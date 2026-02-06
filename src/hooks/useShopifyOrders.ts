@@ -1,0 +1,82 @@
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
+import { Order } from '@/types/analytics';
+
+interface ShopifyOrdersResponse {
+  success: boolean;
+  orders: Array<{
+    id: string;
+    orderNumber: string;
+    customerType: 'B2C';
+    source: 'shopify';
+    customerId: string;
+    customerName: string;
+    date: string;
+    products: Array<{
+      id: string;
+      name: string;
+      sku: string;
+      category: string;
+      quantity: number;
+      unitPrice: number;
+      totalPrice: number;
+    }>;
+    totalAmount: number;
+    currency: string;
+    channel: string;
+    status: 'pending' | 'completed' | 'cancelled' | 'refunded';
+  }>;
+  count: number;
+  error?: string;
+}
+
+interface UseShopifyOrdersOptions {
+  limit?: number;
+  status?: 'open' | 'closed' | 'cancelled' | 'any';
+  createdAtMin?: Date;
+  createdAtMax?: Date;
+  enabled?: boolean;
+}
+
+export function useShopifyOrders(options: UseShopifyOrdersOptions = {}) {
+  const { limit = 50, status = 'any', createdAtMin, createdAtMax, enabled = true } = options;
+
+  return useQuery({
+    queryKey: ['shopify-orders', limit, status, createdAtMin?.toISOString(), createdAtMax?.toISOString()],
+    queryFn: async (): Promise<Order[]> => {
+      const params = new URLSearchParams();
+      params.set('limit', limit.toString());
+      params.set('status', status);
+      
+      if (createdAtMin) {
+        params.set('created_at_min', createdAtMin.toISOString());
+      }
+      if (createdAtMax) {
+        params.set('created_at_max', createdAtMax.toISOString());
+      }
+
+      const { data, error } = await supabase.functions.invoke<ShopifyOrdersResponse>('shopify-orders', {
+        body: null,
+        headers: {},
+      });
+
+      if (error) {
+        console.error('Error fetching Shopify orders:', error);
+        throw new Error(error.message || 'Failed to fetch Shopify orders');
+      }
+
+      if (!data?.success) {
+        throw new Error(data?.error || 'Failed to fetch Shopify orders');
+      }
+
+      // Transform dates from strings to Date objects
+      return data.orders.map((order) => ({
+        ...order,
+        date: new Date(order.date),
+      }));
+    },
+    enabled,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    retry: 2,
+  });
+}
