@@ -63,6 +63,22 @@ export function OrdersTrendChart({ orders, dateRange }: OrdersTrendChartProps) {
 
   const formatCurrency = (value: number) => `€${(value / 1000).toFixed(0)}k`;
 
+  // Custom dot that only renders on peak (local maximum) values
+  const createPeakDot = (dataKey: string, color: string) => {
+    return (props: any) => {
+      const { cx, cy, index } = props;
+      if (cx == null || cy == null || !chartData.length) return null;
+      const val = chartData[index]?.[dataKey as keyof typeof chartData[0]] as number;
+      const prev = index > 0 ? (chartData[index - 1]?.[dataKey as keyof typeof chartData[0]] as number) : -1;
+      const next = index < chartData.length - 1 ? (chartData[index + 1]?.[dataKey as keyof typeof chartData[0]] as number) : -1;
+      const isPeak = val > 0 && val >= prev && val >= next && (val > prev || val > next);
+      if (!isPeak) return null;
+      return (
+        <circle cx={cx} cy={cy} r={4} fill={color} stroke="hsl(var(--background))" strokeWidth={2} />
+      );
+    };
+  };
+
   const CustomTooltip = ({ active, payload, label }: any) => {
     if (!active || !payload?.length) return null;
     return (
@@ -115,9 +131,9 @@ export function OrdersTrendChart({ orders, dateRange }: OrdersTrendChartProps) {
             <XAxis dataKey="date" stroke="hsl(215, 15%, 35%)" fontSize={10} tickLine={false} axisLine={false} />
             <YAxis stroke="hsl(215, 15%, 35%)" fontSize={10} tickLine={false} axisLine={false} tickFormatter={formatCurrency} />
             <Tooltip content={<CustomTooltip />} />
-            <Line type="monotone" dataKey="b2c" name="B2C" stroke="hsl(215, 85%, 55%)" strokeWidth={2} dot={false} />
-            <Line type="monotone" dataKey="b2b" name="B2B" stroke="hsl(25, 95%, 55%)" strokeWidth={2} dot={false} />
-            <Line type="monotone" dataKey="b2bCustom" name="B2B Custom" stroke="hsl(40, 90%, 55%)" strokeWidth={2} strokeDasharray="5 5" dot={false} />
+            <Line type="monotone" dataKey="b2c" name="B2C" stroke="hsl(215, 85%, 55%)" strokeWidth={2} dot={createPeakDot('b2c', 'hsl(215, 85%, 55%)')} activeDot={{ r: 5 }} />
+            <Line type="monotone" dataKey="b2b" name="B2B" stroke="hsl(25, 95%, 55%)" strokeWidth={2} dot={createPeakDot('b2b', 'hsl(25, 95%, 55%)')} activeDot={{ r: 5 }} />
+            <Line type="monotone" dataKey="b2bCustom" name="B2B Custom" stroke="hsl(40, 90%, 55%)" strokeWidth={2} strokeDasharray="5 5" dot={createPeakDot('b2bCustom', 'hsl(40, 90%, 55%)')} activeDot={{ r: 5 }} />
           </LineChart>
         </ResponsiveContainer>
       </div>
