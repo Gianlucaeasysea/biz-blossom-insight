@@ -199,11 +199,78 @@ export default function MetaAds() {
     return totalSpend > 0 ? totalRevenue / totalSpend : 0;
   }, [merData]);
 
+  // UTM Content aggregation: B2C net sales grouped by utm_content
+  const utmContentSales = useMemo(() => {
+    const map = new Map<string, { utmContent: string; netSales: number; orderCount: number }>();
+    const filteredOrders = shopifyOrders.filter(o => {
+      if (o.customerType !== 'B2C') return false;
+      const d = o.date instanceof Date ? o.date : new Date(o.date);
+      return d >= dateRange.start && d <= dateRange.end;
+    });
+    for (const order of filteredOrders) {
+      const utm = (order as any).utm as Record<string, string> | null;
+      const utmContent = utm?.utm_content || '(nessuno)';
+      const netAmt = (order as any).netAmount ?? order.totalAmount;
+      const existing = map.get(utmContent);
+      if (existing) {
+        existing.netSales += netAmt;
+        existing.orderCount += 1;
+      } else {
+        map.set(utmContent, { utmContent, netSales: netAmt, orderCount: 1 });
+      }
+    }
+    return [...map.values()].sort((a, b) => b.netSales - a.netSales);
+  }, [shopifyOrders, dateRange]);
+
+  // Adset MER: cross ad set spend with B2C net sales by category
+  const adsetMerData = useMemo(() => {
+    if (!data?.adsets) return [];
+
+    // B2C net sales by category in date range
+    const revenueByCategory: Record<string, number> = {};
+    const filteredSales = shopifyOrders.filter(o => {
+      if (o.customerType !== 'B2C') return false;
+      const d = o.date instanceof Date ? o.date : new Date(o.date);
+      return d >= dateRange.start && d <= dateRange.end;
+    });
+    for (const order of filteredSales) {
+      const netAmt = (order as any).netAmount ?? order.totalAmount;
+      for (const product of order.products) {
+        const cat = mapCollectionToCategory(product.category);
+        const ratio = order.totalAmount > 0 ? product.totalPrice / order.totalAmount : 0;
+        revenueByCategory[cat] = (revenueByCategory[cat] || 0) + (netAmt * ratio);
+      }
+    }
+
+    return data.adsets
+      .filter(a => campaignFilter === 'all' || a.campaign_name === campaignFilter)
+      .map(a => {
+        const key = `${a.campaign_name}::${a.adset_name}`;
+        const category = adsetCategories[key] || 'Altro';
+        const spend = parseFloat(a.spend || '0');
+        const catRevenue = revenueByCategory[category] || 0;
+        // Proportion of spend this adset represents within its category
+        const totalCatSpend = data.adsets!
+          .filter(x => (adsetCategories[`${x.campaign_name}::${x.adset_name}`] || 'Altro') === category)
+          .reduce((s, x) => s + parseFloat(x.spend || '0'), 0);
+        const allocatedRevenue = totalCatSpend > 0 ? catRevenue * (spend / totalCatSpend) : 0;
+        const mer = spend > 0 ? allocatedRevenue / spend : 0;
+        return {
+          name: a.adset_name,
+          campaignName: a.campaign_name,
+          category,
+          spend,
+          allocatedRevenue,
+          mer,
+        };
+      })
+      .sort((a, b) => b.spend - a.spend);
+  }, [data, shopifyOrders, dateRange, campaignFilter, adsetCategories]);
+
   // UTM cross-reference: match ad UTM tags with Shopify order UTMs
   const utmCrossRef = useMemo(() => {
     if (!creativesData?.ads || !shopifyOrders.length) return [];
 
-    // Build UTM → ad mapping
     const adsByUtmCampaign = new Map<string, { adName: string; campaignName: string; adsetName: string; spend: number; clicks: number; impressions: number }[]>();
     for (const ad of creativesData.ads) {
       const utms = parseUrlTags(ad.url_tags);
@@ -221,7 +288,6 @@ export default function MetaAds() {
       });
     }
 
-    // Match Shopify orders with UTMs
     const matches: { orderNumber: string; orderDate: string; orderAmount: number; netAmount: number; utmSource: string; utmCampaign: string; utmContent: string; matchedAd: string; matchedCampaign: string }[] = [];
 
     const filteredOrders = shopifyOrders.filter(o => {
@@ -233,14 +299,10 @@ export default function MetaAds() {
     for (const order of filteredOrders) {
       const utm = (order as any).utm as Record<string, string> | null;
       if (!utm) continue;
-
       const utmCampaign = (utm.utm_campaign || '').toLowerCase();
       const utmContent = (utm.utm_content || '').toLowerCase();
-
-      // Try matching by utm_campaign or utm_content
       let matchedAds = adsByUtmCampaign.get(utmCampaign);
       if (!matchedAds && utmContent) matchedAds = adsByUtmCampaign.get(utmContent);
-
       const orderDate = order.date instanceof Date ? order.date : new Date(order.date);
       matches.push({
         orderNumber: order.orderNumber,
