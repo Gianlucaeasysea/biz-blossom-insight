@@ -77,12 +77,14 @@ serve(async (req) => {
 
     console.log(`Fetching orders from: ${shopifyUrl}`);
 
-    // Fetch with retry logic for transient errors (503, 429) and network errors
-    let response: Response | null = null;
+    // Fetch with retry logic for transient errors (429/5xx) and network/body-read errors
+    let data: { orders?: ShopifyOrder[] } | null = null;
     const maxRetries = 3;
+    let lastError: Error | null = null;
+
     for (let attempt = 0; attempt < maxRetries; attempt++) {
       try {
-        response = await fetch(shopifyUrl, {
+        const response = await fetch(shopifyUrl, {
           method: 'GET',
           headers: {
             'X-Shopify-Access-Token': accessToken,
@@ -90,33 +92,39 @@ serve(async (req) => {
           },
         });
 
-        if (response.ok) break;
+        if (!response.ok) {
+          const errorText = await response.text().catch(() => 'Unable to read error body');
 
-        // Retry on 503 (service unavailable) and 429 (rate limit)
-        if ((response.status === 503 || response.status === 429) && attempt < maxRetries - 1) {
-          const retryAfter = response.headers.get('Retry-After');
-          const waitMs = retryAfter ? parseInt(retryAfter) * 1000 : Math.pow(2, attempt) * 1000;
-          console.log(`Shopify returned ${response.status}, retrying in ${waitMs}ms (attempt ${attempt + 1}/${maxRetries})`);
-          await response.text(); // consume body
-          await new Promise(r => setTimeout(r, Math.min(waitMs, 60000)));
-          continue;
+          if ((response.status === 429 || response.status >= 500) && attempt < maxRetries - 1) {
+            const retryAfter = response.headers.get('Retry-After');
+            const waitMs = retryAfter ? parseInt(retryAfter, 10) * 1000 : Math.pow(2, attempt) * 1000;
+            console.log(`Shopify returned ${response.status}, retrying in ${waitMs}ms (attempt ${attempt + 1}/${maxRetries})`);
+            await new Promise((r) => setTimeout(r, Math.min(waitMs, 60000)));
+            continue;
+          }
+
+          throw new Error(`Shopify API error: ${response.status} - ${errorText}`);
         }
 
-        const errorText = await response.text();
-        console.error(`Shopify API error: ${response.status} - ${errorText}`);
-        throw new Error(`Shopify API error: ${response.status} - ${errorText}`);
+        const responseText = await response.text();
+        data = JSON.parse(responseText);
+        break;
       } catch (error) {
+        lastError = error instanceof Error ? error : new Error(String(error));
+
         if (attempt < maxRetries - 1) {
           const waitMs = Math.pow(2, attempt) * 1000;
-          console.log(`Network error on attempt ${attempt + 1}/${maxRetries}: ${error.message}. Retrying in ${waitMs}ms...`);
-          await new Promise(r => setTimeout(r, waitMs));
+          console.log(`Shopify request/body read failed on attempt ${attempt + 1}/${maxRetries}: ${lastError.message}. Retrying in ${waitMs}ms...`);
+          await new Promise((r) => setTimeout(r, waitMs));
           continue;
         }
-        throw error;
       }
     }
 
-    const data = await response!.json();
+    if (!data) {
+      throw lastError ?? new Error(`Failed to fetch orders from Shopify after ${maxRetries} attempts.`);
+    }
+
     const orders: ShopifyOrder[] = data.orders || [];
 
     // Transform Shopify orders to our unified format
