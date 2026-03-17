@@ -66,6 +66,7 @@ export default function Index() {
   const channelData = useMemo(() => generateChannelData(filteredOrders), [filteredOrders]);
   const topProducts = useMemo(() => getTopProducts(filteredOrders), [filteredOrders]);
   const topCustomers = useMemo(() => getTopCustomers(filteredOrders), [filteredOrders]);
+  const b2cSkuData = useMemo(() => getB2CSkuBreakdown(filteredOrders), [filteredOrders]);
 
   // Data sources status
   const dataSources = [
