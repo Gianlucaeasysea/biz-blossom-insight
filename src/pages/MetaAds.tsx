@@ -9,7 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { CalendarIcon, Download, Loader2, AlertCircle, TrendingUp, Eye, MousePointerClick, DollarSign, Target, ShoppingCart } from 'lucide-react';
+import { CalendarIcon, Download, Loader2, AlertCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { NavLink } from '@/components/NavLink';
 import { downloadCsv } from '@/lib/csv-export';
