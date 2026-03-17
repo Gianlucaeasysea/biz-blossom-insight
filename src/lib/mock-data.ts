@@ -180,14 +180,57 @@ export function getCombinedSkuBreakdown(orders: Order[]): Array<{
     .sort((a, b) => b.totalValue - a.totalValue);
 }
 
-// Country breakdown
+// SKU to Collection mapping
+export function getSkuCollection(sku: string): string {
+  if (!sku) return 'Other';
+  if (['FS-101-1', 'FM-101-1', 'FCM-101-1'].includes(sku)) return 'Winch Handle';
+  if (['OA-101', 'OA-102', 'OA-103', 'OA-104', 'OA-105', 'SRA-101', 'SRA-102', 'SRA-103', 'SRA-104'].includes(sku)) return 'Low Friction & Solid Rings';
+  if (['OB-102', 'OB-103', 'OB-104'].includes(sku)) return 'Blocks';
+  if (['LC-101', 'LC-102', 'LC-103', 'LC-104', 'LS-101', 'LS-102', 'LS-103', 'LS-104', 'SS-101', 'SS-102', 'SS-103', 'SS-104', 'CWC-101GY', 'CWC-102GY', 'CWC-103GY', 'CWC-104GY', 'SP-101'].includes(sku)) return 'Side products';
+  if (sku === 'W2G-101') return 'Inflatable';
+  if (sku.startsWith('J')) return 'JAKE';
+  if (sku === 'SHIPPING') return 'Shipping';
+  return 'Other';
+}
+
+// Collection breakdown
+export function getCollectionBreakdown(orders: Order[], channel: 'B2C' | 'B2B' | 'all' = 'all'): Array<{
+  collection: string; qtySold: number; b2cSales: number; b2bSales: number; totalSales: number;
+}> {
+  const map: Record<string, { qty: number; b2c: number; b2b: number }> = {};
+
+  orders.filter(o => o.customerType === 'B2C' || isNotCustom(o)).forEach(order => {
+    if (channel !== 'all' && order.customerType !== channel) return;
+    order.products.forEach(product => {
+      const collection = getSkuCollection(product.sku);
+      if (!map[collection]) map[collection] = { qty: 0, b2c: 0, b2b: 0 };
+      map[collection].qty += product.quantity;
+      if (order.customerType === 'B2C') map[collection].b2c += product.totalPrice;
+      else map[collection].b2b += product.totalPrice;
+    });
+  });
+
+  return Object.entries(map)
+    .map(([collection, d]) => ({
+      collection, qtySold: d.qty,
+      b2cSales: Math.round(d.b2c * 100) / 100,
+      b2bSales: Math.round(d.b2b * 100) / 100,
+      totalSales: Math.round((d.b2c + d.b2b) * 100) / 100,
+    }))
+    .sort((a, b) => b.totalSales - a.totalSales);
+}
+
+// Country breakdown - B2C uses destination country, B2B uses country field
 export function getCountryBreakdown(orders: Order[], skuFilter?: string): Array<{
   country: string; b2cSales: number; b2bSales: number; totalSales: number;
 }> {
   const countryMap: Record<string, { b2c: number; b2b: number }> = {};
 
   orders.filter(o => o.customerType === 'B2C' || isNotCustom(o)).forEach(order => {
-    const country = order.country || 'Sconosciuto';
+    // B2C: destinationCountry (shipping_address), B2B: country field
+    const country = (order.customerType === 'B2C'
+      ? (order.destinationCountry || order.country)
+      : order.country) || 'Sconosciuto';
     let amount = 0;
     if (skuFilter) {
       amount = order.products.filter(p => p.sku === skuFilter).reduce((s, p) => s + p.totalPrice, 0);
