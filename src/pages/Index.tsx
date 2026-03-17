@@ -211,6 +211,9 @@ export default function Index() {
           <ConnectionStatus sources={dataSources} />
         </div>
       </div>
+
+      {/* AI Assistant */}
+      <AiAssistant dashboardContext={aiDashboardContext} />
     </div>
   );
 }
