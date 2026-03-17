@@ -18,7 +18,7 @@ serve(async (req) => {
       throw new Error('Missing GOOGLE_SHEETS_API_KEY secret');
     }
 
-    // First, get spreadsheet metadata to find the correct sheet name
+    // Get all sheet names to find the orders sheet
     const metaUrl = `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}?key=${apiKey}&fields=sheets.properties.title`;
     const metaResponse = await fetch(metaUrl);
     if (!metaResponse.ok) {
@@ -26,10 +26,18 @@ serve(async (req) => {
       throw new Error(`Google Sheets metadata error: ${metaResponse.status} - ${errorText}`);
     }
     const metaData = await metaResponse.json();
-    const sheetName = metaData.sheets?.[0]?.properties?.title || 'Sheet1';
-    console.log('Sheet name:', sheetName);
+    const sheetNames = metaData.sheets?.map((s: { properties: { title: string } }) => s.properties.title) || [];
+    console.log('All sheet names:', JSON.stringify(sheetNames));
 
-    // Fetch all rows - use UNFORMATTED_VALUE to get raw data, FORMATTED_VALUE for display
+    // Find the orders sheet - look for keywords like "order", "ordini", or use the one with most columns
+    const orderSheetKeywords = ['order', 'ordini', 'vendite', 'sales', 'b2b'];
+    let sheetName = sheetNames.find((name: string) => 
+      orderSheetKeywords.some(kw => name.toLowerCase().includes(kw))
+    ) || sheetNames[1] || sheetNames[0]; // fallback to second sheet, then first
+    
+    console.log('Using sheet:', sheetName);
+
+    // Fetch all rows
     const range = `'${sheetName}'!A1:AG5000`;
     const sheetsUrl = `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/${encodeURIComponent(range)}?key=${apiKey}&majorDimension=ROWS&valueRenderOption=FORMATTED_VALUE`;
 
