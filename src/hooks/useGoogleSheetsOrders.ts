@@ -27,6 +27,8 @@ interface GoogleSheetsResponse {
     channel: string;
     agent?: string;
     status: 'pending' | 'completed' | 'cancelled' | 'refunded';
+    orderType?: string;
+    country?: string;
   }>;
   count: number;
   error?: string;

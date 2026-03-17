@@ -93,6 +93,7 @@ serve(async (req) => {
     const iCountry = colIdx('country');
     const iNomeProdotto = headers.findIndex((h: string) => h.includes('nome prodotto'));
     const iCollection = colIdx('collection');
+    const iType = headers.findIndex((h: string) => h === 'type' || h === 'tipo');
 
     // SKU mapping for B2B products
     const skuMap: Record<string, string> = {
@@ -241,6 +242,9 @@ serve(async (req) => {
 
       const category = get(iCollection) || 'B2B';
 
+      const orderTypeValue = get(iType);
+      const countryValue = get(iCountry);
+
       orders.push({
         id: `gsheets-${i}`,
         orderNumber: code || `GS-${i}`,
@@ -265,6 +269,8 @@ serve(async (req) => {
         channel: 'wholesale',
         agent: get(iSender) || get(iOwner),
         status,
+        orderType: orderTypeValue || undefined,
+        country: countryValue || undefined,
       });
     }
 

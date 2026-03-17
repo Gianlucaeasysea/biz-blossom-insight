@@ -17,8 +17,10 @@ export interface Order {
   totalAmount: number;
   currency: string;
   channel?: string;
-  agent?: string; // For B2B orders
+  agent?: string;
   status: 'pending' | 'completed' | 'cancelled' | 'refunded';
+  orderType?: string; // B2B: 'custom', etc.
+  country?: string;
 }
 
 export interface OrderProduct {
@@ -60,7 +62,6 @@ export interface SalesChannel {
   type: 'online' | 'retail' | 'wholesale' | 'marketplace';
 }
 
-// KPI Types
 export interface KPIData {
   label: string;
   value: number;
@@ -71,7 +72,6 @@ export interface KPIData {
   currency?: string;
 }
 
-// Filter Types
 export interface DashboardFilters {
   dateRange: {
     start: Date;
@@ -85,11 +85,11 @@ export interface DashboardFilters {
   agents: string[];
 }
 
-// Chart Data Types
 export interface TimeSeriesData {
   date: string;
   b2c: number;
   b2b: number;
+  b2bCustom: number;
   total: number;
 }
 
@@ -99,7 +99,6 @@ export interface CategoryData {
   fill?: string;
 }
 
-// View Configuration
 export interface SavedView {
   id: string;
   name: string;

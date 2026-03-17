@@ -3,26 +3,21 @@ import { subDays } from 'date-fns';
 import { DashboardHeader } from '@/components/dashboard/DashboardHeader';
 import { FilterBar } from '@/components/dashboard/FilterBar';
 import { KPICard } from '@/components/dashboard/KPICard';
-import { RevenueChart } from '@/components/dashboard/RevenueChart';
+import { OrdersTrendChart } from '@/components/dashboard/OrdersTrendChart';
 import { SalesTrendChart } from '@/components/dashboard/SalesTrendChart';
-import { CategoryChart } from '@/components/dashboard/CategoryChart';
-import { DataTable } from '@/components/dashboard/DataTable';
-import { TopProducts, TopCustomers } from '@/components/dashboard/TopList';
-import { ConnectionStatus } from '@/components/dashboard/ConnectionStatus';
 import { B2CSkuTable } from '@/components/dashboard/B2CSkuTable';
 import { B2BSkuTable } from '@/components/dashboard/B2BSkuTable';
+import { CombinedSkuTable } from '@/components/dashboard/CombinedSkuTable';
+import { CountryBreakdown } from '@/components/dashboard/CountryBreakdown';
+import { ConnectionStatus } from '@/components/dashboard/ConnectionStatus';
 import { CustomerType } from '@/types/analytics';
 import { useShopifyOrders } from '@/hooks/useShopifyOrders';
 import { useGoogleSheetsOrders } from '@/hooks/useGoogleSheetsOrders';
 import {
-  generateTimeSeriesData,
-  generateCategoryData,
-  generateChannelData,
   calculateKPIs,
-  getTopProducts,
-  getTopCustomers,
   getB2CSkuBreakdown,
   getB2BSkuBreakdown,
+  getCombinedSkuBreakdown,
 } from '@/lib/mock-data';
 import { Loader2, AlertCircle } from 'lucide-react';
 
@@ -51,19 +46,19 @@ export default function Index() {
   }, [allOrders, dateRange, customerTypeFilter]);
 
   const kpis = useMemo(() => calculateKPIs(filteredOrders), [filteredOrders]);
-  const timeSeriesData = useMemo(() => generateTimeSeriesData(filteredOrders, 30), [filteredOrders]);
-  const categoryData = useMemo(() => generateCategoryData(filteredOrders), [filteredOrders]);
-  const channelData = useMemo(() => generateChannelData(filteredOrders), [filteredOrders]);
-  const topProducts = useMemo(() => getTopProducts(filteredOrders), [filteredOrders]);
-  const topCustomers = useMemo(() => getTopCustomers(filteredOrders), [filteredOrders]);
   const b2cSkuData = useMemo(() => getB2CSkuBreakdown(filteredOrders), [filteredOrders]);
   const b2bSkuData = useMemo(() => getB2BSkuBreakdown(filteredOrders), [filteredOrders]);
+  const combinedSkuData = useMemo(() => getCombinedSkuBreakdown(filteredOrders), [filteredOrders]);
 
-  // Split KPIs into groups
-  const totalKpi = kpis.find(k => k.label === 'Fatturato Totale');
-  const ordersKpi = kpis.find(k => k.label === 'Numero Ordini');
-  const b2cKpis = kpis.filter(k => k.label.includes('B2C'));
-  const b2bKpis = kpis.filter(k => k.label.includes('B2B'));
+  // All unique SKUs for country filter
+  const allSkus = useMemo(() => {
+    const skuSet = new Set<string>();
+    filteredOrders.forEach(o => o.products.forEach(p => skuSet.add(p.sku)));
+    return Array.from(skuSet).sort();
+  }, [filteredOrders]);
+
+  // KPIs by label
+  const kpiMap = useMemo(() => Object.fromEntries(kpis.map(k => [k.label, k])), [kpis]);
 
   const dataSources = [
     { name: 'Shopify', type: 'shopify' as const, status: isLoadingShopify ? 'syncing' as const : isErrorShopify ? 'disconnected' as const : 'connected' as const, recordCount: shopifyOrders.length },
@@ -103,53 +98,65 @@ export default function Index() {
           <FilterBar customerTypeFilter={customerTypeFilter} onCustomerTypeChange={setCustomerTypeFilter} dateRange={dateRange} onDateRangeChange={setDateRange} />
         </div>
 
-        {/* Summary KPIs */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-2 gap-3 mb-6">
-          {totalKpi && <KPICard data={totalKpi} />}
-          {ordersKpi && <KPICard data={ordersKpi} />}
+        {/* === KPI SECTION === */}
+        {/* Total Order */}
+        <div className="mb-6">
+          <p className="section-label mb-2">Overview</p>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            {kpiMap['Total Order'] && <KPICard data={kpiMap['Total Order']} />}
+            {kpiMap['Total Order B2C'] && <KPICard data={kpiMap['Total Order B2C']} />}
+            {kpiMap['Total Order B2B'] && <KPICard data={kpiMap['Total Order B2B']} />}
+          </div>
         </div>
 
-        {/* B2C Section */}
+        {/* Fatturato + Ordini count */}
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
+          {kpiMap['Fatturato B2C'] && <KPICard data={kpiMap['Fatturato B2C']} />}
+          {kpiMap['Fatturato B2B'] && <KPICard data={kpiMap['Fatturato B2B']} />}
+          {kpiMap['Totale Ordini B2C'] && <KPICard data={kpiMap['Totale Ordini B2C']} />}
+          {kpiMap['Totale Ordini B2B'] && <KPICard data={kpiMap['Totale Ordini B2B']} />}
+        </div>
+
+        {/* === TREND CHART: B2C + B2B + Custom === */}
+        <div className="mb-6">
+          <OrdersTrendChart orders={filteredOrders} dateRange={dateRange} />
+        </div>
+
+        {/* === SKU DETAIL SECTION === */}
         <div className="mb-8">
-          <p className="section-label">B2C</p>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 mb-4">
-            {b2cKpis.map(kpi => <KPICard key={kpi.label} data={kpi} />)}
+          <p className="section-label mb-3">Dettaglio Vendite SKU</p>
+          
+          {/* B2C SKU */}
+          <div className="mb-4">
+            <B2CSkuTable data={b2cSkuData} />
           </div>
-          <B2CSkuTable data={b2cSkuData} />
+
+          {/* B2B SKU */}
+          <div className="mb-4">
+            <B2BSkuTable data={b2bSkuData} />
+          </div>
+
+          {/* Combined */}
+          <div>
+            <CombinedSkuTable data={combinedSkuData} />
+          </div>
         </div>
 
-        {/* B2B Section */}
-        <div className="mb-8">
-          <p className="section-label">B2B</p>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-4">
-            {b2bKpis.map(kpi => <KPICard key={kpi.label} data={kpi} />)}
-          </div>
-          <B2BSkuTable data={b2bSkuData} />
+        {/* === COUNTRY BREAKDOWN === */}
+        <div className="mb-6">
+          <p className="section-label mb-3">Vendite per Paese</p>
+          <CountryBreakdown orders={filteredOrders} allSkus={allSkus} />
         </div>
 
-        {/* Charts */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-6">
-          <div className="lg:col-span-2">
-            <RevenueChart data={timeSeriesData} customerTypeFilter={customerTypeFilter} />
-          </div>
-          <ConnectionStatus sources={dataSources} />
-        </div>
-
-        {/* Sales Trend by Channel/Product */}
+        {/* === Sales Trend by Channel/Product === */}
         <div className="mb-6">
           <SalesTrendChart orders={filteredOrders} dateRange={dateRange} />
         </div>
 
-        {/* Breakdown Charts + Top Lists */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-          <CategoryChart data={categoryData} title="Per Categoria" description="Distribuzione fatturato" />
-          <CategoryChart data={channelData} title="Per Canale" description="Performance canali" />
-          <TopProducts products={topProducts} />
-          <TopCustomers customers={topCustomers} />
+        {/* Connection Status */}
+        <div className="mb-6">
+          <ConnectionStatus sources={dataSources} />
         </div>
-
-        {/* Orders Table */}
-        <DataTable orders={filteredOrders} title="Ordini Recenti" />
       </div>
     </div>
   );

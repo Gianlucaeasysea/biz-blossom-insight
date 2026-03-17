@@ -31,6 +31,14 @@ interface ShopifyOrder {
   source_name: string;
   cancelled_at: string | null;
   refunds: Array<unknown>;
+  shipping_address?: {
+    country?: string;
+    country_code?: string;
+  } | null;
+  billing_address?: {
+    country?: string;
+    country_code?: string;
+  } | null;
 }
 
 serve(async (req) => {
@@ -172,6 +180,8 @@ serve(async (req) => {
         status = 'completed';
       }
 
+      const country = order.shipping_address?.country || order.billing_address?.country || undefined;
+
       return {
         id: `shopify-${order.id}`,
         orderNumber: order.name,
@@ -186,7 +196,7 @@ serve(async (req) => {
           id: `shopify-item-${item.id}`,
           name: item.title,
           sku: item.sku || `SKU-${item.product_id}`,
-          category: 'Shopify', // Category would need product metafields
+          category: 'Shopify',
           quantity: item.quantity,
           unitPrice: parseFloat(item.price),
           totalPrice: parseFloat(item.price) * item.quantity,
@@ -195,6 +205,7 @@ serve(async (req) => {
         currency: order.currency,
         channel: order.source_name,
         status,
+        country,
       };
     });
 
