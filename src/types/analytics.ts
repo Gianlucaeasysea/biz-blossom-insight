@@ -11,6 +11,8 @@ export interface Order {
   customerId: string;
   customerName: string;
   date: Date;
+  deliveryDate?: Date | null;
+  payedDate?: Date | null;
   products: OrderProduct[];
   totalAmount: number;
   currency: string;

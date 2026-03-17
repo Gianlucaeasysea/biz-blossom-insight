@@ -85,6 +85,8 @@ serve(async (req) => {
     const iQty = headers.findIndex((h: string) => h.includes('q.ty') || h.includes('qty') || h.includes('quantity'));
     const iProduct = colIdx('product');
     const iOrderDate = headers.findIndex((h: string) => h.includes('order date') || h.includes('order_date'));
+    const iDeliveryDate = headers.findIndex((h: string) => h.includes('delivery date') || h.includes('delivery_date'));
+    const iPayedDate = headers.findIndex((h: string) => h.includes('payed date') || h.includes('payed_date') || h.includes('paid date') || h.includes('paid_date') || h.includes('payment date'));
     const iPrice = colIdx('price');
     const iSender = colIdx('sender');
     const iOwner = colIdx('owner');
@@ -92,7 +94,7 @@ serve(async (req) => {
     const iNomeProdotto = headers.findIndex((h: string) => h.includes('nome prodotto'));
     const iCollection = colIdx('collection');
 
-    console.log(`Column indices: business=${iBusiness}, totFatt=${iTotFattFallback}, orderDate=${iOrderDate}, product=${iProduct}, qty=${iQty}, nomeProdotto=${iNomeProdotto}`);
+    console.log(`Column indices: business=${iBusiness}, totFatt=${iTotFattFallback}, orderDate=${iOrderDate}, deliveryDate=${iDeliveryDate}, payedDate=${iPayedDate}, price=${iPrice}, product=${iProduct}, qty=${iQty}, nomeProdotto=${iNomeProdotto}`);
 
     // Transform rows to orders
     const orders = [];
@@ -105,6 +107,8 @@ serve(async (req) => {
       const business = get(iBusiness);
       const totalStr = get(iTotFattFallback);
       const orderDateStr = get(iOrderDate);
+      const deliveryDateStr = get(iDeliveryDate);
+      const payedDateStr = get(iPayedDate);
       const productName = get(iNomeProdotto) || get(iProduct);
       const code = get(iCode);
       
@@ -115,16 +119,12 @@ serve(async (req) => {
       const parseEuropeanNumber = (str: string): number => {
         if (!str) return 0;
         const cleaned = str.replace(/[^\d.,-]/g, '');
-        // If has both dot and comma, determine format
         if (cleaned.includes(',') && cleaned.includes('.')) {
-          // European: 1.936,00 → remove dots, replace comma with dot
           if (cleaned.lastIndexOf(',') > cleaned.lastIndexOf('.')) {
             return parseFloat(cleaned.replace(/\./g, '').replace(',', '.')) || 0;
           }
-          // US: 1,936.00
           return parseFloat(cleaned.replace(/,/g, '')) || 0;
         }
-        // Only comma: could be "1936,00" (decimal) or "1,936" (thousands)
         if (cleaned.includes(',')) {
           const afterComma = cleaned.split(',')[1];
           if (afterComma && afterComma.length <= 2) {
@@ -132,11 +132,9 @@ serve(async (req) => {
           }
           return parseFloat(cleaned.replace(/,/g, '')) || 0;
         }
-        // Only dots: could be "1.936" (thousands) or "19.36" (decimal)
         if (cleaned.includes('.')) {
           const parts = cleaned.split('.');
           const lastPart = parts[parts.length - 1];
-          // If last segment is exactly 3 digits and there are multiple parts, it's thousands separator
           if (parts.length > 1 && lastPart.length === 3 && parts.length > 2) {
             return parseFloat(cleaned.replace(/\./g, '')) || 0;
           }
@@ -145,31 +143,34 @@ serve(async (req) => {
       };
       const totalAmount = parseEuropeanNumber(totalStr);
       
-      // Parse date - try multiple formats
-      let orderDate: string | null = null;
-      if (orderDateStr) {
-        // Try DD/MM/YYYY, MM/DD/YYYY, YYYY-MM-DD, etc.
-        const parts = orderDateStr.split(/[\/\-\.]/);
+      // Parse date helper
+      const parseDate = (dateStr: string): string | null => {
+        if (!dateStr) return null;
+        const parts = dateStr.split(/[\/\-\.]/);
         if (parts.length === 3) {
           const [a, b, c] = parts.map(Number);
           if (c > 100) {
-            // DD/MM/YYYY or MM/DD/YYYY
-            orderDate = new Date(c, b - 1, a).toISOString();
+            return new Date(c, b - 1, a).toISOString();
           } else if (a > 100) {
-            // YYYY-MM-DD
-            orderDate = new Date(a, b - 1, c).toISOString();
+            return new Date(a, b - 1, c).toISOString();
           }
         }
-        if (!orderDate) {
-          const d = new Date(orderDateStr);
-          if (!isNaN(d.getTime())) orderDate = d.toISOString();
-        }
-      }
-      if (!orderDate) continue; // Skip rows without valid date
+        const d = new Date(dateStr);
+        if (!isNaN(d.getTime())) return d.toISOString();
+        return null;
+      };
+
+      const orderDate = parseDate(orderDateStr);
+      const deliveryDate = parseDate(deliveryDateStr);
+      const payedDate = parseDate(payedDateStr);
+
+      if (!orderDate) continue; // Skip rows without valid order date
 
       // Parse quantity
       const qty = parseInt(get(iQty)) || 1;
-      const unitPrice = parseEuropeanNumber(get(iPrice)) || totalAmount;
+      const priceValue = parseEuropeanNumber(get(iPrice));
+      const unitPrice = priceValue || totalAmount;
+      const productTotal = priceValue > 0 ? priceValue : totalAmount;
 
       // Map order status
       const statusOrderRaw = get(iStatusOrder).toLowerCase();
@@ -192,6 +193,8 @@ serve(async (req) => {
         customerId: `gsheets-customer-${business.toLowerCase().replace(/\s+/g, '-')}`,
         customerName: business || 'Sconosciuto',
         date: orderDate,
+        deliveryDate: deliveryDate || null,
+        payedDate: payedDate || null,
         products: [{
           id: `gsheets-item-${i}`,
           name: productName || 'Prodotto B2B',
@@ -199,9 +202,9 @@ serve(async (req) => {
           category,
           quantity: qty,
           unitPrice,
-          totalPrice: totalAmount,
+          totalPrice: productTotal,
         }],
-        totalAmount,
+        totalAmount: productTotal,
         currency: 'EUR',
         channel: 'wholesale',
         agent: get(iSender) || get(iOwner),

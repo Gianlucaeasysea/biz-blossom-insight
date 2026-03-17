@@ -19,8 +19,10 @@ import {
   getTopProducts,
   getTopCustomers,
   getB2CSkuBreakdown,
+  getB2BSkuBreakdown,
 } from '@/lib/mock-data';
 import { B2CSkuTable } from '@/components/dashboard/B2CSkuTable';
+import { B2BSkuTable } from '@/components/dashboard/B2BSkuTable';
 import { Loader2, AlertCircle } from 'lucide-react';
 
 export default function Index() {
@@ -67,6 +69,7 @@ export default function Index() {
   const topProducts = useMemo(() => getTopProducts(filteredOrders), [filteredOrders]);
   const topCustomers = useMemo(() => getTopCustomers(filteredOrders), [filteredOrders]);
   const b2cSkuData = useMemo(() => getB2CSkuBreakdown(filteredOrders), [filteredOrders]);
+  const b2bSkuData = useMemo(() => getB2BSkuBreakdown(filteredOrders), [filteredOrders]);
 
   // Data sources status
   const dataSources = [
@@ -131,7 +134,7 @@ export default function Index() {
         </div>
 
         {/* KPI Cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4 mb-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-7 gap-4 mb-6">
           {kpis.map((kpi, index) => (
             <KPICard key={kpi.label} data={kpi} index={index} />
           ))}
@@ -166,6 +169,11 @@ export default function Index() {
         {/* B2C SKU Breakdown */}
         <div className="mb-6">
           <B2CSkuTable data={b2cSkuData} />
+        </div>
+
+        {/* B2B SKU Breakdown */}
+        <div className="mb-6">
+          <B2BSkuTable data={b2bSkuData} />
         </div>
 
         {/* Data Table */}
