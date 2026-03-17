@@ -23,16 +23,19 @@ import { Loader2, AlertCircle } from 'lucide-react';
 
 export default function Index() {
   const [customerTypeFilter, setCustomerTypeFilter] = useState<CustomerType | 'all'>('all');
-  const [dateRange, setDateRange] = useState({
+  const [dateRange, setDateRange] = useState(() => ({
     start: subDays(new Date(), 30),
     end: new Date(),
-  });
+  }));
+
+  // Stable date reference for Shopify query to avoid infinite refetches
+  const [shopifyMinDate] = useState(() => subDays(new Date(), 365));
 
   // Fetch real Shopify orders
   const { data: shopifyOrders = [], isLoading: isLoadingShopify, isError: isErrorShopify, error: errorShopify, refetch: refetchShopify, isFetching: isFetchingShopify } = useShopifyOrders({
     limit: 250,
     status: 'any',
-    createdAtMin: subDays(new Date(), 365),
+    createdAtMin: shopifyMinDate,
     enabled: true,
   });
 
