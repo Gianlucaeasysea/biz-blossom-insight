@@ -55,10 +55,26 @@ export function useShopifyOrders(options: UseShopifyOrdersOptions = {}) {
         params.set('created_at_max', createdAtMax.toISOString());
       }
 
-      const { data, error } = await supabase.functions.invoke<ShopifyOrdersResponse>('shopify-orders', {
-        body: null,
-        headers: {},
-      });
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+      const anonKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+      
+      const response = await fetch(
+        `${supabaseUrl}/functions/v1/shopify-orders?${params.toString()}`,
+        {
+          headers: {
+            'Authorization': `Bearer ${anonKey}`,
+            'apikey': anonKey,
+          },
+        }
+      );
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData?.error || `HTTP ${response.status}`);
+      }
+
+      const data: ShopifyOrdersResponse = await response.json();
+      const error = null;
 
       if (error) {
         console.error('Error fetching Shopify orders:', error);
