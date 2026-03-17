@@ -155,9 +155,9 @@ export function calculateKPIs(orders: Order[]): KPIData[] {
   const calcB2CFatturato = (list: Order[]) => list.filter(o => o.customerType === 'B2C' && o.status === 'completed').reduce((sum, o) => sum + o.totalAmount, 0);
   const calcB2CRaccolti = (list: Order[]) => list.filter(o => o.customerType === 'B2C').reduce((sum, o) => sum + o.totalAmount, 0);
 
-  // B2B: Fatturato = orders with deliveryDate filled, sum product prices
-  const calcB2BFatturato = (list: Order[]) => list
-    .filter(o => o.customerType === 'B2B' && o.deliveryDate)
+  // B2B: Fatturato = filter by deliveryDate in period, sum product prices
+  const calcB2BFatturato = (allOrders: Order[], start: Date, end: Date) => allOrders
+    .filter(o => o.customerType === 'B2B' && o.deliveryDate && o.deliveryDate >= start && o.deliveryDate <= end)
     .reduce((sum, o) => sum + o.products.reduce((ps, p) => ps + p.totalPrice, 0), 0);
 
   // B2B: Ordini Raccolti = all B2B orders, sum product prices (filtered by order date - already done via currentPeriod)
@@ -165,7 +165,7 @@ export function calculateKPIs(orders: Order[]): KPIData[] {
     .filter(o => o.customerType === 'B2B')
     .reduce((sum, o) => sum + o.products.reduce((ps, p) => ps + p.totalPrice, 0), 0);
 
-  // B2B: Ordini Pagati = orders with payedDate filled in current period
+  // B2B: Ordini Pagati = filter by payedDate in period, sum product prices
   const calcB2BPagati = (allOrders: Order[], start: Date, end: Date) => allOrders
     .filter(o => o.customerType === 'B2B' && o.payedDate && o.payedDate >= start && o.payedDate <= end)
     .reduce((sum, o) => sum + o.products.reduce((ps, p) => ps + p.totalPrice, 0), 0);
@@ -182,8 +182,8 @@ export function calculateKPIs(orders: Order[]): KPIData[] {
   const previousB2CRacc = calcB2CRaccolti(previousPeriod);
   const b2cRaccChange = previousB2CRacc ? ((currentB2CRacc - previousB2CRacc) / previousB2CRacc) * 100 : 0;
 
-  const currentB2BFatt = calcB2BFatturato(currentPeriod);
-  const previousB2BFatt = calcB2BFatturato(previousPeriod);
+  const currentB2BFatt = calcB2BFatturato(orders, thirtyDaysAgo, now);
+  const previousB2BFatt = calcB2BFatturato(orders, sixtyDaysAgo, thirtyDaysAgo);
   const b2bFattChange = previousB2BFatt ? ((currentB2BFatt - previousB2BFatt) / previousB2BFatt) * 100 : 0;
 
   const currentB2BRacc = calcB2BRaccolti(currentPeriod);
