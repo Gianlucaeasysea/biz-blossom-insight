@@ -171,6 +171,11 @@ export default function Index() {
           <B2CSkuTable data={b2cSkuData} />
         </div>
 
+        {/* B2B SKU Breakdown */}
+        <div className="mb-6">
+          <B2BSkuTable data={b2bSkuData} />
+        </div>
+
         {/* Data Table */}
         <DataTable orders={filteredOrders} title="Ordini Recenti" />
       </div>
