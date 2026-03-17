@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { subDays } from 'date-fns';
+import { subDays, format } from 'date-fns';
 import { DashboardHeader } from '@/components/dashboard/DashboardHeader';
 import { FilterBar } from '@/components/dashboard/FilterBar';
 import { KPICard } from '@/components/dashboard/KPICard';
@@ -11,6 +11,7 @@ import { CombinedSkuTable } from '@/components/dashboard/CombinedSkuTable';
 import { CountryBreakdown } from '@/components/dashboard/CountryBreakdown';
 import { CollectionBreakdown } from '@/components/dashboard/CollectionBreakdown';
 import { ConnectionStatus } from '@/components/dashboard/ConnectionStatus';
+import { AiAssistant } from '@/components/dashboard/AiAssistant';
 import { CustomerType } from '@/types/analytics';
 import { NavLink } from '@/components/NavLink';
 import { useShopifyOrders } from '@/hooks/useShopifyOrders';

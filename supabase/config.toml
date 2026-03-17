@@ -8,3 +8,6 @@ verify_jwt = false
 
 [functions.meta-ads]
 verify_jwt = false
+
+[functions.ai-assistant]
+verify_jwt = false
