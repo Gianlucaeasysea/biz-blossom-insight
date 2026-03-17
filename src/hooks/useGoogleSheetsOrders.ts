@@ -63,6 +63,8 @@ export function useGoogleSheetsOrders(enabled = true) {
       return data.orders.map((order) => ({
         ...order,
         date: new Date(order.date),
+        deliveryDate: order.deliveryDate ? new Date(order.deliveryDate) : null,
+        payedDate: order.payedDate ? new Date(order.payedDate) : null,
       }));
     },
     enabled,

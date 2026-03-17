@@ -154,7 +154,21 @@ export function calculateKPIs(orders: Order[]): KPIData[] {
   const calcTotal = (list: Order[]) => list.reduce((sum, o) => sum + o.totalAmount, 0);
   const calcB2CFatturato = (list: Order[]) => list.filter(o => o.customerType === 'B2C' && o.status === 'completed').reduce((sum, o) => sum + o.totalAmount, 0);
   const calcB2CRaccolti = (list: Order[]) => list.filter(o => o.customerType === 'B2C').reduce((sum, o) => sum + o.totalAmount, 0);
-  const calcB2B = (list: Order[]) => list.filter(o => o.customerType === 'B2B').reduce((sum, o) => sum + o.totalAmount, 0);
+
+  // B2B: Fatturato = orders with deliveryDate filled, sum product prices
+  const calcB2BFatturato = (list: Order[]) => list
+    .filter(o => o.customerType === 'B2B' && o.deliveryDate)
+    .reduce((sum, o) => sum + o.products.reduce((ps, p) => ps + p.totalPrice, 0), 0);
+
+  // B2B: Ordini Raccolti = all B2B orders, sum product prices (filtered by order date - already done via currentPeriod)
+  const calcB2BRaccolti = (list: Order[]) => list
+    .filter(o => o.customerType === 'B2B')
+    .reduce((sum, o) => sum + o.products.reduce((ps, p) => ps + p.totalPrice, 0), 0);
+
+  // B2B: Ordini Pagati = orders with payedDate filled in current period
+  const calcB2BPagati = (allOrders: Order[], start: Date, end: Date) => allOrders
+    .filter(o => o.customerType === 'B2B' && o.payedDate && o.payedDate >= start && o.payedDate <= end)
+    .reduce((sum, o) => sum + o.products.reduce((ps, p) => ps + p.totalPrice, 0), 0);
 
   const currentTotal = calcTotal(currentPeriod);
   const previousTotal = calcTotal(previousPeriod);
@@ -168,17 +182,21 @@ export function calculateKPIs(orders: Order[]): KPIData[] {
   const previousB2CRacc = calcB2CRaccolti(previousPeriod);
   const b2cRaccChange = previousB2CRacc ? ((currentB2CRacc - previousB2CRacc) / previousB2CRacc) * 100 : 0;
 
-  const currentB2B = calcB2B(currentPeriod);
-  const previousB2B = calcB2B(previousPeriod);
-  const b2bChange = previousB2B ? ((currentB2B - previousB2B) / previousB2B) * 100 : 0;
+  const currentB2BFatt = calcB2BFatturato(currentPeriod);
+  const previousB2BFatt = calcB2BFatturato(previousPeriod);
+  const b2bFattChange = previousB2BFatt ? ((currentB2BFatt - previousB2BFatt) / previousB2BFatt) * 100 : 0;
+
+  const currentB2BRacc = calcB2BRaccolti(currentPeriod);
+  const previousB2BRacc = calcB2BRaccolti(previousPeriod);
+  const b2bRaccChange = previousB2BRacc ? ((currentB2BRacc - previousB2BRacc) / previousB2BRacc) * 100 : 0;
+
+  const currentB2BPagati = calcB2BPagati(orders, thirtyDaysAgo, now);
+  const previousB2BPagati = calcB2BPagati(orders, sixtyDaysAgo, thirtyDaysAgo);
+  const b2bPagatiChange = previousB2BPagati ? ((currentB2BPagati - previousB2BPagati) / previousB2BPagati) * 100 : 0;
 
   const currentOrders = currentPeriod.length;
   const previousOrders = previousPeriod.length;
   const ordersChange = previousOrders ? ((currentOrders - previousOrders) / previousOrders) * 100 : 0;
-
-  const currentAOV = currentOrders ? currentTotal / currentOrders : 0;
-  const previousAOV = previousOrders ? previousTotal / previousOrders : 0;
-  const aovChange = previousAOV ? ((currentAOV - previousAOV) / previousAOV) * 100 : 0;
 
   return [
     {
@@ -210,10 +228,28 @@ export function calculateKPIs(orders: Order[]): KPIData[] {
     },
     {
       label: 'Fatturato B2B',
-      value: currentB2B,
-      previousValue: previousB2B,
-      changePercent: Math.round(b2bChange * 10) / 10,
-      trend: b2bChange >= 0 ? 'up' : 'down',
+      value: currentB2BFatt,
+      previousValue: previousB2BFatt,
+      changePercent: Math.round(b2bFattChange * 10) / 10,
+      trend: b2bFattChange >= 0 ? 'up' : 'down',
+      format: 'currency',
+      currency: 'EUR',
+    },
+    {
+      label: 'Ordini Raccolti B2B',
+      value: currentB2BRacc,
+      previousValue: previousB2BRacc,
+      changePercent: Math.round(b2bRaccChange * 10) / 10,
+      trend: b2bRaccChange >= 0 ? 'up' : 'down',
+      format: 'currency',
+      currency: 'EUR',
+    },
+    {
+      label: 'Ordini Pagati B2B',
+      value: currentB2BPagati,
+      previousValue: previousB2BPagati,
+      changePercent: Math.round(b2bPagatiChange * 10) / 10,
+      trend: b2bPagatiChange >= 0 ? 'up' : 'down',
       format: 'currency',
       currency: 'EUR',
     },
@@ -225,16 +261,48 @@ export function calculateKPIs(orders: Order[]): KPIData[] {
       trend: ordersChange >= 0 ? 'up' : 'down',
       format: 'number',
     },
-    {
-      label: 'Valore Medio Ordine',
-      value: currentAOV,
-      previousValue: previousAOV,
-      changePercent: Math.round(aovChange * 10) / 10,
-      trend: aovChange >= 0 ? 'up' : 'down',
-      format: 'currency',
-      currency: 'EUR',
-    },
   ];
+}
+
+// Get B2B SKU breakdown
+export function getB2BSkuBreakdown(orders: Order[]): Array<{
+  sku: string;
+  name: string;
+  fatturato: number;
+  ordiniRaccolti: number;
+  ordiniPagati: number;
+}> {
+  const skuMap: Record<string, { name: string; fatturato: number; ordiniRaccolti: number; ordiniPagati: number }> = {};
+
+  const b2bOrders = orders.filter(o => o.customerType === 'B2B');
+
+  b2bOrders.forEach(order => {
+    order.products.forEach(product => {
+      if (!skuMap[product.sku]) {
+        skuMap[product.sku] = { name: product.name, fatturato: 0, ordiniRaccolti: 0, ordiniPagati: 0 };
+      }
+      // Ordini Raccolti = all orders (by order date)
+      skuMap[product.sku].ordiniRaccolti += product.totalPrice;
+      // Fatturato = only orders with deliveryDate
+      if (order.deliveryDate) {
+        skuMap[product.sku].fatturato += product.totalPrice;
+      }
+      // Ordini Pagati = only orders with payedDate
+      if (order.payedDate) {
+        skuMap[product.sku].ordiniPagati += product.totalPrice;
+      }
+    });
+  });
+
+  return Object.entries(skuMap)
+    .map(([sku, data]) => ({
+      sku,
+      name: data.name,
+      fatturato: Math.round(data.fatturato * 100) / 100,
+      ordiniRaccolti: Math.round(data.ordiniRaccolti * 100) / 100,
+      ordiniPagati: Math.round(data.ordiniPagati * 100) / 100,
+    }))
+    .sort((a, b) => b.ordiniRaccolti - a.ordiniRaccolti);
 }
 
 // Get B2C SKU breakdown with fatturato (completed) and ordini raccolti (all)
