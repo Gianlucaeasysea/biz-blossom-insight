@@ -117,6 +117,7 @@ serve(async (req) => {
       'Olli™ - Anti Shock solid ring aluminium - XL - 55x101': 'SRA-104',
       'Olli™ - Snatch and Anti-shock block - M 50x12': 'OB-103',
       'Olli™ - Snatch and Anti-shock block S 40X10': 'OB-102',
+      'Olli™ - Snatch and Anti-shock block S - 40X10': 'OB-102',
       'Covered Loop in Dyneema® - S - 14x10': 'LC-101',
       'Covered Loop in Dyneema® for Olli - S - 14x10': 'LC-101',
       'Covered Loop in Dyneema® - M - 20x14': 'LC-102',
