@@ -85,6 +85,8 @@ serve(async (req) => {
     const iQty = headers.findIndex((h: string) => h.includes('q.ty') || h.includes('qty') || h.includes('quantity'));
     const iProduct = colIdx('product');
     const iOrderDate = headers.findIndex((h: string) => h.includes('order date') || h.includes('order_date'));
+    const iDeliveryDate = headers.findIndex((h: string) => h.includes('delivery date') || h.includes('delivery_date'));
+    const iPayedDate = headers.findIndex((h: string) => h.includes('payed date') || h.includes('payed_date') || h.includes('paid date') || h.includes('paid_date') || h.includes('payment date'));
     const iPrice = colIdx('price');
     const iSender = colIdx('sender');
     const iOwner = colIdx('owner');
@@ -92,7 +94,7 @@ serve(async (req) => {
     const iNomeProdotto = headers.findIndex((h: string) => h.includes('nome prodotto'));
     const iCollection = colIdx('collection');
 
-    console.log(`Column indices: business=${iBusiness}, totFatt=${iTotFattFallback}, orderDate=${iOrderDate}, product=${iProduct}, qty=${iQty}, nomeProdotto=${iNomeProdotto}`);
+    console.log(`Column indices: business=${iBusiness}, totFatt=${iTotFattFallback}, orderDate=${iOrderDate}, deliveryDate=${iDeliveryDate}, payedDate=${iPayedDate}, price=${iPrice}, product=${iProduct}, qty=${iQty}, nomeProdotto=${iNomeProdotto}`);
 
     // Transform rows to orders
     const orders = [];
