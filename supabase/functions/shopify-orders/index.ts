@@ -31,6 +31,14 @@ interface ShopifyOrder {
   source_name: string;
   cancelled_at: string | null;
   refunds: Array<unknown>;
+  shipping_address?: {
+    country?: string;
+    country_code?: string;
+  } | null;
+  billing_address?: {
+    country?: string;
+    country_code?: string;
+  } | null;
 }
 
 serve(async (req) => {
