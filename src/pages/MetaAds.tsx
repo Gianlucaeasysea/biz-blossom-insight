@@ -638,7 +638,100 @@ export default function MetaAds() {
             </CardContent>
           </Card>
 
-          {/* UTM Cross-Reference */}
+          {/* UTM Content → Net Sales B2C */}
+          <Card className="mb-6">
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <CardTitle className="text-sm font-medium">Net Sales B2C per UTM Content</CardTitle>
+              <Button variant="ghost" size="icon" onClick={handleExportUtmContent}><Download className="w-4 h-4" /></Button>
+            </CardHeader>
+            <CardContent>
+              <p className="text-xs text-muted-foreground mb-4">Vendite nette B2C aggregate per valore utm_content degli ordini Shopify</p>
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b border-border">
+                      <th className="text-left py-3 px-2 text-muted-foreground font-medium">UTM Content</th>
+                      <th className="text-right py-3 px-2 text-muted-foreground font-medium">Net Sales B2C</th>
+                      <th className="text-right py-3 px-2 text-muted-foreground font-medium">N. Ordini</th>
+                      <th className="text-right py-3 px-2 text-muted-foreground font-medium">AOV Netto</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {utmContentSales.map((r, i) => (
+                      <tr key={i} className="border-b border-border/50 hover:bg-secondary/30 transition-colors">
+                        <td className="py-3 px-2 font-medium truncate max-w-[250px]">{r.utmContent}</td>
+                        <td className="text-right py-3 px-2 font-semibold">{fmtCurrency(r.netSales)}</td>
+                        <td className="text-right py-3 px-2">{r.orderCount}</td>
+                        <td className="text-right py-3 px-2">{fmtCurrency(r.orderCount > 0 ? r.netSales / r.orderCount : 0)}</td>
+                      </tr>
+                    ))}
+                    {utmContentSales.length > 0 && (
+                      <tr className="border-t-2 border-border bg-secondary/20">
+                        <td className="py-3 px-2 font-bold">TOTALE</td>
+                        <td className="text-right py-3 px-2 font-bold">{fmtCurrency(utmContentSales.reduce((s, r) => s + r.netSales, 0))}</td>
+                        <td className="text-right py-3 px-2 font-bold">{utmContentSales.reduce((s, r) => s + r.orderCount, 0)}</td>
+                        <td className="text-right py-3 px-2 font-bold">{fmtCurrency(utmContentSales.reduce((s, r) => s + r.netSales, 0) / Math.max(utmContentSales.reduce((s, r) => s + r.orderCount, 0), 1))}</td>
+                      </tr>
+                    )}
+                    {utmContentSales.length === 0 && (<tr><td colSpan={4} className="text-center py-6 text-muted-foreground">Nessun ordine con utm_content nel periodo</td></tr>)}
+                  </tbody>
+                </table>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Adset MER: ad set spend vs B2C net sales by category */}
+          <Card className="mb-6">
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <CardTitle className="text-sm font-medium">MER per Gruppo di Inserzione (Adset ↔ Net Sales B2C)</CardTitle>
+              <Button variant="ghost" size="icon" onClick={handleExportAdsetMer}><Download className="w-4 h-4" /></Button>
+            </CardHeader>
+            <CardContent>
+              <p className="text-xs text-muted-foreground mb-4">Net Sales B2C allocato proporzionalmente alla spesa di ogni adset nella stessa categoria</p>
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b border-border">
+                      <th className="text-left py-3 px-2 text-muted-foreground font-medium">Gruppo Inserzioni</th>
+                      <th className="text-left py-3 px-2 text-muted-foreground font-medium">Campagna</th>
+                      <th className="text-left py-3 px-2 text-muted-foreground font-medium">Categoria</th>
+                      <th className="text-right py-3 px-2 text-muted-foreground font-medium">Spesa Ads</th>
+                      <th className="text-right py-3 px-2 text-muted-foreground font-medium">Net Sales Allocato</th>
+                      <th className="text-right py-3 px-2 text-muted-foreground font-medium">MER</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {adsetMerData.map((r, i) => (
+                      <tr key={i} className="border-b border-border/50 hover:bg-secondary/30 transition-colors">
+                        <td className="py-3 px-2 font-medium truncate max-w-[180px]">{r.name}</td>
+                        <td className="py-3 px-2 text-muted-foreground truncate max-w-[150px]">{r.campaignName}</td>
+                        <td className="py-3 px-2"><Badge className={cn('text-xs', categoryBadgeColors[r.category] || categoryBadgeColors['Altro'])}>{r.category}</Badge></td>
+                        <td className="text-right py-3 px-2">{fmtCurrency(r.spend)}</td>
+                        <td className="text-right py-3 px-2">{fmtCurrency(r.allocatedRevenue)}</td>
+                        <td className={cn("text-right py-3 px-2 font-bold", r.mer >= 1 ? 'text-success' : 'text-destructive')}>{r.mer.toFixed(2)}x</td>
+                      </tr>
+                    ))}
+                    {adsetMerData.length > 0 && (() => {
+                      const totSpend = adsetMerData.reduce((s, r) => s + r.spend, 0);
+                      const totRev = adsetMerData.reduce((s, r) => s + r.allocatedRevenue, 0);
+                      const totMer = totSpend > 0 ? totRev / totSpend : 0;
+                      return (
+                        <tr className="border-t-2 border-border bg-secondary/20">
+                          <td className="py-3 px-2 font-bold" colSpan={3}>TOTALE</td>
+                          <td className="text-right py-3 px-2 font-bold">{fmtCurrency(totSpend)}</td>
+                          <td className="text-right py-3 px-2 font-bold">{fmtCurrency(totRev)}</td>
+                          <td className={cn("text-right py-3 px-2 font-bold", totMer >= 1 ? 'text-success' : 'text-destructive')}>{totMer.toFixed(2)}x</td>
+                        </tr>
+                      );
+                    })()}
+                    {adsetMerData.length === 0 && (<tr><td colSpan={6} className="text-center py-6 text-muted-foreground">Nessun dato</td></tr>)}
+                  </tbody>
+                </table>
+              </div>
+            </CardContent>
+          </Card>
+
+
           <Card>
             <CardHeader className="pb-2">
               <button onClick={() => setShowUtmMatch(!showUtmMatch)} className="flex items-center gap-2 text-sm font-medium hover:text-primary transition-colors w-full text-left">
