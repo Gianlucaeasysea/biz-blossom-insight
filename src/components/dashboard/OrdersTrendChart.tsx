@@ -73,8 +73,12 @@ export function OrdersTrendChart({ orders, dateRange }: OrdersTrendChartProps) {
       const next = index < chartData.length - 1 ? (chartData[index + 1]?.[dataKey as keyof typeof chartData[0]] as number) : -1;
       const isPeak = val > 0 && val >= prev && val >= next && (val > prev || val > next);
       if (!isPeak) return null;
+      const label = val >= 1000 ? `€${(val / 1000).toFixed(1)}k` : `€${val}`;
       return (
-        <circle cx={cx} cy={cy} r={4} fill={color} stroke="hsl(var(--background))" strokeWidth={2} />
+        <g>
+          <circle cx={cx} cy={cy} r={4} fill={color} stroke="hsl(var(--background))" strokeWidth={2} />
+          <text x={cx} y={cy - 10} textAnchor="middle" fill={color} fontSize={9} fontWeight={600}>{label}</text>
+        </g>
       );
     };
   };
