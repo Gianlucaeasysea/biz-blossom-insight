@@ -199,11 +199,78 @@ export default function MetaAds() {
     return totalSpend > 0 ? totalRevenue / totalSpend : 0;
   }, [merData]);
 
+  // UTM Content aggregation: B2C net sales grouped by utm_content
+  const utmContentSales = useMemo(() => {
+    const map = new Map<string, { utmContent: string; netSales: number; orderCount: number }>();
+    const filteredOrders = shopifyOrders.filter(o => {
+      if (o.customerType !== 'B2C') return false;
+      const d = o.date instanceof Date ? o.date : new Date(o.date);
+      return d >= dateRange.start && d <= dateRange.end;
+    });
+    for (const order of filteredOrders) {
+      const utm = (order as any).utm as Record<string, string> | null;
+      const utmContent = utm?.utm_content || '(nessuno)';
+      const netAmt = (order as any).netAmount ?? order.totalAmount;
+      const existing = map.get(utmContent);
+      if (existing) {
+        existing.netSales += netAmt;
+        existing.orderCount += 1;
+      } else {
+        map.set(utmContent, { utmContent, netSales: netAmt, orderCount: 1 });
+      }
+    }
+    return [...map.values()].sort((a, b) => b.netSales - a.netSales);
+  }, [shopifyOrders, dateRange]);
+
+  // Adset MER: cross ad set spend with B2C net sales by category
+  const adsetMerData = useMemo(() => {
+    if (!data?.adsets) return [];
+
+    // B2C net sales by category in date range
+    const revenueByCategory: Record<string, number> = {};
+    const filteredSales = shopifyOrders.filter(o => {
+      if (o.customerType !== 'B2C') return false;
+      const d = o.date instanceof Date ? o.date : new Date(o.date);
+      return d >= dateRange.start && d <= dateRange.end;
+    });
+    for (const order of filteredSales) {
+      const netAmt = (order as any).netAmount ?? order.totalAmount;
+      for (const product of order.products) {
+        const cat = mapCollectionToCategory(product.category);
+        const ratio = order.totalAmount > 0 ? product.totalPrice / order.totalAmount : 0;
+        revenueByCategory[cat] = (revenueByCategory[cat] || 0) + (netAmt * ratio);
+      }
+    }
+
+    return data.adsets
+      .filter(a => campaignFilter === 'all' || a.campaign_name === campaignFilter)
+      .map(a => {
+        const key = `${a.campaign_name}::${a.adset_name}`;
+        const category = adsetCategories[key] || 'Altro';
+        const spend = parseFloat(a.spend || '0');
+        const catRevenue = revenueByCategory[category] || 0;
+        // Proportion of spend this adset represents within its category
+        const totalCatSpend = data.adsets!
+          .filter(x => (adsetCategories[`${x.campaign_name}::${x.adset_name}`] || 'Altro') === category)
+          .reduce((s, x) => s + parseFloat(x.spend || '0'), 0);
+        const allocatedRevenue = totalCatSpend > 0 ? catRevenue * (spend / totalCatSpend) : 0;
+        const mer = spend > 0 ? allocatedRevenue / spend : 0;
+        return {
+          name: a.adset_name,
+          campaignName: a.campaign_name,
+          category,
+          spend,
+          allocatedRevenue,
+          mer,
+        };
+      })
+      .sort((a, b) => b.spend - a.spend);
+  }, [data, shopifyOrders, dateRange, campaignFilter, adsetCategories]);
+
   // UTM cross-reference: match ad UTM tags with Shopify order UTMs
   const utmCrossRef = useMemo(() => {
     if (!creativesData?.ads || !shopifyOrders.length) return [];
 
-    // Build UTM → ad mapping
     const adsByUtmCampaign = new Map<string, { adName: string; campaignName: string; adsetName: string; spend: number; clicks: number; impressions: number }[]>();
     for (const ad of creativesData.ads) {
       const utms = parseUrlTags(ad.url_tags);
@@ -221,7 +288,6 @@ export default function MetaAds() {
       });
     }
 
-    // Match Shopify orders with UTMs
     const matches: { orderNumber: string; orderDate: string; orderAmount: number; netAmount: number; utmSource: string; utmCampaign: string; utmContent: string; matchedAd: string; matchedCampaign: string }[] = [];
 
     const filteredOrders = shopifyOrders.filter(o => {
@@ -233,14 +299,10 @@ export default function MetaAds() {
     for (const order of filteredOrders) {
       const utm = (order as any).utm as Record<string, string> | null;
       if (!utm) continue;
-
       const utmCampaign = (utm.utm_campaign || '').toLowerCase();
       const utmContent = (utm.utm_content || '').toLowerCase();
-
-      // Try matching by utm_campaign or utm_content
       let matchedAds = adsByUtmCampaign.get(utmCampaign);
       if (!matchedAds && utmContent) matchedAds = adsByUtmCampaign.get(utmContent);
-
       const orderDate = order.date instanceof Date ? order.date : new Date(order.date);
       matches.push({
         orderNumber: order.orderNumber,
@@ -274,6 +336,14 @@ export default function MetaAds() {
   const handleExportMER = () => {
     downloadCsv('meta-ads-mer', ['Categoria', 'Spesa Ads', 'Net Sales B2C', 'MER'],
       merData.map(r => [r.category, r.spend.toFixed(2), r.revenue.toFixed(2), r.mer.toFixed(2)]));
+  };
+  const handleExportUtmContent = () => {
+    downloadCsv('utm-content-sales', ['UTM Content', 'Net Sales B2C', 'N. Ordini'],
+      utmContentSales.map(r => [r.utmContent, r.netSales.toFixed(2), r.orderCount]));
+  };
+  const handleExportAdsetMer = () => {
+    downloadCsv('adset-mer', ['Gruppo Inserzioni', 'Campagna', 'Categoria', 'Spesa Ads', 'Net Sales B2C Allocato', 'MER'],
+      adsetMerData.map(r => [r.name, r.campaignName, r.category, r.spend.toFixed(2), r.allocatedRevenue.toFixed(2), r.mer.toFixed(2)]));
   };
   const handleExportUtm = () => {
     downloadCsv('meta-utm-match', ['Ordine', 'Data', 'Importo Netto', 'UTM Source', 'UTM Campaign', 'UTM Content', 'Ad Matched', 'Campagna Meta'],
@@ -568,7 +638,100 @@ export default function MetaAds() {
             </CardContent>
           </Card>
 
-          {/* UTM Cross-Reference */}
+          {/* UTM Content → Net Sales B2C */}
+          <Card className="mb-6">
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <CardTitle className="text-sm font-medium">Net Sales B2C per UTM Content</CardTitle>
+              <Button variant="ghost" size="icon" onClick={handleExportUtmContent}><Download className="w-4 h-4" /></Button>
+            </CardHeader>
+            <CardContent>
+              <p className="text-xs text-muted-foreground mb-4">Vendite nette B2C aggregate per valore utm_content degli ordini Shopify</p>
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b border-border">
+                      <th className="text-left py-3 px-2 text-muted-foreground font-medium">UTM Content</th>
+                      <th className="text-right py-3 px-2 text-muted-foreground font-medium">Net Sales B2C</th>
+                      <th className="text-right py-3 px-2 text-muted-foreground font-medium">N. Ordini</th>
+                      <th className="text-right py-3 px-2 text-muted-foreground font-medium">AOV Netto</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {utmContentSales.map((r, i) => (
+                      <tr key={i} className="border-b border-border/50 hover:bg-secondary/30 transition-colors">
+                        <td className="py-3 px-2 font-medium truncate max-w-[250px]">{r.utmContent}</td>
+                        <td className="text-right py-3 px-2 font-semibold">{fmtCurrency(r.netSales)}</td>
+                        <td className="text-right py-3 px-2">{r.orderCount}</td>
+                        <td className="text-right py-3 px-2">{fmtCurrency(r.orderCount > 0 ? r.netSales / r.orderCount : 0)}</td>
+                      </tr>
+                    ))}
+                    {utmContentSales.length > 0 && (
+                      <tr className="border-t-2 border-border bg-secondary/20">
+                        <td className="py-3 px-2 font-bold">TOTALE</td>
+                        <td className="text-right py-3 px-2 font-bold">{fmtCurrency(utmContentSales.reduce((s, r) => s + r.netSales, 0))}</td>
+                        <td className="text-right py-3 px-2 font-bold">{utmContentSales.reduce((s, r) => s + r.orderCount, 0)}</td>
+                        <td className="text-right py-3 px-2 font-bold">{fmtCurrency(utmContentSales.reduce((s, r) => s + r.netSales, 0) / Math.max(utmContentSales.reduce((s, r) => s + r.orderCount, 0), 1))}</td>
+                      </tr>
+                    )}
+                    {utmContentSales.length === 0 && (<tr><td colSpan={4} className="text-center py-6 text-muted-foreground">Nessun ordine con utm_content nel periodo</td></tr>)}
+                  </tbody>
+                </table>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Adset MER: ad set spend vs B2C net sales by category */}
+          <Card className="mb-6">
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <CardTitle className="text-sm font-medium">MER per Gruppo di Inserzione (Adset ↔ Net Sales B2C)</CardTitle>
+              <Button variant="ghost" size="icon" onClick={handleExportAdsetMer}><Download className="w-4 h-4" /></Button>
+            </CardHeader>
+            <CardContent>
+              <p className="text-xs text-muted-foreground mb-4">Net Sales B2C allocato proporzionalmente alla spesa di ogni adset nella stessa categoria</p>
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b border-border">
+                      <th className="text-left py-3 px-2 text-muted-foreground font-medium">Gruppo Inserzioni</th>
+                      <th className="text-left py-3 px-2 text-muted-foreground font-medium">Campagna</th>
+                      <th className="text-left py-3 px-2 text-muted-foreground font-medium">Categoria</th>
+                      <th className="text-right py-3 px-2 text-muted-foreground font-medium">Spesa Ads</th>
+                      <th className="text-right py-3 px-2 text-muted-foreground font-medium">Net Sales Allocato</th>
+                      <th className="text-right py-3 px-2 text-muted-foreground font-medium">MER</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {adsetMerData.map((r, i) => (
+                      <tr key={i} className="border-b border-border/50 hover:bg-secondary/30 transition-colors">
+                        <td className="py-3 px-2 font-medium truncate max-w-[180px]">{r.name}</td>
+                        <td className="py-3 px-2 text-muted-foreground truncate max-w-[150px]">{r.campaignName}</td>
+                        <td className="py-3 px-2"><Badge className={cn('text-xs', categoryBadgeColors[r.category] || categoryBadgeColors['Altro'])}>{r.category}</Badge></td>
+                        <td className="text-right py-3 px-2">{fmtCurrency(r.spend)}</td>
+                        <td className="text-right py-3 px-2">{fmtCurrency(r.allocatedRevenue)}</td>
+                        <td className={cn("text-right py-3 px-2 font-bold", r.mer >= 1 ? 'text-success' : 'text-destructive')}>{r.mer.toFixed(2)}x</td>
+                      </tr>
+                    ))}
+                    {adsetMerData.length > 0 && (() => {
+                      const totSpend = adsetMerData.reduce((s, r) => s + r.spend, 0);
+                      const totRev = adsetMerData.reduce((s, r) => s + r.allocatedRevenue, 0);
+                      const totMer = totSpend > 0 ? totRev / totSpend : 0;
+                      return (
+                        <tr className="border-t-2 border-border bg-secondary/20">
+                          <td className="py-3 px-2 font-bold" colSpan={3}>TOTALE</td>
+                          <td className="text-right py-3 px-2 font-bold">{fmtCurrency(totSpend)}</td>
+                          <td className="text-right py-3 px-2 font-bold">{fmtCurrency(totRev)}</td>
+                          <td className={cn("text-right py-3 px-2 font-bold", totMer >= 1 ? 'text-success' : 'text-destructive')}>{totMer.toFixed(2)}x</td>
+                        </tr>
+                      );
+                    })()}
+                    {adsetMerData.length === 0 && (<tr><td colSpan={6} className="text-center py-6 text-muted-foreground">Nessun dato</td></tr>)}
+                  </tbody>
+                </table>
+              </div>
+            </CardContent>
+          </Card>
+
+
           <Card>
             <CardHeader className="pb-2">
               <button onClick={() => setShowUtmMatch(!showUtmMatch)} className="flex items-center gap-2 text-sm font-medium hover:text-primary transition-colors w-full text-left">
