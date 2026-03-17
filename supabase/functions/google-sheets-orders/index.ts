@@ -43,28 +43,28 @@ serve(async (req) => {
 
     // Header row (row 0)
     const headers = rows[0].map((h: string) => h.trim().toLowerCase());
+    console.log('Raw headers:', JSON.stringify(rows[0]));
+    console.log('Normalized headers:', JSON.stringify(headers));
     
-    // Map column indices
+    // Map column indices - use flexible matching
     const colIdx = (name: string) => headers.findIndex((h: string) => h.includes(name));
     
-    const iOrderType = colIdx('type order');
-    const iType = colIdx('type');  
     const iBusiness = colIdx('business');
     const iCode = colIdx('code');
     const iStatusOrder = colIdx('status order');
-    const iStatusPayment = colIdx('status pay');
-    const iTotFatt = colIdx('tot');
-    const iQty = colIdx('q.ty');
+    const iTotFatt = headers.findIndex((h: string) => h.includes('tot') && (h.includes('fatt') || h.includes(',')));
+    const iTotFattFallback = iTotFatt >= 0 ? iTotFatt : headers.findIndex((h: string) => h.startsWith('tot'));
+    const iQty = headers.findIndex((h: string) => h.includes('q.ty') || h.includes('qty') || h.includes('quantity'));
     const iProduct = colIdx('product');
-    const iOrderDate = colIdx('order date');
+    const iOrderDate = headers.findIndex((h: string) => h.includes('order date') || h.includes('order_date'));
     const iPrice = colIdx('price');
     const iSender = colIdx('sender');
     const iOwner = colIdx('owner');
     const iCountry = colIdx('country');
-    const iNomeProdotto = colIdx('nome prodotto ok');
+    const iNomeProdotto = headers.findIndex((h: string) => h.includes('nome prodotto'));
     const iCollection = colIdx('collection');
 
-    console.log(`Found ${rows.length - 1} data rows. Header indices: business=${iBusiness}, totFatt=${iTotFatt}, orderDate=${iOrderDate}, product=${iProduct}`);
+    console.log(`Column indices: business=${iBusiness}, totFatt=${iTotFattFallback}, orderDate=${iOrderDate}, product=${iProduct}, qty=${iQty}, nomeProdotto=${iNomeProdotto}`);
 
     // Transform rows to orders
     const orders = [];
