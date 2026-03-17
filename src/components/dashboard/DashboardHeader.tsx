@@ -10,14 +10,14 @@ interface DashboardHeaderProps {
 export function DashboardHeader({ onRefresh, isLoading }: DashboardHeaderProps) {
   return (
     <header className="flex items-center justify-between mb-8">
-      <div className="flex items-center gap-4">
-        <img src={companyLogo} alt="Logo" className="h-8 w-auto brightness-90" />
-        <div className="h-6 w-px bg-border" />
+      <div className="flex items-center gap-5">
+        <img src={companyLogo} alt="EasySea Logo" className="h-14 w-auto" />
+        <div className="h-8 w-px bg-border/50" />
         <div>
-          <h1 className="text-lg font-semibold tracking-tight text-foreground">
-            Analytics
+          <h1 className="text-xl font-bold tracking-tight text-foreground">
+            EASYSEA ANALYTICS
           </h1>
-          <p className="text-xs text-muted-foreground">B2C + B2B</p>
+          <p className="text-xs text-muted-foreground mt-0.5">Dashboard B2C + B2B</p>
         </div>
       </div>
 

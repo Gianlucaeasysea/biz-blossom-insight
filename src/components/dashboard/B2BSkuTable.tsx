@@ -2,12 +2,12 @@ import { useState, useMemo } from 'react';
 import { Search, ArrowUpDown } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 
-interface SkuRow { sku: string; name: string; fatturato: number; ordiniRaccolti: number; ordiniPagati: number; }
-type SortField = 'sku' | 'name' | 'fatturato' | 'ordiniRaccolti' | 'ordiniPagati';
+interface SkuRow { sku: string; name: string; qtySold: number; priceRaccolto: number; priceConsegnato: number; }
+type SortField = 'sku' | 'name' | 'qtySold' | 'priceRaccolto' | 'priceConsegnato';
 
 export function B2BSkuTable({ data }: { data: SkuRow[] }) {
   const [search, setSearch] = useState('');
-  const [sortField, setSortField] = useState<SortField>('ordiniRaccolti');
+  const [sortField, setSortField] = useState<SortField>('priceRaccolto');
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc');
 
   const filtered = useMemo(() => {
@@ -39,18 +39,18 @@ export function B2BSkuTable({ data }: { data: SkuRow[] }) {
           <thead><tr>
             <th><SortBtn field="sku">SKU</SortBtn></th>
             <th><SortBtn field="name">Prodotto</SortBtn></th>
-            <th className="text-right"><SortBtn field="fatturato">Fatturato</SortBtn></th>
-            <th className="text-right"><SortBtn field="ordiniRaccolti">Raccolti</SortBtn></th>
-            <th className="text-right"><SortBtn field="ordiniPagati">Pagati</SortBtn></th>
+            <th className="text-center"><SortBtn field="qtySold">Pezzi Venduti</SortBtn></th>
+            <th className="text-right"><SortBtn field="priceRaccolto">Ordine Raccolto</SortBtn></th>
+            <th className="text-right"><SortBtn field="priceConsegnato">Ordine Consegnato</SortBtn></th>
           </tr></thead>
           <tbody>
             {filtered.map(r => (
               <tr key={r.sku}>
                 <td className="font-mono text-xs">{r.sku}</td>
                 <td className="text-xs">{r.name}</td>
-                <td className="text-right font-mono text-xs">{fmt(r.fatturato)}</td>
-                <td className="text-right font-mono text-xs">{fmt(r.ordiniRaccolti)}</td>
-                <td className="text-right font-mono text-xs">{fmt(r.ordiniPagati)}</td>
+                <td className="text-center text-xs">{r.qtySold}</td>
+                <td className="text-right font-mono text-xs">{fmt(r.priceRaccolto)}</td>
+                <td className="text-right font-mono text-xs">{fmt(r.priceConsegnato)}</td>
               </tr>
             ))}
             {!filtered.length && <tr><td colSpan={5} className="text-center text-muted-foreground py-6 text-xs">Nessun dato</td></tr>}
@@ -58,9 +58,9 @@ export function B2BSkuTable({ data }: { data: SkuRow[] }) {
           {filtered.length > 0 && (
             <tfoot><tr className="border-t-2 border-border font-semibold text-xs">
               <td colSpan={2}>Totale</td>
-              <td className="text-right font-mono">{fmt(filtered.reduce((s, r) => s + r.fatturato, 0))}</td>
-              <td className="text-right font-mono">{fmt(filtered.reduce((s, r) => s + r.ordiniRaccolti, 0))}</td>
-              <td className="text-right font-mono">{fmt(filtered.reduce((s, r) => s + r.ordiniPagati, 0))}</td>
+              <td className="text-center">{filtered.reduce((s, r) => s + r.qtySold, 0)}</td>
+              <td className="text-right font-mono">{fmt(filtered.reduce((s, r) => s + r.priceRaccolto, 0))}</td>
+              <td className="text-right font-mono">{fmt(filtered.reduce((s, r) => s + r.priceConsegnato, 0))}</td>
             </tr></tfoot>
           )}
         </table>
