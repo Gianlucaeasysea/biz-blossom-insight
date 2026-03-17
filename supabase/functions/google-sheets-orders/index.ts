@@ -44,6 +44,12 @@ serve(async (req) => {
 
     const data = await response.json();
     const rows: string[][] = data.values || [];
+    
+    // Debug: log first 3 rows to understand structure
+    console.log('Total rows:', rows.length);
+    console.log('Row 0 (length=' + (rows[0]?.length || 0) + '):', JSON.stringify(rows[0]?.slice(0, 15)));
+    console.log('Row 1 (length=' + (rows[1]?.length || 0) + '):', JSON.stringify(rows[1]?.slice(0, 15)));
+    console.log('Row 2 (length=' + (rows[2]?.length || 0) + '):', JSON.stringify(rows[2]?.slice(0, 15)));
 
     if (rows.length < 2) {
       return new Response(
