@@ -15,6 +15,7 @@ export interface Order {
   payedDate?: Date | null;
   products: OrderProduct[];
   totalAmount: number;
+  netAmount?: number;
   currency: string;
   channel?: string;
   agent?: string;
@@ -22,6 +23,9 @@ export interface Order {
   orderType?: string; // B2B: 'custom', etc.
   country?: string;
   destinationCountry?: string; // B2C: shipping destination country
+  landingSite?: string | null;
+  referringSite?: string | null;
+  utm?: Record<string, string> | null;
 }
 
 export interface OrderProduct {

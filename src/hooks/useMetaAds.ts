@@ -31,13 +31,30 @@ export interface MetaCampaignInsight {
   action_values?: { action_type: string; value: string }[];
 }
 
+export interface MetaAdsetInsight {
+  adset_name: string;
+  adset_id?: string;
+  campaign_name: string;
+  campaign_id?: string;
+  spend: string;
+  impressions: string;
+  clicks: string;
+  ctr: string;
+  cpc: string;
+  actions?: { action_type: string; value: string }[];
+  action_values?: { action_type: string; value: string }[];
+}
+
 export interface MetaAdCreative {
   id: string;
   name: string;
   campaign_id: string;
   campaign_name: string;
+  adset_id: string;
+  adset_name: string;
   effective_status: string;
   thumbnail_url: string | null;
+  url_tags: string;
   spend: string;
   impressions: string;
   clicks: string;
@@ -50,13 +67,13 @@ export interface MetaAdCreative {
 export interface MetaCoreData {
   daily: MetaDailyInsight[];
   campaigns: MetaCampaignInsight[];
+  adsets: MetaAdsetInsight[];
 }
 
 export interface MetaCreativesData {
   ads: MetaAdCreative[];
 }
 
-// Product category mapping
 export const CAMPAIGN_CATEGORY_MAP: Record<string, string> = {
   'flipper': 'Flipper™ Collection',
   'winch': 'Flipper™ Collection',
@@ -89,8 +106,8 @@ export const CAMPAIGN_CATEGORY_MAP: Record<string, string> = {
   'dynamic': 'Catalog / DPA',
 };
 
-export function detectCampaignCategory(campaignName: string): string {
-  const lower = campaignName.toLowerCase();
+export function detectCampaignCategory(name: string): string {
+  const lower = name.toLowerCase();
   for (const [keyword, category] of Object.entries(CAMPAIGN_CATEGORY_MAP)) {
     if (lower.includes(keyword)) return category;
   }
@@ -105,7 +122,6 @@ export function getActionValue(actions: { action_type: string; value: string }[]
 
 export function parseMetaKPIs(daily: MetaDailyInsight[]) {
   let totalSpend = 0, totalImpressions = 0, totalClicks = 0, totalReach = 0, totalPurchases = 0, totalPurchaseValue = 0;
-
   for (const d of daily) {
     totalSpend += parseFloat(d.spend || '0');
     totalImpressions += parseInt(d.impressions || '0');
@@ -114,27 +130,33 @@ export function parseMetaKPIs(daily: MetaDailyInsight[]) {
     totalPurchases += getActionValue(d.actions, 'purchase');
     totalPurchaseValue += getActionValue(d.action_values, 'purchase');
   }
-
   const ctr = totalImpressions > 0 ? (totalClicks / totalImpressions) * 100 : 0;
   const cpc = totalClicks > 0 ? totalSpend / totalClicks : 0;
   const cpm = totalImpressions > 0 ? (totalSpend / totalImpressions) * 1000 : 0;
   const roas = totalSpend > 0 ? totalPurchaseValue / totalSpend : 0;
   const costPerPurchase = totalPurchases > 0 ? totalSpend / totalPurchases : 0;
-
   return { totalSpend, totalImpressions, totalClicks, totalReach, ctr, cpc, cpm, totalPurchases, totalPurchaseValue, roas, costPerPurchase };
 }
 
-// Core data: daily + campaigns (fast)
+// Parse UTM url_tags string (e.g. "utm_source=facebook&utm_campaign=flipper") into object
+export function parseUrlTags(urlTags: string): Record<string, string> {
+  if (!urlTags) return {};
+  const params: Record<string, string> = {};
+  try {
+    const sp = new URLSearchParams(urlTags);
+    for (const [k, v] of sp) {
+      if (k.startsWith('utm_')) params[k] = v;
+    }
+  } catch { /* ignore */ }
+  return params;
+}
+
 export function useMetaAds(dateRange: { start: Date; end: Date }) {
   return useQuery<MetaCoreData>({
     queryKey: ['meta-ads-core', format(dateRange.start, 'yyyy-MM-dd'), format(dateRange.end, 'yyyy-MM-dd')],
     queryFn: async () => {
       const { data, error } = await supabase.functions.invoke('meta-ads', {
-        body: {
-          dateFrom: format(dateRange.start, 'yyyy-MM-dd'),
-          dateTo: format(dateRange.end, 'yyyy-MM-dd'),
-          mode: 'core',
-        },
+        body: { dateFrom: format(dateRange.start, 'yyyy-MM-dd'), dateTo: format(dateRange.end, 'yyyy-MM-dd'), mode: 'core' },
       });
       if (error) throw error;
       if (data.error) throw new Error(data.error);
@@ -144,17 +166,12 @@ export function useMetaAds(dateRange: { start: Date; end: Date }) {
   });
 }
 
-// Creatives: ads with thumbnails (lazy, heavier)
 export function useMetaCreatives(dateRange: { start: Date; end: Date }, enabled: boolean) {
   return useQuery<MetaCreativesData>({
     queryKey: ['meta-ads-creatives', format(dateRange.start, 'yyyy-MM-dd'), format(dateRange.end, 'yyyy-MM-dd')],
     queryFn: async () => {
       const { data, error } = await supabase.functions.invoke('meta-ads', {
-        body: {
-          dateFrom: format(dateRange.start, 'yyyy-MM-dd'),
-          dateTo: format(dateRange.end, 'yyyy-MM-dd'),
-          mode: 'creatives',
-        },
+        body: { dateFrom: format(dateRange.start, 'yyyy-MM-dd'), dateTo: format(dateRange.end, 'yyyy-MM-dd'), mode: 'creatives' },
       });
       if (error) throw error;
       if (data.error) throw new Error(data.error);
