@@ -77,31 +77,43 @@ serve(async (req) => {
 
     console.log(`Fetching orders from: ${shopifyUrl}`);
 
-    // Fetch with retry logic for transient errors (503, 429)
+    // Fetch with retry logic for transient errors (503, 429) and network errors
     let response: Response | null = null;
     const maxRetries = 3;
     for (let attempt = 0; attempt < maxRetries; attempt++) {
-      response = await fetch(shopifyUrl, {
-        method: 'GET',
-        headers: {
-          'X-Shopify-Access-Token': accessToken,
-          'Content-Type': 'application/json',
-        },
-      });
+      try {
+        response = await fetch(shopifyUrl, {
+          method: 'GET',
+          headers: {
+            'X-Shopify-Access-Token': accessToken,
+            'Content-Type': 'application/json',
+          },
+        });
 
-      if (response.ok) break;
+        if (response.ok) break;
 
-      // Retry on 503 (service unavailable) and 429 (rate limit)
-      if ((response.status === 503 || response.status === 429) && attempt < maxRetries - 1) {
-        const waitMs = Math.pow(2, attempt) * 1000; // 1s, 2s, 4s
-        console.log(`Shopify returned ${response.status}, retrying in ${waitMs}ms (attempt ${attempt + 1}/${maxRetries})`);
-        await new Promise(r => setTimeout(r, waitMs));
-        continue;
+        // Retry on 503 (service unavailable) and 429 (rate limit)
+        if ((response.status === 503 || response.status === 429) && attempt < maxRetries - 1) {
+          const retryAfter = response.headers.get('Retry-After');
+          const waitMs = retryAfter ? parseInt(retryAfter) * 1000 : Math.pow(2, attempt) * 1000;
+          console.log(`Shopify returned ${response.status}, retrying in ${waitMs}ms (attempt ${attempt + 1}/${maxRetries})`);
+          await response.text(); // consume body
+          await new Promise(r => setTimeout(r, Math.min(waitMs, 60000)));
+          continue;
+        }
+
+        const errorText = await response.text();
+        console.error(`Shopify API error: ${response.status} - ${errorText}`);
+        throw new Error(`Shopify API error: ${response.status} - ${errorText}`);
+      } catch (error) {
+        if (attempt < maxRetries - 1) {
+          const waitMs = Math.pow(2, attempt) * 1000;
+          console.log(`Network error on attempt ${attempt + 1}/${maxRetries}: ${error.message}. Retrying in ${waitMs}ms...`);
+          await new Promise(r => setTimeout(r, waitMs));
+          continue;
+        }
+        throw error;
       }
-
-      const errorText = await response.text();
-      console.error(`Shopify API error: ${response.status} - ${errorText}`);
-      throw new Error(`Shopify API error: ${response.status} - ${errorText}`);
     }
 
     const data = await response!.json();
