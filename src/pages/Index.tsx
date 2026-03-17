@@ -67,19 +67,20 @@ export default function Index() {
     {
       name: 'Shopify Store',
       type: 'shopify' as const,
-      status: isLoading ? 'syncing' as const : isError ? 'disconnected' as const : 'connected' as const,
+      status: isLoadingShopify ? 'syncing' as const : isErrorShopify ? 'disconnected' as const : 'connected' as const,
       recordCount: shopifyOrders.length,
     },
     {
       name: 'Google Sheets B2B',
       type: 'google_sheets' as const,
-      status: 'disconnected' as const,
-      recordCount: 0,
+      status: isLoadingGS ? 'syncing' as const : isErrorGS ? 'disconnected' as const : 'connected' as const,
+      recordCount: gsOrders.length,
     },
   ];
 
   const handleRefresh = () => {
-    refetch();
+    refetchShopify();
+    refetchGS();
   };
 
   return (
