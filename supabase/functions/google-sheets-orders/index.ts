@@ -29,11 +29,11 @@ serve(async (req) => {
     const sheetName = metaData.sheets?.[0]?.properties?.title || 'Sheet1';
     console.log('Sheet name:', sheetName);
 
-    // Fetch all rows from the sheet
+    // Fetch all rows - use UNFORMATTED_VALUE to get raw data, FORMATTED_VALUE for display
     const range = `'${sheetName}'!A1:AG5000`;
-    const sheetsUrl = `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/${encodeURIComponent(range)}?key=${apiKey}`;
+    const sheetsUrl = `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/${encodeURIComponent(range)}?key=${apiKey}&majorDimension=ROWS&valueRenderOption=FORMATTED_VALUE`;
 
-    console.log('Fetching Google Sheets data...');
+    console.log(`Fetching sheet: ${sheetName}, range: ${range}`);
     const response = await fetch(sheetsUrl);
 
     if (!response.ok) {
