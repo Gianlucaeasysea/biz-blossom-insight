@@ -22,12 +22,11 @@ serve(async (req) => {
     const { dateFrom, dateTo, mode } = await req.json();
     const timeRange = JSON.stringify({ since: dateFrom, until: dateTo });
 
-    // MODE: 'core' (default) = daily + campaigns only, 'creatives' = ads with thumbnails
     if (mode === 'creatives') {
-      // Fetch ads with creative thumbnails + ad-level insights
+      // Fetch ads with creative thumbnails, UTM url_tags, and adset info
       const [adsRes, adInsightsRes] = await Promise.all([
-        fetch(`${META_API_BASE}/${AD_ACCOUNT_ID}/ads?fields=id,name,campaign_id,campaign{name},creative{thumbnail_url,image_url},effective_status&filtering=[{"field":"impressions","operator":"GREATER_THAN","value":"0"}]&limit=50&access_token=${accessToken}`),
-        fetch(`${META_API_BASE}/${AD_ACCOUNT_ID}/insights?fields=ad_id,ad_name,campaign_name,campaign_id,spend,impressions,clicks,ctr,cpc,actions,action_values&time_range=${encodeURIComponent(timeRange)}&level=ad&limit=50&access_token=${accessToken}`),
+        fetch(`${META_API_BASE}/${AD_ACCOUNT_ID}/ads?fields=id,name,campaign_id,campaign{name},adset_id,adset{name},creative{thumbnail_url,image_url,url_tags},effective_status&filtering=[{"field":"impressions","operator":"GREATER_THAN","value":"0"}]&limit=50&access_token=${accessToken}`),
+        fetch(`${META_API_BASE}/${AD_ACCOUNT_ID}/insights?fields=ad_id,ad_name,campaign_name,campaign_id,adset_name,adset_id,spend,impressions,clicks,ctr,cpc,actions,action_values&time_range=${encodeURIComponent(timeRange)}&level=ad&limit=50&access_token=${accessToken}`),
       ]);
 
       if (!adsRes.ok) throw new Error(`Meta ads failed [${adsRes.status}]: ${await adsRes.text()}`);
@@ -48,8 +47,11 @@ serve(async (req) => {
           name: ad.name,
           campaign_id: ad.campaign_id || ad.campaign?.id,
           campaign_name: ad.campaign?.name || insights?.campaign_name || '',
+          adset_id: ad.adset_id || ad.adset?.id || insights?.adset_id || '',
+          adset_name: ad.adset?.name || insights?.adset_name || '',
           effective_status: ad.effective_status,
           thumbnail_url: ad.creative?.thumbnail_url || ad.creative?.image_url || null,
+          url_tags: ad.creative?.url_tags || '',
           spend: insights?.spend || '0',
           impressions: insights?.impressions || '0',
           clicks: insights?.clicks || '0',
@@ -65,21 +67,27 @@ serve(async (req) => {
       });
     }
 
-    // DEFAULT: core data - daily insights + campaign breakdown
-    const [insightsRes, campaignsRes] = await Promise.all([
+    // DEFAULT: core data - daily insights + campaign + adset breakdown
+    const [insightsRes, campaignsRes, adsetsRes] = await Promise.all([
       fetch(`${META_API_BASE}/${AD_ACCOUNT_ID}/insights?fields=spend,impressions,clicks,ctr,cpc,cpm,reach,frequency,actions,cost_per_action_type,action_values&time_range=${encodeURIComponent(timeRange)}&time_increment=1&limit=100&access_token=${accessToken}`),
       fetch(`${META_API_BASE}/${AD_ACCOUNT_ID}/insights?fields=campaign_name,campaign_id,spend,impressions,clicks,ctr,cpc,actions,cost_per_action_type,action_values&time_range=${encodeURIComponent(timeRange)}&level=campaign&limit=100&access_token=${accessToken}`),
+      fetch(`${META_API_BASE}/${AD_ACCOUNT_ID}/insights?fields=adset_name,adset_id,campaign_name,campaign_id,spend,impressions,clicks,ctr,cpc,actions,action_values&time_range=${encodeURIComponent(timeRange)}&level=adset&limit=100&access_token=${accessToken}`),
     ]);
 
     if (!insightsRes.ok) throw new Error(`Meta insights failed [${insightsRes.status}]: ${await insightsRes.text()}`);
     if (!campaignsRes.ok) throw new Error(`Meta campaigns failed [${campaignsRes.status}]: ${await campaignsRes.text()}`);
+    if (!adsetsRes.ok) throw new Error(`Meta adsets failed [${adsetsRes.status}]: ${await adsetsRes.text()}`);
 
-    const insightsData = await insightsRes.json();
-    const campaignsData = await campaignsRes.json();
+    const [insightsData, campaignsData, adsetsData] = await Promise.all([
+      insightsRes.json(),
+      campaignsRes.json(),
+      adsetsRes.json(),
+    ]);
 
     return new Response(JSON.stringify({
       daily: insightsData.data || [],
       campaigns: campaignsData.data || [],
+      adsets: adsetsData.data || [],
     }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });

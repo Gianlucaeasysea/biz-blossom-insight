@@ -11,6 +11,7 @@ interface ShopifyOrder {
   name: string;
   created_at: string;
   total_price: string;
+  total_discounts: string;
   currency: string;
   financial_status: string;
   fulfillment_status: string | null;
@@ -30,7 +31,13 @@ interface ShopifyOrder {
   }>;
   source_name: string;
   cancelled_at: string | null;
-  refunds: Array<unknown>;
+  refunds: Array<{
+    refund_line_items?: Array<{
+      quantity: number;
+      line_item_id: number;
+      subtotal: number;
+    }>;
+  }>;
   shipping_address?: {
     country?: string;
     country_code?: string;
@@ -39,10 +46,27 @@ interface ShopifyOrder {
     country?: string;
     country_code?: string;
   } | null;
+  landing_site?: string | null;
+  referring_site?: string | null;
+  note_attributes?: Array<{ name: string; value: string }>;
+}
+
+function extractUtmParams(url: string | null | undefined): Record<string, string> {
+  if (!url) return {};
+  try {
+    const parsed = new URL(url, 'https://placeholder.com');
+    const utms: Record<string, string> = {};
+    for (const key of ['utm_source', 'utm_medium', 'utm_campaign', 'utm_content', 'utm_term']) {
+      const val = parsed.searchParams.get(key);
+      if (val) utms[key] = val;
+    }
+    return utms;
+  } catch {
+    return {};
+  }
 }
 
 serve(async (req) => {
-  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders });
   }
@@ -55,40 +79,30 @@ serve(async (req) => {
       throw new Error('Missing Shopify credentials. Please configure SHOPIFY_STORE_NAME and SHOPIFY_ACCESS_TOKEN.');
     }
 
-    // Clean up store name - extract just the store name from various formats
-    // Handle: "https://admin.shopify.com/store/mystore", "mystore.myshopify.com", "mystore"
     if (storeName.includes('admin.shopify.com/store/')) {
       const match = storeName.match(/admin\.shopify\.com\/store\/([^\/\?]+)/);
       if (match) storeName = match[1];
     } else if (storeName.includes('.myshopify.com')) {
       storeName = storeName.replace(/https?:\/\//, '').replace('.myshopify.com', '').replace(/\/.*/g, '');
     }
-    // Remove any remaining protocol or trailing slashes
     storeName = storeName.replace(/https?:\/\//g, '').replace(/\//g, '').trim();
 
-    // Parse query parameters
     const url = new URL(req.url);
     const limit = url.searchParams.get('limit') || '50';
     const status = url.searchParams.get('status') || 'any';
     const createdAtMin = url.searchParams.get('created_at_min');
     const createdAtMax = url.searchParams.get('created_at_max');
 
-    // Build base Shopify API URL
     const baseParams = `limit=${limit}&status=${status}`;
     let shopifyUrl = `https://${storeName}.myshopify.com/admin/api/2024-01/orders.json?${baseParams}`;
     
-    if (createdAtMin) {
-      shopifyUrl += `&created_at_min=${createdAtMin}`;
-    }
-    if (createdAtMax) {
-      shopifyUrl += `&created_at_max=${createdAtMax}`;
-    }
+    if (createdAtMin) shopifyUrl += `&created_at_min=${createdAtMin}`;
+    if (createdAtMax) shopifyUrl += `&created_at_max=${createdAtMax}`;
 
-    // Paginate through all orders using cursor-based pagination
     const allOrders: ShopifyOrder[] = [];
     let nextPageUrl: string | null = shopifyUrl;
     let pageCount = 0;
-    const maxPages = 20; // Safety limit: 20 pages × 250 = up to 5000 orders
+    const maxPages = 20;
 
     while (nextPageUrl && pageCount < maxPages) {
       pageCount++;
@@ -110,26 +124,21 @@ serve(async (req) => {
 
           if (!response.ok) {
             const errorText = await response.text().catch(() => 'Unable to read error body');
-
             if ((response.status === 429 || response.status >= 500) && attempt < maxRetries - 1) {
               const retryAfter = response.headers.get('Retry-After');
               const waitMs = retryAfter ? parseInt(retryAfter, 10) * 1000 : Math.pow(2, attempt) * 1000;
-              console.log(`Shopify returned ${response.status}, retrying in ${waitMs}ms (attempt ${attempt + 1}/${maxRetries})`);
+              console.log(`Shopify returned ${response.status}, retrying in ${waitMs}ms`);
               await new Promise((r) => setTimeout(r, Math.min(waitMs, 60000)));
               continue;
             }
-
             throw new Error(`Shopify API error: ${response.status} - ${errorText}`);
           }
 
-          // Parse next page URL from Link header before reading body
           const linkHeader = response.headers.get('Link');
           nextPageUrl = null;
           if (linkHeader) {
             const nextMatch = linkHeader.match(/<([^>]+)>;\s*rel="next"/);
-            if (nextMatch) {
-              nextPageUrl = nextMatch[1];
-            }
+            if (nextMatch) nextPageUrl = nextMatch[1];
           }
 
           const responseText = await response.text();
@@ -137,10 +146,9 @@ serve(async (req) => {
           break;
         } catch (error) {
           lastError = error instanceof Error ? error : new Error(String(error));
-
           if (attempt < maxRetries - 1) {
             const waitMs = Math.pow(2, attempt) * 1000;
-            console.log(`Shopify request failed on attempt ${attempt + 1}/${maxRetries}: ${lastError.message}. Retrying in ${waitMs}ms...`);
+            console.log(`Retry ${attempt + 1}/${maxRetries}: ${lastError.message}`);
             await new Promise((r) => setTimeout(r, waitMs));
             continue;
           }
@@ -148,37 +156,54 @@ serve(async (req) => {
       }
 
       if (!data) {
-        throw lastError ?? new Error(`Failed to fetch orders page ${pageCount} after ${maxRetries} attempts.`);
+        throw lastError ?? new Error(`Failed to fetch orders page ${pageCount}`);
       }
 
       const pageOrders = data.orders || [];
       allOrders.push(...pageOrders);
 
-      // If we got fewer orders than the limit, there are no more pages
-      if (pageOrders.length < parseInt(limit, 10)) {
-        nextPageUrl = null;
-      }
-
-      // Small delay between pages to respect rate limits
-      if (nextPageUrl) {
-        await new Promise((r) => setTimeout(r, 500));
-      }
+      if (pageOrders.length < parseInt(limit, 10)) nextPageUrl = null;
+      if (nextPageUrl) await new Promise((r) => setTimeout(r, 500));
     }
 
     console.log(`Fetched ${allOrders.length} total orders across ${pageCount} pages`);
-    const orders = allOrders;
 
-    // Transform Shopify orders to our unified format
-    const transformedOrders = orders.map((order) => {
-      // Map status
-      let status: 'pending' | 'completed' | 'cancelled' | 'refunded' = 'pending';
+    const transformedOrders = allOrders.map((order) => {
+      let orderStatus: 'pending' | 'completed' | 'cancelled' | 'refunded' = 'pending';
       if (order.cancelled_at) {
-        status = 'cancelled';
+        orderStatus = 'cancelled';
       } else if (order.refunds && order.refunds.length > 0) {
-        status = 'refunded';
+        orderStatus = 'refunded';
       } else if (order.financial_status === 'paid' && order.fulfillment_status === 'fulfilled') {
-        status = 'completed';
+        orderStatus = 'completed';
       }
+
+      // Calculate net amount (total - discounts - refunds)
+      let refundTotal = 0;
+      if (order.refunds) {
+        for (const refund of order.refunds) {
+          if (refund.refund_line_items) {
+            for (const rli of refund.refund_line_items) {
+              refundTotal += rli.subtotal || 0;
+            }
+          }
+        }
+      }
+      const netAmount = parseFloat(order.total_price) - refundTotal;
+
+      // Extract UTM parameters from landing_site and referring_site
+      const utmFromLanding = extractUtmParams(order.landing_site);
+      const utmFromReferring = extractUtmParams(order.referring_site);
+      // Also check note_attributes for UTM data
+      const utmFromNotes: Record<string, string> = {};
+      if (order.note_attributes) {
+        for (const attr of order.note_attributes) {
+          if (attr.name.startsWith('utm_')) {
+            utmFromNotes[attr.name] = attr.value;
+          }
+        }
+      }
+      const utm = { ...utmFromReferring, ...utmFromLanding, ...utmFromNotes };
 
       const country = order.shipping_address?.country || order.billing_address?.country || undefined;
       const destinationCountry = order.shipping_address?.country || undefined;
@@ -203,11 +228,15 @@ serve(async (req) => {
           totalPrice: parseFloat(item.price) * item.quantity,
         })),
         totalAmount: parseFloat(order.total_price),
+        netAmount,
         currency: order.currency,
         channel: order.source_name,
-        status,
+        status: orderStatus,
         country,
         destinationCountry,
+        landingSite: order.landing_site || null,
+        referringSite: order.referring_site || null,
+        utm: Object.keys(utm).length > 0 ? utm : null,
       };
     });
 
@@ -226,7 +255,6 @@ serve(async (req) => {
     );
   } catch (error) {
     console.error('Error fetching Shopify orders:', error);
-    
     return new Response(
       JSON.stringify({ 
         success: false, 
