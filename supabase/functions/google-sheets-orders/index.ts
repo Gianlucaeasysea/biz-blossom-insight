@@ -165,7 +165,7 @@ serve(async (req) => {
       const orderDateStr = get(iOrderDate);
       const deliveryDateStr = get(iDeliveryDate);
       const payedDateStr = get(iPayedDate);
-      const productName = get(iNomeProdotto) || get(iProduct);
+      const productName = get(iProduct);
       const code = get(iCode);
       
       // Skip rows without essential data
