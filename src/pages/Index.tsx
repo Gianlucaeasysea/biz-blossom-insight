@@ -63,6 +63,44 @@ export default function Index() {
   // KPIs by label
   const kpiMap = useMemo(() => Object.fromEntries(kpis.map(k => [k.label, k])), [kpis]);
 
+  // Build AI context string from dashboard data
+  const aiDashboardContext = useMemo(() => {
+    const lines: string[] = [];
+    lines.push(`Periodo: ${format(dateRange.start, 'dd/MM/yyyy')} - ${format(dateRange.end, 'dd/MM/yyyy')}`);
+    lines.push(`Filtro tipo cliente: ${customerTypeFilter}`);
+    lines.push(`Totale ordini caricati: ${allOrders.length} (Shopify: ${shopifyOrders.length}, Google Sheets B2B: ${gsOrders.length})`);
+    lines.push(`Ordini nel periodo filtrato: ${filteredOrders.length}`);
+    lines.push('');
+    lines.push('--- KPI ---');
+    kpis.forEach(k => {
+      const val = k.format === 'currency' ? `€${k.value.toLocaleString('it-IT', { minimumFractionDigits: 2 })}` : k.value.toLocaleString('it-IT');
+      lines.push(`${k.label}: ${val}`);
+    });
+    lines.push('');
+    lines.push('--- Top SKU B2C (per net sales) ---');
+    b2cSkuData.slice(0, 15).forEach(s => lines.push(`${s.sku} (${s.name}): qty ${s.qtySold}, net sales €${s.netSalesTotal.toLocaleString('it-IT', { minimumFractionDigits: 2 })}, evasi €${s.netSalesFulfilled.toLocaleString('it-IT', { minimumFractionDigits: 2 })}`));
+    lines.push('');
+    lines.push('--- Top SKU B2B (per price raccolto) ---');
+    b2bSkuData.slice(0, 15).forEach(s => lines.push(`${s.sku} (${s.name}): qty ${s.qtySold}, raccolto €${s.priceRaccolto.toLocaleString('it-IT', { minimumFractionDigits: 2 })}, consegnato €${s.priceConsegnato.toLocaleString('it-IT', { minimumFractionDigits: 2 })}`));
+    lines.push('');
+    lines.push('--- Top SKU Combinato ---');
+    combinedSkuData.slice(0, 15).forEach(s => lines.push(`${s.sku} (${s.name}): qty ${s.qtySold}, totale €${s.totalValue.toLocaleString('it-IT', { minimumFractionDigits: 2 })}`));
+    lines.push('');
+    // Country breakdown
+    const countryMap: Record<string, { orders: number; revenue: number }> = {};
+    filteredOrders.forEach(o => {
+      const c = o.destinationCountry || o.country || 'Sconosciuto';
+      if (!countryMap[c]) countryMap[c] = { orders: 0, revenue: 0 };
+      countryMap[c].orders++;
+      countryMap[c].revenue += o.totalAmount;
+    });
+    lines.push('--- Vendite per Paese ---');
+    Object.entries(countryMap).sort((a, b) => b[1].revenue - a[1].revenue).slice(0, 10).forEach(([c, d]) =>
+      lines.push(`${c}: ${d.orders} ordini, €${d.revenue.toLocaleString('it-IT', { minimumFractionDigits: 2 })}`)
+    );
+    return lines.join('\n');
+  }, [dateRange, customerTypeFilter, allOrders, shopifyOrders, gsOrders, filteredOrders, kpis, b2cSkuData, b2bSkuData, combinedSkuData]);
+
   const dataSources = [
     { name: 'Shopify', type: 'shopify' as const, status: isLoadingShopify ? 'syncing' as const : isErrorShopify ? 'disconnected' as const : 'connected' as const, recordCount: shopifyOrders.length },
     { name: 'Google Sheets B2B', type: 'google_sheets' as const, status: isLoadingGS ? 'syncing' as const : isErrorGS ? 'disconnected' as const : 'connected' as const, recordCount: gsOrders.length },
