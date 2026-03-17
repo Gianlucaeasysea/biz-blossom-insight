@@ -254,7 +254,7 @@ serve(async (req) => {
         products: [{
           id: `gsheets-item-${i}`,
           name: productName || 'Prodotto B2B',
-          sku: code || `GS-SKU-${i}`,
+          sku: lookupSku(productName),
           category,
           quantity: qty,
           unitPrice,
