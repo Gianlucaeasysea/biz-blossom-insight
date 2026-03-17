@@ -20,6 +20,7 @@ export interface MetaDailyInsight {
 
 export interface MetaCampaignInsight {
   campaign_name: string;
+  campaign_id?: string;
   spend: string;
   impressions: string;
   clicks: string;
@@ -30,12 +31,73 @@ export interface MetaCampaignInsight {
   action_values?: { action_type: string; value: string }[];
 }
 
+export interface MetaAdCreative {
+  id: string;
+  name: string;
+  campaign_id: string;
+  campaign_name: string;
+  effective_status: string;
+  thumbnail_url: string | null;
+  creative_title: string | null;
+  creative_body: string | null;
+  spend: string;
+  impressions: string;
+  clicks: string;
+  ctr: string;
+  cpc: string;
+  actions?: { action_type: string; value: string }[];
+  action_values?: { action_type: string; value: string }[];
+}
+
 export interface MetaAdsData {
   daily: MetaDailyInsight[];
   campaigns: MetaCampaignInsight[];
+  ads: MetaAdCreative[];
 }
 
-function getActionValue(actions: { action_type: string; value: string }[] | undefined, type: string): number {
+// Product category mapping based on campaign name patterns
+// Maps campaign name keywords to EasySea product categories
+export const CAMPAIGN_CATEGORY_MAP: Record<string, string> = {
+  'flipper': 'Flipper™ Collection',
+  'winch': 'Flipper™ Collection',
+  'olli': 'Olli™ Collection',
+  'snatch': 'Olli™ Collection',
+  'anti-shock': 'Olli™ Collection',
+  'anti shock': 'Olli™ Collection',
+  'block': 'Olli™ Collection',
+  'ring': 'Olli™ Collection',
+  'way2': 'Way2',
+  'gangway': 'Way2',
+  'jib': 'Jib Collection',
+  'boat hook': 'Jib Collection',
+  'boathook': 'Jib Collection',
+  'telescope': 'Jib Collection',
+  'pole': 'Jib Collection',
+  'brush': 'Jib Collection',
+  'linemaster': 'Jib Collection',
+  'quickgrip': 'Jib Collection',
+  'shackle': 'Textile Connections',
+  'dyneema': 'Textile Connections',
+  'loop': 'Textile Connections',
+  'rope deflector': 'Rope Deflector',
+  'brand': 'Brand Awareness',
+  'awareness': 'Brand Awareness',
+  'retarget': 'Retargeting',
+  'remarketing': 'Retargeting',
+  'catalog': 'Catalog / DPA',
+  'dpa': 'Catalog / DPA',
+  'dynamic': 'Catalog / DPA',
+};
+
+export function detectCampaignCategory(campaignName: string): string {
+  const lower = campaignName.toLowerCase();
+  for (const [keyword, category] of Object.entries(CAMPAIGN_CATEGORY_MAP)) {
+    if (lower.includes(keyword)) return category;
+  }
+  return 'Altro';
+}
+
+export function getActionValue(actions: { action_type: string; value: string }[] | undefined, type: string): number {
   if (!actions) return 0;
   const action = actions.find(a => a.action_type === type);
   return action ? parseFloat(action.value) : 0;
@@ -61,8 +123,6 @@ export function parseMetaKPIs(daily: MetaDailyInsight[]) {
 
   return { totalSpend, totalImpressions, totalClicks, totalReach, ctr, cpc, cpm, totalPurchases, totalPurchaseValue, roas, costPerPurchase };
 }
-
-export { getActionValue };
 
 export function useMetaAds(dateRange: { start: Date; end: Date }) {
   return useQuery<MetaAdsData>({
