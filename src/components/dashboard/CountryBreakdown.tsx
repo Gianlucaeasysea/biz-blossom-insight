@@ -1,7 +1,8 @@
 import { useState, useMemo } from 'react';
-import { ArrowUpDown, Globe } from 'lucide-react';
+import { ArrowUpDown, Globe, Download } from 'lucide-react';
 import { Order } from '@/types/analytics';
 import { getCountryBreakdown } from '@/lib/mock-data';
+import { downloadCsv } from '@/lib/csv-export';
 
 interface CountryBreakdownProps {
   orders: Order[];
@@ -37,6 +38,11 @@ export function CountryBreakdown({ orders, allSkus }: CountryBreakdownProps) {
     </button>
   );
 
+  const handleExport = () => {
+    downloadCsv('vendite-paese', ['Paese', 'B2C', 'B2B', 'Totale'],
+      sorted.map(r => [r.country, r.b2cSales, r.b2bSales, r.totalSales]));
+  };
+
   return (
     <div className="chart-container">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
@@ -44,16 +50,21 @@ export function CountryBreakdown({ orders, allSkus }: CountryBreakdownProps) {
           <Globe className="w-4 h-4 text-muted-foreground" />
           <h3 className="text-sm font-semibold">Vendite per Paese</h3>
         </div>
-        <select
-          value={skuFilter}
-          onChange={e => setSkuFilter(e.target.value)}
-          className="h-8 text-xs rounded-md border border-border/50 bg-muted/50 px-3 py-1 text-foreground"
-        >
-          <option value="">Tutti gli SKU</option>
-          {allSkus.map(sku => (
-            <option key={sku} value={sku}>{sku}</option>
-          ))}
-        </select>
+        <div className="flex items-center gap-2">
+          <select
+            value={skuFilter}
+            onChange={e => setSkuFilter(e.target.value)}
+            className="h-8 text-xs rounded-md border border-border/50 bg-muted/50 px-3 py-1 text-foreground"
+          >
+            <option value="">Tutti gli SKU</option>
+            {allSkus.map(sku => (
+              <option key={sku} value={sku}>{sku}</option>
+            ))}
+          </select>
+          <button onClick={handleExport} className="p-2 rounded-md hover:bg-muted/50 text-muted-foreground hover:text-foreground transition-colors" title="Esporta CSV">
+            <Download className="w-4 h-4" />
+          </button>
+        </div>
       </div>
       <div className="overflow-x-auto scrollbar-custom">
         <table className="data-table">
@@ -80,7 +91,7 @@ export function CountryBreakdown({ orders, allSkus }: CountryBreakdownProps) {
               <td className="text-right font-mono">{fmt(sorted.reduce((s, r) => s + r.b2cSales, 0))}</td>
               <td className="text-right font-mono">{fmt(sorted.reduce((s, r) => s + r.b2bSales, 0))}</td>
               <td className="text-right font-mono">{fmt(sorted.reduce((s, r) => s + r.totalSales, 0))}</td>
-            </tr></tfoot>
+            </tfoot>
           )}
         </table>
       </div>

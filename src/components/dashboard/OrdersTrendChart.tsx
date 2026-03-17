@@ -1,10 +1,12 @@
 import { useState, useMemo } from 'react';
 import {
-  LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend,
+  LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
 } from 'recharts';
-import { Order, TimeSeriesData } from '@/types/analytics';
+import { Download } from 'lucide-react';
+import { Order } from '@/types/analytics';
 import { format, eachDayOfInterval, eachWeekOfInterval, eachMonthOfInterval, startOfWeek, endOfWeek, startOfMonth, endOfMonth, isWithinInterval } from 'date-fns';
 import { it } from 'date-fns/locale';
+import { downloadCsv } from '@/lib/csv-export';
 
 type Granularity = 'day' | 'week' | 'month';
 
@@ -48,6 +50,11 @@ export function OrdersTrendChart({ orders, dateRange }: OrdersTrendChartProps) {
     });
   }, [orders, dateRange, granularity]);
 
+  const handleExport = () => {
+    downloadCsv('andamento-ordini', ['Data', 'B2C', 'B2B', 'B2B Custom'],
+      chartData.map(r => [r.date, r.b2c, r.b2b, r.b2bCustom]));
+  };
+
   const granularities = [
     { value: 'day' as Granularity, label: 'Giorno' },
     { value: 'week' as Granularity, label: 'Settimana' },
@@ -81,30 +88,35 @@ export function OrdersTrendChart({ orders, dateRange }: OrdersTrendChartProps) {
           <h3 className="text-sm font-semibold text-foreground">Andamento Ordini</h3>
           <p className="text-xs text-muted-foreground">B2C + B2B (+ B2B Custom)</p>
         </div>
-        <div className="flex rounded-md bg-muted p-0.5">
-          {granularities.map(g => (
-            <button
-              key={g.value}
-              onClick={() => setGranularity(g.value)}
-              className={`px-3 py-1 text-xs font-medium rounded transition-colors ${
-                granularity === g.value ? 'bg-secondary text-foreground' : 'text-muted-foreground hover:text-foreground'
-              }`}
-            >
-              {g.label}
-            </button>
-          ))}
+        <div className="flex items-center gap-2">
+          <div className="flex rounded-md bg-muted p-0.5">
+            {granularities.map(g => (
+              <button
+                key={g.value}
+                onClick={() => setGranularity(g.value)}
+                className={`px-3 py-1 text-xs font-medium rounded transition-colors ${
+                  granularity === g.value ? 'bg-secondary text-foreground' : 'text-muted-foreground hover:text-foreground'
+                }`}
+              >
+                {g.label}
+              </button>
+            ))}
+          </div>
+          <button onClick={handleExport} className="p-2 rounded-md hover:bg-muted/50 text-muted-foreground hover:text-foreground transition-colors" title="Esporta CSV">
+            <Download className="w-4 h-4" />
+          </button>
         </div>
       </div>
 
       <div className="h-[320px]">
         <ResponsiveContainer width="100%" height="100%">
           <LineChart data={chartData} margin={{ top: 5, right: 5, left: 0, bottom: 0 }}>
-            <CartesianGrid stroke="hsl(220, 15%, 12%)" strokeDasharray="3 3" vertical={false} />
-            <XAxis dataKey="date" stroke="hsl(220, 10%, 35%)" fontSize={10} tickLine={false} axisLine={false} />
-            <YAxis stroke="hsl(220, 10%, 35%)" fontSize={10} tickLine={false} axisLine={false} tickFormatter={formatCurrency} />
+            <CartesianGrid stroke="hsl(218, 25%, 14%)" strokeDasharray="3 3" vertical={false} />
+            <XAxis dataKey="date" stroke="hsl(215, 15%, 35%)" fontSize={10} tickLine={false} axisLine={false} />
+            <YAxis stroke="hsl(215, 15%, 35%)" fontSize={10} tickLine={false} axisLine={false} tickFormatter={formatCurrency} />
             <Tooltip content={<CustomTooltip />} />
-            <Line type="monotone" dataKey="b2c" name="B2C" stroke="hsl(190, 100%, 50%)" strokeWidth={2} dot={false} />
-            <Line type="monotone" dataKey="b2b" name="B2B" stroke="hsl(270, 60%, 55%)" strokeWidth={2} dot={false} />
+            <Line type="monotone" dataKey="b2c" name="B2C" stroke="hsl(215, 85%, 55%)" strokeWidth={2} dot={false} />
+            <Line type="monotone" dataKey="b2b" name="B2B" stroke="hsl(25, 95%, 55%)" strokeWidth={2} dot={false} />
             <Line type="monotone" dataKey="b2bCustom" name="B2B Custom" stroke="hsl(40, 90%, 55%)" strokeWidth={2} strokeDasharray="5 5" dot={false} />
           </LineChart>
         </ResponsiveContainer>
@@ -112,11 +124,11 @@ export function OrdersTrendChart({ orders, dateRange }: OrdersTrendChartProps) {
 
       <div className="flex flex-wrap gap-x-4 gap-y-1 mt-4">
         <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-          <div className="w-3 h-0.5 rounded" style={{ backgroundColor: 'hsl(190, 100%, 50%)' }} />
+          <div className="w-3 h-0.5 rounded" style={{ backgroundColor: 'hsl(215, 85%, 55%)' }} />
           <span>B2C</span>
         </div>
         <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-          <div className="w-3 h-0.5 rounded" style={{ backgroundColor: 'hsl(270, 60%, 55%)' }} />
+          <div className="w-3 h-0.5 rounded" style={{ backgroundColor: 'hsl(25, 95%, 55%)' }} />
           <span>B2B</span>
         </div>
         <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
