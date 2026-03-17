@@ -169,7 +169,7 @@ serve(async (req) => {
 
       // Parse quantity
       const qty = parseInt(get(iQty)) || 1;
-      const unitPrice = parseFloat(get(iPrice).replace(/[^\d.,-]/g, '').replace(',', '.')) || totalAmount;
+      const unitPrice = parseEuropeanNumber(get(iPrice)) || totalAmount;
 
       // Map order status
       const statusOrderRaw = get(iStatusOrder).toLowerCase();
