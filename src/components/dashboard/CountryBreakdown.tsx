@@ -91,7 +91,7 @@ export function CountryBreakdown({ orders, allSkus }: CountryBreakdownProps) {
               <td className="text-right font-mono">{fmt(sorted.reduce((s, r) => s + r.b2cSales, 0))}</td>
               <td className="text-right font-mono">{fmt(sorted.reduce((s, r) => s + r.b2bSales, 0))}</td>
               <td className="text-right font-mono">{fmt(sorted.reduce((s, r) => s + r.totalSales, 0))}</td>
-            </tfoot>
+            </tr></tfoot>
           )}
         </table>
       </div>
