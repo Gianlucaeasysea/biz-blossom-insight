@@ -186,7 +186,7 @@ export function getSkuCollection(sku: string): string {
   if (['FS-101-1', 'FM-101-1', 'FCM-101-1'].includes(sku)) return 'Winch Handle';
   if (['OA-101', 'OA-102', 'OA-103', 'OA-104', 'OA-105', 'SRA-101', 'SRA-102', 'SRA-103', 'SRA-104'].includes(sku)) return 'Low Friction & Solid Rings';
   if (['OB-102', 'OB-103', 'OB-104'].includes(sku)) return 'Blocks';
-  if (['LC-101', 'LC-102', 'LC-103', 'LC-104', 'LS-101', 'LS-102', 'LS-103', 'LS-104', 'SS-101', 'SS-102', 'SS-103', 'SS-104', 'CWC-101GY', 'CWC-102GY', 'CWC-103GY', 'CWC-104GY', 'SP-101'].includes(sku)) return 'Side products';
+  if (['LC-101', 'LC-102', 'LC-103', 'LC-104', 'LS-101', 'LS-102', 'LS-103', 'LS-104', 'SS-101', 'SS-102', 'SS-103', 'SS-104', 'CWC-101GY', 'CWC-102GY', 'CWC-103GY', 'CWC-104GY', 'SP-101', 'ROD-101'].includes(sku)) return 'Side products';
   if (sku === 'W2G-101') return 'Inflatable';
   if (sku.startsWith('J')) return 'JAKE';
   if (sku === 'SHIPPING') return 'Shipping';

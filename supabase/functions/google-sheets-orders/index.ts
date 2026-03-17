@@ -135,6 +135,7 @@ serve(async (req) => {
       'Soft Shackle in Dyneema® - L - 28x20': 'SS-104',
       'Spira – The Twistable Guardrail Cover': 'SP-101',
       'Way2 - The inflatable reversible gangway': 'W2G-101',
+      'Rope deflector': 'ROD-101',
     };
 
     const lookupSku = (productName: string): string => {
