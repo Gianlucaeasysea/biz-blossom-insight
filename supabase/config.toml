@@ -1,1 +1,7 @@
 project_id = "coqwpaovisnoqpjimkjg"
+
+[functions.shopify-orders]
+verify_jwt = false
+
+[functions.google-sheets-orders]
+verify_jwt = false
