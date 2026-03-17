@@ -99,6 +99,7 @@ serve(async (req) => {
     const skuMap: Record<string, string> = {
       'Flipper™ - Standard Foldable Winch Handle': 'FS-101-1',
       'Flipper MAX™ - Foldable Winch Handle': 'FM-101-1',
+      'Flipper™ - Max Foldable Winch Handle': 'FM-101-1',
       'Flipper™ Max Carbon': 'FCM-101-1',
       'Flipper™ Anti-Mould Winch Cover - Gray / S - 30': 'CWC-101GY',
       'Anti-Mould Winch Cover - Gray / S - 36': 'CWC-101GY',

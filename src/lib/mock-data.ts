@@ -193,23 +193,56 @@ export function getSkuCollection(sku: string): string {
   return 'Other';
 }
 
-// Collection breakdown
-export function getCollectionBreakdown(orders: Order[], channel: 'B2C' | 'B2B' | 'all' = 'all'): Array<{
+// B2C Collection breakdown: qty + net sales
+export function getB2CCollectionBreakdown(orders: Order[]): Array<{
+  collection: string; qtySold: number; netSales: number;
+}> {
+  const map: Record<string, { qty: number; sales: number }> = {};
+  orders.filter(o => o.customerType === 'B2C').forEach(order => {
+    order.products.forEach(p => {
+      const c = getSkuCollection(p.sku);
+      if (!map[c]) map[c] = { qty: 0, sales: 0 };
+      map[c].qty += p.quantity;
+      map[c].sales += p.totalPrice;
+    });
+  });
+  return Object.entries(map)
+    .map(([collection, d]) => ({ collection, qtySold: d.qty, netSales: Math.round(d.sales * 100) / 100 }))
+    .sort((a, b) => b.netSales - a.netSales);
+}
+
+// B2B Collection breakdown: qty + price sum (filtered by order date, excl custom)
+export function getB2BCollectionBreakdown(orders: Order[]): Array<{
+  collection: string; qtySold: number; priceSomma: number;
+}> {
+  const map: Record<string, { qty: number; price: number }> = {};
+  orders.filter(o => o.customerType === 'B2B' && isNotCustom(o)).forEach(order => {
+    order.products.forEach(p => {
+      const c = getSkuCollection(p.sku);
+      if (!map[c]) map[c] = { qty: 0, price: 0 };
+      map[c].qty += p.quantity;
+      map[c].price += p.totalPrice;
+    });
+  });
+  return Object.entries(map)
+    .map(([collection, d]) => ({ collection, qtySold: d.qty, priceSomma: Math.round(d.price * 100) / 100 }))
+    .sort((a, b) => b.priceSomma - a.priceSomma);
+}
+
+// Combined Collection breakdown
+export function getCombinedCollectionBreakdown(orders: Order[]): Array<{
   collection: string; qtySold: number; b2cSales: number; b2bSales: number; totalSales: number;
 }> {
   const map: Record<string, { qty: number; b2c: number; b2b: number }> = {};
-
   orders.filter(o => o.customerType === 'B2C' || isNotCustom(o)).forEach(order => {
-    if (channel !== 'all' && order.customerType !== channel) return;
-    order.products.forEach(product => {
-      const collection = getSkuCollection(product.sku);
-      if (!map[collection]) map[collection] = { qty: 0, b2c: 0, b2b: 0 };
-      map[collection].qty += product.quantity;
-      if (order.customerType === 'B2C') map[collection].b2c += product.totalPrice;
-      else map[collection].b2b += product.totalPrice;
+    order.products.forEach(p => {
+      const c = getSkuCollection(p.sku);
+      if (!map[c]) map[c] = { qty: 0, b2c: 0, b2b: 0 };
+      map[c].qty += p.quantity;
+      if (order.customerType === 'B2C') map[c].b2c += p.totalPrice;
+      else map[c].b2b += p.totalPrice;
     });
   });
-
   return Object.entries(map)
     .map(([collection, d]) => ({
       collection, qtySold: d.qty,
@@ -218,6 +251,7 @@ export function getCollectionBreakdown(orders: Order[], channel: 'B2C' | 'B2B' |
       totalSales: Math.round((d.b2c + d.b2b) * 100) / 100,
     }))
     .sort((a, b) => b.totalSales - a.totalSales);
+}
 }
 
 // Country breakdown - B2C uses destination country, B2B uses country field
