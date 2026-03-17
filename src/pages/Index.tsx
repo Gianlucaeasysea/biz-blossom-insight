@@ -69,6 +69,7 @@ export default function Index() {
   const topProducts = useMemo(() => getTopProducts(filteredOrders), [filteredOrders]);
   const topCustomers = useMemo(() => getTopCustomers(filteredOrders), [filteredOrders]);
   const b2cSkuData = useMemo(() => getB2CSkuBreakdown(filteredOrders), [filteredOrders]);
+  const b2bSkuData = useMemo(() => getB2BSkuBreakdown(filteredOrders), [filteredOrders]);
 
   // Data sources status
   const dataSources = [
