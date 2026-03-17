@@ -283,8 +283,8 @@ export function getB2BSkuBreakdown(orders: Order[]): Array<{
       }
       // Ordini Raccolti = all orders (by order date)
       skuMap[product.sku].ordiniRaccolti += product.totalPrice;
-      // Fatturato = only orders with deliveryDate
-      if (order.deliveryDate) {
+      // Fatturato = only orders with status DELIVERED (completed) and deliveryDate
+      if (order.status === 'completed' && order.deliveryDate) {
         skuMap[product.sku].fatturato += product.totalPrice;
       }
       // Ordini Pagati = only orders with payedDate
