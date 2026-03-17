@@ -111,8 +111,39 @@ serve(async (req) => {
       // Skip rows without essential data
       if (!business && !totalStr && !orderDateStr) continue;
 
-      // Parse total amount - handle European number format (comma as decimal)
-      const totalAmount = parseFloat(totalStr.replace(/[^\d.,-]/g, '').replace(',', '.')) || 0;
+      // Parse amount - handle European format: "1.936,00" (dot=thousands, comma=decimal)
+      const parseEuropeanNumber = (str: string): number => {
+        if (!str) return 0;
+        const cleaned = str.replace(/[^\d.,-]/g, '');
+        // If has both dot and comma, determine format
+        if (cleaned.includes(',') && cleaned.includes('.')) {
+          // European: 1.936,00 → remove dots, replace comma with dot
+          if (cleaned.lastIndexOf(',') > cleaned.lastIndexOf('.')) {
+            return parseFloat(cleaned.replace(/\./g, '').replace(',', '.')) || 0;
+          }
+          // US: 1,936.00
+          return parseFloat(cleaned.replace(/,/g, '')) || 0;
+        }
+        // Only comma: could be "1936,00" (decimal) or "1,936" (thousands)
+        if (cleaned.includes(',')) {
+          const afterComma = cleaned.split(',')[1];
+          if (afterComma && afterComma.length <= 2) {
+            return parseFloat(cleaned.replace(',', '.')) || 0;
+          }
+          return parseFloat(cleaned.replace(/,/g, '')) || 0;
+        }
+        // Only dots: could be "1.936" (thousands) or "19.36" (decimal)
+        if (cleaned.includes('.')) {
+          const parts = cleaned.split('.');
+          const lastPart = parts[parts.length - 1];
+          // If last segment is exactly 3 digits and there are multiple parts, it's thousands separator
+          if (parts.length > 1 && lastPart.length === 3 && parts.length > 2) {
+            return parseFloat(cleaned.replace(/\./g, '')) || 0;
+          }
+        }
+        return parseFloat(cleaned) || 0;
+      };
+      const totalAmount = parseEuropeanNumber(totalStr);
       
       // Parse date - try multiple formats
       let orderDate: string | null = null;
