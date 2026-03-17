@@ -181,6 +181,7 @@ serve(async (req) => {
       }
 
       const country = order.shipping_address?.country || order.billing_address?.country || undefined;
+      const destinationCountry = order.shipping_address?.country || undefined;
 
       return {
         id: `shopify-${order.id}`,
