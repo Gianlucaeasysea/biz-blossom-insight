@@ -1,13 +1,11 @@
-import { motion } from 'framer-motion';
-import { 
-  AreaChart, 
-  Area, 
-  XAxis, 
-  YAxis, 
-  CartesianGrid, 
-  Tooltip, 
+import {
+  AreaChart,
+  Area,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
   ResponsiveContainer,
-  Legend
 } from 'recharts';
 import { TimeSeriesData, CustomerType } from '@/types/analytics';
 
@@ -17,128 +15,58 @@ interface RevenueChartProps {
 }
 
 export function RevenueChart({ data, customerTypeFilter }: RevenueChartProps) {
-  const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat('it-IT', {
-      style: 'currency',
-      currency: 'EUR',
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
-    }).format(value);
-  };
-
   const CustomTooltip = ({ active, payload, label }: any) => {
-    if (active && payload && payload.length) {
-      return (
-        <div className="glass-card p-3 !bg-popover/95 border border-border">
-          <p className="text-sm font-medium mb-2">{label}</p>
-          {payload.map((entry: any, index: number) => (
-            <div key={index} className="flex items-center gap-2 text-sm">
-              <div 
-                className="w-3 h-3 rounded-full" 
-                style={{ backgroundColor: entry.color }}
-              />
-              <span className="text-muted-foreground">{entry.name}:</span>
-              <span className="font-medium">{formatCurrency(entry.value)}</span>
-            </div>
-          ))}
-        </div>
-      );
-    }
-    return null;
+    if (!active || !payload?.length) return null;
+    return (
+      <div className="bg-popover border border-border rounded-md p-3 text-xs shadow-lg">
+        <p className="font-medium mb-2">{label}</p>
+        {payload.map((entry: any, i: number) => (
+          <div key={i} className="flex items-center gap-2 py-0.5">
+            <div className="w-2 h-2 rounded-full" style={{ backgroundColor: entry.color }} />
+            <span className="text-muted-foreground">{entry.name}:</span>
+            <span className="font-mono font-medium">
+              {new Intl.NumberFormat('it-IT', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 }).format(entry.value)}
+            </span>
+          </div>
+        ))}
+      </div>
+    );
   };
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: 0.2 }}
-      className="chart-container"
-    >
-      <div className="flex items-center justify-between mb-6">
-        <div>
-          <h3 className="text-lg font-semibold">Andamento Fatturato</h3>
-          <p className="text-sm text-muted-foreground">Trend vendite nel periodo selezionato</p>
-        </div>
+    <div className="chart-container">
+      <div className="mb-5">
+        <h3 className="text-sm font-semibold">Andamento Fatturato</h3>
+        <p className="text-xs text-muted-foreground">B2C vs B2B nel periodo</p>
       </div>
 
-      <div className="h-[350px]">
+      <div className="h-[280px]">
         <ResponsiveContainer width="100%" height="100%">
-          <AreaChart data={data} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
+          <AreaChart data={data} margin={{ top: 5, right: 5, left: 0, bottom: 0 }}>
             <defs>
-              <linearGradient id="gradientB2C" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%" stopColor="hsl(199, 89%, 48%)" stopOpacity={0.3} />
-                <stop offset="95%" stopColor="hsl(199, 89%, 48%)" stopOpacity={0} />
+              <linearGradient id="gB2C" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="5%" stopColor="hsl(190, 100%, 50%)" stopOpacity={0.15} />
+                <stop offset="95%" stopColor="hsl(190, 100%, 50%)" stopOpacity={0} />
               </linearGradient>
-              <linearGradient id="gradientB2B" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%" stopColor="hsl(262, 83%, 58%)" stopOpacity={0.3} />
-                <stop offset="95%" stopColor="hsl(262, 83%, 58%)" stopOpacity={0} />
-              </linearGradient>
-              <linearGradient id="gradientTotal" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%" stopColor="hsl(142, 76%, 36%)" stopOpacity={0.3} />
-                <stop offset="95%" stopColor="hsl(142, 76%, 36%)" stopOpacity={0} />
+              <linearGradient id="gB2B" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="5%" stopColor="hsl(270, 60%, 55%)" stopOpacity={0.15} />
+                <stop offset="95%" stopColor="hsl(270, 60%, 55%)" stopOpacity={0} />
               </linearGradient>
             </defs>
-            <CartesianGrid 
-              strokeDasharray="3 3" 
-              stroke="hsl(217, 33%, 17%)" 
-              vertical={false}
-            />
-            <XAxis 
-              dataKey="date" 
-              stroke="hsl(215, 20%, 55%)"
-              fontSize={12}
-              tickLine={false}
-              axisLine={false}
-            />
-            <YAxis 
-              stroke="hsl(215, 20%, 55%)"
-              fontSize={12}
-              tickLine={false}
-              axisLine={false}
-              tickFormatter={(value) => `€${(value / 1000).toFixed(0)}k`}
-            />
+            <CartesianGrid stroke="hsl(220, 15%, 12%)" strokeDasharray="3 3" vertical={false} />
+            <XAxis dataKey="date" stroke="hsl(220, 10%, 35%)" fontSize={10} tickLine={false} axisLine={false} />
+            <YAxis stroke="hsl(220, 10%, 35%)" fontSize={10} tickLine={false} axisLine={false}
+              tickFormatter={v => `€${(v / 1000).toFixed(0)}k`} />
             <Tooltip content={<CustomTooltip />} />
-            <Legend 
-              wrapperStyle={{ paddingTop: '20px' }}
-              formatter={(value) => <span className="text-sm text-muted-foreground">{value}</span>}
-            />
-            
             {(customerTypeFilter === 'all' || customerTypeFilter === 'B2C') && (
-              <Area
-                type="monotone"
-                dataKey="b2c"
-                name="B2C"
-                stroke="hsl(199, 89%, 48%)"
-                strokeWidth={2}
-                fill="url(#gradientB2C)"
-              />
+              <Area type="monotone" dataKey="b2c" name="B2C" stroke="hsl(190, 100%, 50%)" strokeWidth={1.5} fill="url(#gB2C)" />
             )}
-            
             {(customerTypeFilter === 'all' || customerTypeFilter === 'B2B') && (
-              <Area
-                type="monotone"
-                dataKey="b2b"
-                name="B2B"
-                stroke="hsl(262, 83%, 58%)"
-                strokeWidth={2}
-                fill="url(#gradientB2B)"
-              />
-            )}
-
-            {customerTypeFilter === 'all' && (
-              <Area
-                type="monotone"
-                dataKey="total"
-                name="Totale"
-                stroke="hsl(142, 76%, 36%)"
-                strokeWidth={2}
-                fill="url(#gradientTotal)"
-                strokeDasharray="5 5"
-              />
+              <Area type="monotone" dataKey="b2b" name="B2B" stroke="hsl(270, 60%, 55%)" strokeWidth={1.5} fill="url(#gB2B)" />
             )}
           </AreaChart>
         </ResponsiveContainer>
       </div>
-    </motion.div>
+    </div>
   );
 }
