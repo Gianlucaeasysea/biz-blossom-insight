@@ -140,12 +140,12 @@ export default function MetaAds() {
         <>
           {/* KPI Cards */}
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-8">
-            <KPICard title="Spesa Totale" value={fmtCurrency(kpis.totalSpend)} icon={<DollarSign className="w-4 h-4" />} />
-            <KPICard title="Impressioni" value={fmtNumber(kpis.totalImpressions)} icon={<Eye className="w-4 h-4" />} />
-            <KPICard title="Click" value={fmtNumber(kpis.totalClicks)} icon={<MousePointerClick className="w-4 h-4" />} />
-            <KPICard title="CTR" value={fmtPct(kpis.ctr)} icon={<Target className="w-4 h-4" />} />
-            <KPICard title="Acquisti" value={fmtNumber(kpis.totalPurchases)} icon={<ShoppingCart className="w-4 h-4" />} />
-            <KPICard title="ROAS" value={kpis.roas.toFixed(2) + 'x'} icon={<TrendingUp className="w-4 h-4" />} />
+            <KPICard data={{ label: 'Spesa Totale', value: kpis.totalSpend, trend: 'neutral', format: 'currency' }} />
+            <KPICard data={{ label: 'Impressioni', value: kpis.totalImpressions, trend: 'neutral', format: 'number' }} />
+            <KPICard data={{ label: 'Click', value: kpis.totalClicks, trend: 'neutral', format: 'number' }} />
+            <KPICard data={{ label: 'CTR', value: kpis.ctr, trend: 'neutral', format: 'percent' }} />
+            <KPICard data={{ label: 'Acquisti', value: kpis.totalPurchases, trend: 'neutral', format: 'number' }} />
+            <KPICard data={{ label: 'ROAS', value: kpis.roas, trend: kpis.roas >= 1 ? 'up' : 'down', format: 'number' }} />
           </div>
 
           {/* Spend & Clicks Chart */}
