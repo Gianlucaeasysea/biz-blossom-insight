@@ -1,7 +1,7 @@
 import { useState, useMemo } from 'react';
 import { subDays, format } from 'date-fns';
 import { it } from 'date-fns/locale';
-import { useMetaAds, parseMetaKPIs, getActionValue, detectCampaignCategory } from '@/hooks/useMetaAds';
+import { useMetaAds, useMetaCreatives, parseMetaKPIs, getActionValue, detectCampaignCategory } from '@/hooks/useMetaAds';
 import { useShopifyOrders } from '@/hooks/useShopifyOrders';
 import { useGoogleSheetsOrders } from '@/hooks/useGoogleSheetsOrders';
 import { DashboardHeader } from '@/components/dashboard/DashboardHeader';
@@ -12,7 +12,7 @@ import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
-import { CalendarIcon, Download, Loader2, AlertCircle, Image as ImageIcon } from 'lucide-react';
+import { CalendarIcon, Download, Loader2, AlertCircle, Image as ImageIcon, ChevronDown } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { NavLink } from '@/components/NavLink';
 import { downloadCsv } from '@/lib/csv-export';
@@ -20,7 +20,6 @@ import {
   ResponsiveContainer, LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend,
 } from 'recharts';
 
-// Map product collection names to their category for MER cross-reference
 const COLLECTION_TO_CATEGORY: Record<string, string> = {
   "Flipper™ Collection": "Flipper™ Collection",
   "Olli™ Collection": "Olli™ Collection",
@@ -28,13 +27,28 @@ const COLLECTION_TO_CATEGORY: Record<string, string> = {
   "Textile connections": "Textile Connections",
   "Rope deflector": "Rope Deflector",
   "Way2": "Way2",
-  "Shopify": "Altro", // default Shopify category
+  "Shopify": "Altro",
   "B2B": "Altro",
 };
 
 function mapCollectionToCategory(collection: string): string {
   return COLLECTION_TO_CATEGORY[collection] || 'Altro';
 }
+
+const ALL_CATEGORIES = ['Flipper™ Collection', 'Olli™ Collection', 'Jib Collection', 'Way2', 'Textile Connections', 'Rope Deflector', 'Brand Awareness', 'Retargeting', 'Catalog / DPA', 'Altro'];
+
+const categoryBadgeColors: Record<string, string> = {
+  'Flipper™ Collection': 'bg-primary/20 text-primary',
+  'Olli™ Collection': 'bg-accent/20 text-accent',
+  'Jib Collection': 'bg-success/20 text-success',
+  'Way2': 'bg-purple-500/20 text-purple-400',
+  'Textile Connections': 'bg-cyan-500/20 text-cyan-400',
+  'Rope Deflector': 'bg-yellow-500/20 text-yellow-400',
+  'Brand Awareness': 'bg-pink-500/20 text-pink-400',
+  'Retargeting': 'bg-indigo-500/20 text-indigo-400',
+  'Catalog / DPA': 'bg-emerald-500/20 text-emerald-400',
+  'Altro': 'bg-muted text-muted-foreground',
+};
 
 export default function MetaAds() {
   const [dateRange, setDateRange] = useState(() => ({
@@ -43,20 +57,24 @@ export default function MetaAds() {
   }));
   const [campaignFilter, setCampaignFilter] = useState<string>('all');
   const [categoryOverrides, setCategoryOverrides] = useState<Record<string, string>>({});
+  const [showCreatives, setShowCreatives] = useState(false);
 
+  // Core data loads fast (2 API calls)
   const { data, isLoading, isError, error, refetch, isFetching } = useMetaAds(dateRange);
 
-  // Sales data for MER calculation
-  const { data: shopifyOrders = [] } = useShopifyOrders({ limit: 250, status: 'any', createdAtMin: new Date('2025-01-01'), enabled: true });
+  // Creatives load lazily only when expanded
+  const { data: creativesData, isLoading: isLoadingCreatives } = useMetaCreatives(dateRange, showCreatives);
+
+  // Sales data for MER
+  const [shopifyMinDate] = useState(() => new Date('2025-01-01'));
+  const { data: shopifyOrders = [] } = useShopifyOrders({ limit: 250, status: 'any', createdAtMin: shopifyMinDate, enabled: true });
   const { data: gsOrders = [] } = useGoogleSheetsOrders(true);
 
-  // All campaigns list
   const campaignNames = useMemo(() => {
     if (!data?.campaigns) return [];
     return [...new Set(data.campaigns.map(c => c.campaign_name))].sort();
   }, [data]);
 
-  // Detect categories for each campaign
   const campaignCategories = useMemo(() => {
     const map: Record<string, string> = {};
     campaignNames.forEach(name => {
@@ -64,11 +82,6 @@ export default function MetaAds() {
     });
     return map;
   }, [campaignNames, categoryOverrides]);
-
-  // All unique categories
-  const allCategories = useMemo(() => {
-    return [...new Set(Object.values(campaignCategories))].sort();
-  }, [campaignCategories]);
 
   const kpis = useMemo(() => {
     if (!data?.daily) return null;
@@ -109,17 +122,15 @@ export default function MetaAds() {
       }));
   }, [data, campaignFilter, campaignCategories]);
 
-  // Ads / creatives filtered by campaign
   const adsData = useMemo(() => {
-    if (!data?.ads) return [];
-    return data.ads
+    if (!creativesData?.ads) return [];
+    return creativesData.ads
       .filter(a => campaignFilter === 'all' || a.campaign_name === campaignFilter)
       .sort((a, b) => parseFloat(b.spend) - parseFloat(a.spend));
-  }, [data, campaignFilter]);
+  }, [creativesData, campaignFilter]);
 
-  // MER calculation: Revenue per category from sales / Ad spend per category
+  // MER
   const merData = useMemo(() => {
-    // Ad spend per category
     const spendByCategory: Record<string, number> = {};
     if (data?.campaigns) {
       for (const c of data.campaigns) {
@@ -127,33 +138,26 @@ export default function MetaAds() {
         spendByCategory[cat] = (spendByCategory[cat] || 0) + parseFloat(c.spend || '0');
       }
     }
-
-    // Revenue per category from sales (both B2C + B2B)
     const allSalesOrders = [...shopifyOrders, ...gsOrders];
     const revenueByCategory: Record<string, number> = {};
     const filteredSales = allSalesOrders.filter(o => {
       const d = o.date instanceof Date ? o.date : new Date(o.date);
       return d >= dateRange.start && d <= dateRange.end;
     });
-
     for (const order of filteredSales) {
       for (const product of order.products) {
         const cat = mapCollectionToCategory(product.category);
         revenueByCategory[cat] = (revenueByCategory[cat] || 0) + product.totalPrice;
       }
     }
-
-    // Calculate MER per category
     const categories = [...new Set([...Object.keys(spendByCategory), ...Object.keys(revenueByCategory)])].sort();
     return categories.map(cat => {
       const spend = spendByCategory[cat] || 0;
       const revenue = revenueByCategory[cat] || 0;
-      const mer = spend > 0 ? revenue / spend : 0;
-      return { category: cat, spend, revenue, mer };
+      return { category: cat, spend, revenue, mer: spend > 0 ? revenue / spend : 0 };
     });
   }, [data, campaignCategories, shopifyOrders, gsOrders, dateRange]);
 
-  // Total MER
   const totalMER = useMemo(() => {
     const totalSpend = merData.reduce((s, m) => s + m.spend, 0);
     const totalRevenue = merData.reduce((s, m) => s + m.revenue, 0);
@@ -162,48 +166,25 @@ export default function MetaAds() {
 
   const handleExportDaily = () => {
     downloadCsv('meta-ads-daily', ['Data', 'Spesa', 'Impressioni', 'Click', 'CTR%', 'CPC', 'Reach', 'Acquisti'],
-      chartData.map(r => [r.date, r.spend.toFixed(2), r.impressions, r.clicks, r.ctr.toFixed(2), r.cpc.toFixed(2), r.reach, r.purchases])
-    );
+      chartData.map(r => [r.date, r.spend.toFixed(2), r.impressions, r.clicks, r.ctr.toFixed(2), r.cpc.toFixed(2), r.reach, r.purchases]));
   };
-
   const handleExportCampaigns = () => {
     downloadCsv('meta-ads-campaigns', ['Campagna', 'Categoria', 'Spesa', 'Impressioni', 'Click', 'CTR%', 'CPC', 'Acquisti', 'Valore Acquisti', 'ROAS'],
-      campaignData.map(r => [r.name, r.category, r.spend.toFixed(2), r.impressions, r.clicks, r.ctr.toFixed(2), r.cpc.toFixed(2), r.purchases, r.purchaseValue.toFixed(2), r.roas.toFixed(2)])
-    );
+      campaignData.map(r => [r.name, r.category, r.spend.toFixed(2), r.impressions, r.clicks, r.ctr.toFixed(2), r.cpc.toFixed(2), r.purchases, r.purchaseValue.toFixed(2), r.roas.toFixed(2)]));
   };
-
   const handleExportMER = () => {
     downloadCsv('meta-ads-mer', ['Categoria', 'Spesa Ads', 'Ricavo Vendite', 'MER'],
-      merData.map(r => [r.category, r.spend.toFixed(2), r.revenue.toFixed(2), r.mer.toFixed(2)])
-    );
-  };
-
-  const handleCategoryChange = (campaignName: string, newCategory: string) => {
-    setCategoryOverrides(prev => ({ ...prev, [campaignName]: newCategory }));
+      merData.map(r => [r.category, r.spend.toFixed(2), r.revenue.toFixed(2), r.mer.toFixed(2)]));
   };
 
   const fmtCurrency = (v: number) => `€${v.toFixed(2)}`;
   const fmtNumber = (v: number) => v.toLocaleString('it-IT');
   const fmtPct = (v: number) => `${v.toFixed(2)}%`;
 
-  const categoryBadgeColors: Record<string, string> = {
-    'Flipper™ Collection': 'bg-primary/20 text-primary',
-    'Olli™ Collection': 'bg-accent/20 text-accent',
-    'Jib Collection': 'bg-success/20 text-success',
-    'Way2': 'bg-purple-500/20 text-purple-400',
-    'Textile Connections': 'bg-cyan-500/20 text-cyan-400',
-    'Rope Deflector': 'bg-yellow-500/20 text-yellow-400',
-    'Brand Awareness': 'bg-pink-500/20 text-pink-400',
-    'Retargeting': 'bg-indigo-500/20 text-indigo-400',
-    'Catalog / DPA': 'bg-emerald-500/20 text-emerald-400',
-    'Altro': 'bg-muted text-muted-foreground',
-  };
-
   return (
     <div className="min-h-screen bg-background text-foreground p-6 md:p-10">
       <DashboardHeader onRefresh={() => refetch()} isLoading={isFetching} />
 
-      {/* Navigation */}
       <div className="flex gap-2 mb-6">
         <NavLink to="/" className="px-4 py-2 rounded-lg text-sm font-medium bg-secondary text-secondary-foreground hover:bg-secondary/80 transition-colors" activeClassName="bg-primary text-primary-foreground">Sales Dashboard</NavLink>
         <NavLink to="/meta-ads" className="px-4 py-2 rounded-lg text-sm font-medium bg-secondary text-secondary-foreground hover:bg-secondary/80 transition-colors" activeClassName="bg-primary text-primary-foreground">Meta Ads</NavLink>
@@ -230,7 +211,6 @@ export default function MetaAds() {
           </PopoverTrigger>
           <PopoverContent className="w-auto p-0"><Calendar mode="single" selected={dateRange.end} onSelect={(d) => d && setDateRange(prev => ({ ...prev, end: d }))} /></PopoverContent>
         </Popover>
-
         <Select value={campaignFilter} onValueChange={setCampaignFilter}>
           <SelectTrigger className="w-[280px]">
             <SelectValue placeholder="Tutte le campagne" />
@@ -290,11 +270,8 @@ export default function MetaAds() {
                 </ResponsiveContainer>
               </CardContent>
             </Card>
-
             <Card>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium">Click & CTR</CardTitle>
-              </CardHeader>
+              <CardHeader className="pb-2"><CardTitle className="text-sm font-medium">Click & CTR</CardTitle></CardHeader>
               <CardContent>
                 <ResponsiveContainer width="100%" height={300}>
                   <LineChart data={chartData}>
@@ -312,53 +289,63 @@ export default function MetaAds() {
             </Card>
           </div>
 
-          {/* Creatives Grid */}
-          {adsData.length > 0 && (
-            <Card className="mb-6">
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium flex items-center gap-2">
-                  <ImageIcon className="w-4 h-4" /> Creatività ({adsData.length})
-                </CardTitle>
-              </CardHeader>
+          {/* Creatives - Lazy loaded */}
+          <Card className="mb-6">
+            <CardHeader className="pb-2">
+              <button
+                onClick={() => setShowCreatives(!showCreatives)}
+                className="flex items-center gap-2 text-sm font-medium hover:text-primary transition-colors w-full text-left"
+              >
+                <ImageIcon className="w-4 h-4" />
+                Creatività
+                <ChevronDown className={cn("w-4 h-4 transition-transform", showCreatives && "rotate-180")} />
+                {isLoadingCreatives && <Loader2 className="w-3 h-3 animate-spin ml-2" />}
+              </button>
+            </CardHeader>
+            {showCreatives && (
               <CardContent>
-                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
-                  {adsData.slice(0, 20).map((ad) => (
-                    <div key={ad.id} className="rounded-lg border border-border bg-secondary/30 overflow-hidden">
-                      {ad.thumbnail_url ? (
-                        <img
-                          src={ad.thumbnail_url}
-                          alt={ad.name}
-                          className="w-full aspect-square object-cover"
-                          loading="lazy"
-                        />
-                      ) : (
-                        <div className="w-full aspect-square bg-muted flex items-center justify-center">
-                          <ImageIcon className="w-8 h-8 text-muted-foreground" />
+                {isLoadingCreatives ? (
+                  <div className="flex items-center justify-center py-8">
+                    <Loader2 className="w-5 h-5 animate-spin text-primary" />
+                    <span className="ml-2 text-sm text-muted-foreground">Caricamento creatività...</span>
+                  </div>
+                ) : adsData.length > 0 ? (
+                  <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+                    {adsData.slice(0, 20).map((ad) => (
+                      <div key={ad.id} className="rounded-lg border border-border bg-secondary/30 overflow-hidden">
+                        {ad.thumbnail_url ? (
+                          <img src={ad.thumbnail_url} alt={ad.name} className="w-full aspect-square object-cover" loading="lazy" />
+                        ) : (
+                          <div className="w-full aspect-square bg-muted flex items-center justify-center">
+                            <ImageIcon className="w-8 h-8 text-muted-foreground" />
+                          </div>
+                        )}
+                        <div className="p-3">
+                          <p className="text-xs font-medium truncate mb-1">{ad.name}</p>
+                          <p className="text-[10px] text-muted-foreground truncate mb-2">{ad.campaign_name}</p>
+                          <div className="flex items-center justify-between text-[10px]">
+                            <span>Spesa: {fmtCurrency(parseFloat(ad.spend))}</span>
+                            <span>Click: {fmtNumber(parseInt(ad.clicks))}</span>
+                          </div>
+                          <div className="flex items-center justify-between text-[10px] mt-1">
+                            <span>Impr: {fmtNumber(parseInt(ad.impressions))}</span>
+                            <span>CTR: {fmtPct(parseFloat(ad.ctr || '0'))}</span>
+                          </div>
+                          <Badge className={cn('mt-2 text-[9px]', categoryBadgeColors[campaignCategories[ad.campaign_name] || 'Altro'] || categoryBadgeColors['Altro'])}>
+                            {campaignCategories[ad.campaign_name] || 'Altro'}
+                          </Badge>
                         </div>
-                      )}
-                      <div className="p-3">
-                        <p className="text-xs font-medium truncate mb-1">{ad.name}</p>
-                        <p className="text-[10px] text-muted-foreground truncate mb-2">{ad.campaign_name}</p>
-                        <div className="flex items-center justify-between text-[10px]">
-                          <span>Spesa: {fmtCurrency(parseFloat(ad.spend))}</span>
-                          <span>Click: {fmtNumber(parseInt(ad.clicks))}</span>
-                        </div>
-                        <div className="flex items-center justify-between text-[10px] mt-1">
-                          <span>Impr: {fmtNumber(parseInt(ad.impressions))}</span>
-                          <span>CTR: {fmtPct(parseFloat(ad.ctr || '0'))}</span>
-                        </div>
-                        <Badge className={cn('mt-2 text-[9px]', categoryBadgeColors[campaignCategories[ad.campaign_name] || 'Altro'] || categoryBadgeColors['Altro'])}>
-                          {campaignCategories[ad.campaign_name] || 'Altro'}
-                        </Badge>
                       </div>
-                    </div>
-                  ))}
-                </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-sm text-muted-foreground text-center py-4">Nessuna creatività trovata</p>
+                )}
               </CardContent>
-            </Card>
-          )}
+            )}
+          </Card>
 
-          {/* Campaigns Table with Category */}
+          {/* Campaigns Table */}
           <Card className="mb-6">
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <CardTitle className="text-sm font-medium">Performance Campagne</CardTitle>
@@ -370,9 +357,9 @@ export default function MetaAds() {
                   <thead>
                     <tr className="border-b border-border">
                       <th className="text-left py-3 px-2 text-muted-foreground font-medium">Campagna</th>
-                      <th className="text-left py-3 px-2 text-muted-foreground font-medium">Categoria Prodotto</th>
+                      <th className="text-left py-3 px-2 text-muted-foreground font-medium">Categoria</th>
                       <th className="text-right py-3 px-2 text-muted-foreground font-medium">Spesa</th>
-                      <th className="text-right py-3 px-2 text-muted-foreground font-medium">Impressioni</th>
+                      <th className="text-right py-3 px-2 text-muted-foreground font-medium">Impr.</th>
                       <th className="text-right py-3 px-2 text-muted-foreground font-medium">Click</th>
                       <th className="text-right py-3 px-2 text-muted-foreground font-medium">CTR</th>
                       <th className="text-right py-3 px-2 text-muted-foreground font-medium">CPC</th>
@@ -385,17 +372,10 @@ export default function MetaAds() {
                       <tr key={i} className="border-b border-border/50 hover:bg-secondary/30 transition-colors">
                         <td className="py-3 px-2 font-medium truncate max-w-[200px]">{c.name}</td>
                         <td className="py-3 px-2">
-                          <Select
-                            value={c.category}
-                            onValueChange={(val) => handleCategoryChange(c.name, val)}
-                          >
-                            <SelectTrigger className="h-7 text-xs w-[160px]">
-                              <SelectValue />
-                            </SelectTrigger>
+                          <Select value={c.category} onValueChange={(val) => setCategoryOverrides(prev => ({ ...prev, [c.name]: val }))}>
+                            <SelectTrigger className="h-7 text-xs w-[160px]"><SelectValue /></SelectTrigger>
                             <SelectContent>
-                              {['Flipper™ Collection', 'Olli™ Collection', 'Jib Collection', 'Way2', 'Textile Connections', 'Rope Deflector', 'Brand Awareness', 'Retargeting', 'Catalog / DPA', 'Altro'].map(cat => (
-                                <SelectItem key={cat} value={cat}>{cat}</SelectItem>
-                              ))}
+                              {ALL_CATEGORIES.map(cat => (<SelectItem key={cat} value={cat}>{cat}</SelectItem>))}
                             </SelectContent>
                           </Select>
                         </td>
@@ -409,7 +389,7 @@ export default function MetaAds() {
                       </tr>
                     ))}
                     {campaignData.length === 0 && (
-                      <tr><td colSpan={9} className="text-center py-6 text-muted-foreground">Nessuna campagna nel periodo selezionato</td></tr>
+                      <tr><td colSpan={9} className="text-center py-6 text-muted-foreground">Nessuna campagna</td></tr>
                     )}
                   </tbody>
                 </table>
@@ -420,16 +400,16 @@ export default function MetaAds() {
           {/* MER Table */}
           <Card>
             <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium">MER per Categoria Prodotto (Marketing Efficiency Ratio)</CardTitle>
+              <CardTitle className="text-sm font-medium">MER per Categoria (Marketing Efficiency Ratio)</CardTitle>
               <Button variant="ghost" size="icon" onClick={handleExportMER}><Download className="w-4 h-4" /></Button>
             </CardHeader>
             <CardContent>
-              <p className="text-xs text-muted-foreground mb-4">MER = Ricavo Vendite (B2C+B2B) / Spesa Ads — incrocia i dati delle campagne Meta con le vendite reali per categoria prodotto</p>
+              <p className="text-xs text-muted-foreground mb-4">MER = Ricavo Vendite (B2C+B2B) / Spesa Ads</p>
               <div className="overflow-x-auto">
                 <table className="w-full text-sm">
                   <thead>
                     <tr className="border-b border-border">
-                      <th className="text-left py-3 px-2 text-muted-foreground font-medium">Categoria Prodotto</th>
+                      <th className="text-left py-3 px-2 text-muted-foreground font-medium">Categoria</th>
                       <th className="text-right py-3 px-2 text-muted-foreground font-medium">Spesa Ads</th>
                       <th className="text-right py-3 px-2 text-muted-foreground font-medium">Ricavo Vendite</th>
                       <th className="text-right py-3 px-2 text-muted-foreground font-medium">MER</th>
@@ -439,29 +419,19 @@ export default function MetaAds() {
                     {merData.map((m, i) => (
                       <tr key={i} className="border-b border-border/50 hover:bg-secondary/30 transition-colors">
                         <td className="py-3 px-2">
-                          <Badge className={cn('text-xs', categoryBadgeColors[m.category] || categoryBadgeColors['Altro'])}>
-                            {m.category}
-                          </Badge>
+                          <Badge className={cn('text-xs', categoryBadgeColors[m.category] || categoryBadgeColors['Altro'])}>{m.category}</Badge>
                         </td>
                         <td className="text-right py-3 px-2">{fmtCurrency(m.spend)}</td>
                         <td className="text-right py-3 px-2">{fmtCurrency(m.revenue)}</td>
-                        <td className={cn("text-right py-3 px-2 font-bold", m.mer >= 1 ? 'text-success' : 'text-destructive')}>
-                          {m.mer.toFixed(2)}x
-                        </td>
+                        <td className={cn("text-right py-3 px-2 font-bold", m.mer >= 1 ? 'text-success' : 'text-destructive')}>{m.mer.toFixed(2)}x</td>
                       </tr>
                     ))}
-                    {merData.length === 0 && (
-                      <tr><td colSpan={4} className="text-center py-6 text-muted-foreground">Nessun dato disponibile</td></tr>
-                    )}
-                    {/* Total row */}
                     {merData.length > 0 && (
                       <tr className="border-t-2 border-border bg-secondary/20">
                         <td className="py-3 px-2 font-bold">TOTALE</td>
                         <td className="text-right py-3 px-2 font-bold">{fmtCurrency(merData.reduce((s, m) => s + m.spend, 0))}</td>
                         <td className="text-right py-3 px-2 font-bold">{fmtCurrency(merData.reduce((s, m) => s + m.revenue, 0))}</td>
-                        <td className={cn("text-right py-3 px-2 font-bold", totalMER >= 1 ? 'text-success' : 'text-destructive')}>
-                          {totalMER.toFixed(2)}x
-                        </td>
+                        <td className={cn("text-right py-3 px-2 font-bold", totalMER >= 1 ? 'text-success' : 'text-destructive')}>{totalMER.toFixed(2)}x</td>
                       </tr>
                     )}
                   </tbody>

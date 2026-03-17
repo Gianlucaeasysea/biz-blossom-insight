@@ -8,22 +8,6 @@ const corsHeaders = {
 const META_API_BASE = 'https://graph.facebook.com/v21.0';
 const AD_ACCOUNT_ID = 'act_449815118955538';
 
-async function fetchAllPages(url: string): Promise<any[]> {
-  const results: any[] = [];
-  let nextUrl: string | null = url;
-  while (nextUrl) {
-    const res = await fetch(nextUrl);
-    if (!res.ok) {
-      const errBody = await res.text();
-      throw new Error(`Meta API failed [${res.status}]: ${errBody}`);
-    }
-    const json = await res.json();
-    if (json.data) results.push(...json.data);
-    nextUrl = json.paging?.next || null;
-  }
-  return results;
-}
-
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -35,59 +19,67 @@ serve(async (req) => {
       throw new Error('META_ACCESS_TOKEN is not configured');
     }
 
-    const { dateFrom, dateTo } = await req.json();
+    const { dateFrom, dateTo, mode } = await req.json();
     const timeRange = JSON.stringify({ since: dateFrom, until: dateTo });
 
-    // Fetch account-level daily insights
-    const insightsUrl = `${META_API_BASE}/${AD_ACCOUNT_ID}/insights?fields=spend,impressions,clicks,ctr,cpc,cpm,reach,frequency,actions,cost_per_action_type,action_values&time_range=${encodeURIComponent(timeRange)}&time_increment=1&limit=100&access_token=${accessToken}`;
+    // MODE: 'core' (default) = daily + campaigns only, 'creatives' = ads with thumbnails
+    if (mode === 'creatives') {
+      // Fetch ads with creative thumbnails + ad-level insights
+      const [adsRes, adInsightsRes] = await Promise.all([
+        fetch(`${META_API_BASE}/${AD_ACCOUNT_ID}/ads?fields=id,name,campaign_id,campaign{name},creative{thumbnail_url,image_url},effective_status&filtering=[{"field":"impressions","operator":"GREATER_THAN","value":"0"}]&limit=50&access_token=${accessToken}`),
+        fetch(`${META_API_BASE}/${AD_ACCOUNT_ID}/insights?fields=ad_id,ad_name,campaign_name,campaign_id,spend,impressions,clicks,ctr,cpc,actions,action_values&time_range=${encodeURIComponent(timeRange)}&level=ad&limit=50&access_token=${accessToken}`),
+      ]);
 
-    // Fetch campaign-level data
-    const campaignsUrl = `${META_API_BASE}/${AD_ACCOUNT_ID}/insights?fields=campaign_name,campaign_id,spend,impressions,clicks,ctr,cpc,actions,cost_per_action_type,action_values&time_range=${encodeURIComponent(timeRange)}&level=campaign&limit=100&access_token=${accessToken}`;
+      if (!adsRes.ok) throw new Error(`Meta ads failed [${adsRes.status}]: ${await adsRes.text()}`);
+      if (!adInsightsRes.ok) throw new Error(`Meta ad insights failed [${adInsightsRes.status}]: ${await adInsightsRes.text()}`);
 
-    // Fetch ads with creative thumbnails
-    const adsUrl = `${META_API_BASE}/${AD_ACCOUNT_ID}/ads?fields=id,name,campaign_id,campaign{name},creative{thumbnail_url,title,body,image_url},effective_status&filtering=[{"field":"impressions","operator":"GREATER_THAN","value":"0"}]&limit=100&access_token=${accessToken}`;
+      const adsData = await adsRes.json();
+      const adInsightsData = await adInsightsRes.json();
 
-    // Fetch ad-level insights
-    const adInsightsUrl = `${META_API_BASE}/${AD_ACCOUNT_ID}/insights?fields=ad_id,ad_name,campaign_name,campaign_id,spend,impressions,clicks,ctr,cpc,actions,action_values&time_range=${encodeURIComponent(timeRange)}&level=ad&limit=100&access_token=${accessToken}`;
+      const insightsMap = new Map<string, any>();
+      for (const ai of (adInsightsData.data || [])) {
+        insightsMap.set(ai.ad_id, ai);
+      }
 
-    const [dailyData, campaignsData, adsData, adInsightsData] = await Promise.all([
-      fetchAllPages(insightsUrl),
-      fetchAllPages(campaignsUrl),
-      fetchAllPages(adsUrl),
-      fetchAllPages(adInsightsUrl),
-    ]);
+      const ads = (adsData.data || []).map((ad: any) => {
+        const insights = insightsMap.get(ad.id);
+        return {
+          id: ad.id,
+          name: ad.name,
+          campaign_id: ad.campaign_id || ad.campaign?.id,
+          campaign_name: ad.campaign?.name || insights?.campaign_name || '',
+          effective_status: ad.effective_status,
+          thumbnail_url: ad.creative?.thumbnail_url || ad.creative?.image_url || null,
+          spend: insights?.spend || '0',
+          impressions: insights?.impressions || '0',
+          clicks: insights?.clicks || '0',
+          ctr: insights?.ctr || '0',
+          cpc: insights?.cpc || '0',
+          actions: insights?.actions || [],
+          action_values: insights?.action_values || [],
+        };
+      });
 
-    // Merge ad info with insights
-    const adInsightsMap = new Map<string, any>();
-    for (const ai of adInsightsData) {
-      adInsightsMap.set(ai.ad_id, ai);
+      return new Response(JSON.stringify({ ads }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
     }
 
-    const ads = adsData.map((ad: any) => {
-      const insights = adInsightsMap.get(ad.id);
-      return {
-        id: ad.id,
-        name: ad.name,
-        campaign_id: ad.campaign_id || ad.campaign?.id,
-        campaign_name: ad.campaign?.name || insights?.campaign_name || '',
-        effective_status: ad.effective_status,
-        thumbnail_url: ad.creative?.thumbnail_url || ad.creative?.image_url || null,
-        creative_title: ad.creative?.title || null,
-        creative_body: ad.creative?.body || null,
-        spend: insights?.spend || '0',
-        impressions: insights?.impressions || '0',
-        clicks: insights?.clicks || '0',
-        ctr: insights?.ctr || '0',
-        cpc: insights?.cpc || '0',
-        actions: insights?.actions || [],
-        action_values: insights?.action_values || [],
-      };
-    });
+    // DEFAULT: core data - daily insights + campaign breakdown
+    const [insightsRes, campaignsRes] = await Promise.all([
+      fetch(`${META_API_BASE}/${AD_ACCOUNT_ID}/insights?fields=spend,impressions,clicks,ctr,cpc,cpm,reach,frequency,actions,cost_per_action_type,action_values&time_range=${encodeURIComponent(timeRange)}&time_increment=1&limit=100&access_token=${accessToken}`),
+      fetch(`${META_API_BASE}/${AD_ACCOUNT_ID}/insights?fields=campaign_name,campaign_id,spend,impressions,clicks,ctr,cpc,actions,cost_per_action_type,action_values&time_range=${encodeURIComponent(timeRange)}&level=campaign&limit=100&access_token=${accessToken}`),
+    ]);
+
+    if (!insightsRes.ok) throw new Error(`Meta insights failed [${insightsRes.status}]: ${await insightsRes.text()}`);
+    if (!campaignsRes.ok) throw new Error(`Meta campaigns failed [${campaignsRes.status}]: ${await campaignsRes.text()}`);
+
+    const insightsData = await insightsRes.json();
+    const campaignsData = await campaignsRes.json();
 
     return new Response(JSON.stringify({
-      daily: dailyData,
-      campaigns: campaignsData,
-      ads,
+      daily: insightsData.data || [],
+      campaigns: campaignsData.data || [],
     }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
