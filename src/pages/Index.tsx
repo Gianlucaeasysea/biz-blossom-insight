@@ -12,6 +12,7 @@ import { CountryBreakdown } from '@/components/dashboard/CountryBreakdown';
 import { CollectionBreakdown } from '@/components/dashboard/CollectionBreakdown';
 import { ConnectionStatus } from '@/components/dashboard/ConnectionStatus';
 import { CustomerType } from '@/types/analytics';
+import { NavLink } from '@/components/NavLink';
 import { useShopifyOrders } from '@/hooks/useShopifyOrders';
 import { useGoogleSheetsOrders } from '@/hooks/useGoogleSheetsOrders';
 import {
@@ -72,6 +73,12 @@ export default function Index() {
     <div className="min-h-screen bg-background p-4 sm:p-6 lg:p-8">
       <div className="max-w-[1600px] mx-auto">
         <DashboardHeader onRefresh={handleRefresh} isLoading={isFetching} />
+
+        {/* Navigation */}
+        <div className="flex gap-2 mb-6">
+          <NavLink to="/" className="px-4 py-2 rounded-lg text-sm font-medium bg-secondary text-secondary-foreground hover:bg-secondary/80 transition-colors" activeClassName="bg-primary text-primary-foreground">Sales Dashboard</NavLink>
+          <NavLink to="/meta-ads" className="px-4 py-2 rounded-lg text-sm font-medium bg-secondary text-secondary-foreground hover:bg-secondary/80 transition-colors" activeClassName="bg-primary text-primary-foreground">Meta Ads</NavLink>
+        </div>
 
         {/* Errors */}
         {isErrorShopify && (

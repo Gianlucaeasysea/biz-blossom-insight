@@ -5,3 +5,6 @@ verify_jwt = false
 
 [functions.google-sheets-orders]
 verify_jwt = false
+
+[functions.meta-ads]
+verify_jwt = false
