@@ -11,6 +11,8 @@ interface GoogleSheetsResponse {
     customerId: string;
     customerName: string;
     date: string;
+    deliveryDate: string | null;
+    payedDate: string | null;
     products: Array<{
       id: string;
       name: string;
