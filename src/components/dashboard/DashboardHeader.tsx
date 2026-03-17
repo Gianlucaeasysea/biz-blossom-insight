@@ -1,6 +1,6 @@
-import { motion } from 'framer-motion';
-import { BarChart3, Settings, RefreshCw, Plug } from 'lucide-react';
+import { RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import companyLogo from '@/assets/company-logo.png';
 
 interface DashboardHeaderProps {
   onRefresh?: () => void;
@@ -9,52 +9,27 @@ interface DashboardHeaderProps {
 
 export function DashboardHeader({ onRefresh, isLoading }: DashboardHeaderProps) {
   return (
-    <motion.header
-      initial={{ opacity: 0, y: -20 }}
-      animate={{ opacity: 1, y: 0 }}
-      className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8"
-    >
+    <header className="flex items-center justify-between mb-8">
       <div className="flex items-center gap-4">
-        <div className="p-3 rounded-xl bg-gradient-to-br from-primary/20 to-accent/20 glow-primary">
-          <BarChart3 className="w-8 h-8 text-primary" />
-        </div>
+        <img src={companyLogo} alt="Logo" className="h-8 w-auto brightness-90" />
+        <div className="h-6 w-px bg-border" />
         <div>
-          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">
-            Analytics Dashboard
+          <h1 className="text-lg font-semibold tracking-tight text-foreground">
+            Analytics
           </h1>
-          <p className="text-muted-foreground">
-            Vendite B2C + B2B unificate
-          </p>
+          <p className="text-xs text-muted-foreground">B2C + B2B</p>
         </div>
       </div>
 
-      <div className="flex items-center gap-2">
-        <Button
-          variant="outline"
-          size="sm"
-          className="bg-muted/50 border-border/50"
-        >
-          <Plug className="w-4 h-4 mr-2" />
-          Connessioni
-        </Button>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={onRefresh}
-          disabled={isLoading}
-          className="bg-muted/50 border-border/50"
-        >
-          <RefreshCw className={`w-4 h-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
-          Aggiorna
-        </Button>
-        <Button
-          variant="outline"
-          size="sm"
-          className="bg-muted/50 border-border/50"
-        >
-          <Settings className="w-4 h-4" />
-        </Button>
-      </div>
-    </motion.header>
+      <Button
+        variant="ghost"
+        size="sm"
+        onClick={onRefresh}
+        disabled={isLoading}
+        className="text-muted-foreground hover:text-foreground"
+      >
+        <RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} />
+      </Button>
+    </header>
   );
 }
