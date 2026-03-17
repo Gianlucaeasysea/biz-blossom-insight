@@ -18,7 +18,9 @@ import {
   calculateKPIs,
   getTopProducts,
   getTopCustomers,
+  getB2CSkuBreakdown,
 } from '@/lib/mock-data';
+import { B2CSkuTable } from '@/components/dashboard/B2CSkuTable';
 import { Loader2, AlertCircle } from 'lucide-react';
 
 export default function Index() {
@@ -64,6 +66,7 @@ export default function Index() {
   const channelData = useMemo(() => generateChannelData(filteredOrders), [filteredOrders]);
   const topProducts = useMemo(() => getTopProducts(filteredOrders), [filteredOrders]);
   const topCustomers = useMemo(() => getTopCustomers(filteredOrders), [filteredOrders]);
+  const b2cSkuData = useMemo(() => getB2CSkuBreakdown(filteredOrders), [filteredOrders]);
 
   // Data sources status
   const dataSources = [
@@ -128,7 +131,7 @@ export default function Index() {
         </div>
 
         {/* KPI Cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 mb-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4 mb-6">
           {kpis.map((kpi, index) => (
             <KPICard key={kpi.label} data={kpi} index={index} />
           ))}
@@ -158,6 +161,11 @@ export default function Index() {
           />
           <TopProducts products={topProducts} />
           <TopCustomers customers={topCustomers} />
+        </div>
+
+        {/* B2C SKU Breakdown */}
+        <div className="mb-6">
+          <B2CSkuTable data={b2cSkuData} />
         </div>
 
         {/* Data Table */}

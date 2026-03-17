@@ -152,16 +152,21 @@ export function calculateKPIs(orders: Order[]): KPIData[] {
   const previousPeriod = orders.filter(o => o.date >= sixtyDaysAgo && o.date < thirtyDaysAgo);
 
   const calcTotal = (list: Order[]) => list.reduce((sum, o) => sum + o.totalAmount, 0);
-  const calcB2C = (list: Order[]) => list.filter(o => o.customerType === 'B2C').reduce((sum, o) => sum + o.totalAmount, 0);
+  const calcB2CFatturato = (list: Order[]) => list.filter(o => o.customerType === 'B2C' && o.status === 'completed').reduce((sum, o) => sum + o.totalAmount, 0);
+  const calcB2CRaccolti = (list: Order[]) => list.filter(o => o.customerType === 'B2C').reduce((sum, o) => sum + o.totalAmount, 0);
   const calcB2B = (list: Order[]) => list.filter(o => o.customerType === 'B2B').reduce((sum, o) => sum + o.totalAmount, 0);
 
   const currentTotal = calcTotal(currentPeriod);
   const previousTotal = calcTotal(previousPeriod);
   const totalChange = previousTotal ? ((currentTotal - previousTotal) / previousTotal) * 100 : 0;
 
-  const currentB2C = calcB2C(currentPeriod);
-  const previousB2C = calcB2C(previousPeriod);
-  const b2cChange = previousB2C ? ((currentB2C - previousB2C) / previousB2C) * 100 : 0;
+  const currentB2CFatt = calcB2CFatturato(currentPeriod);
+  const previousB2CFatt = calcB2CFatturato(previousPeriod);
+  const b2cFattChange = previousB2CFatt ? ((currentB2CFatt - previousB2CFatt) / previousB2CFatt) * 100 : 0;
+
+  const currentB2CRacc = calcB2CRaccolti(currentPeriod);
+  const previousB2CRacc = calcB2CRaccolti(previousPeriod);
+  const b2cRaccChange = previousB2CRacc ? ((currentB2CRacc - previousB2CRacc) / previousB2CRacc) * 100 : 0;
 
   const currentB2B = calcB2B(currentPeriod);
   const previousB2B = calcB2B(previousPeriod);
@@ -187,10 +192,19 @@ export function calculateKPIs(orders: Order[]): KPIData[] {
     },
     {
       label: 'Fatturato B2C',
-      value: currentB2C,
-      previousValue: previousB2C,
-      changePercent: Math.round(b2cChange * 10) / 10,
-      trend: b2cChange >= 0 ? 'up' : 'down',
+      value: currentB2CFatt,
+      previousValue: previousB2CFatt,
+      changePercent: Math.round(b2cFattChange * 10) / 10,
+      trend: b2cFattChange >= 0 ? 'up' : 'down',
+      format: 'currency',
+      currency: 'EUR',
+    },
+    {
+      label: 'Ordini Raccolti B2C',
+      value: currentB2CRacc,
+      previousValue: previousB2CRacc,
+      changePercent: Math.round(b2cRaccChange * 10) / 10,
+      trend: b2cRaccChange >= 0 ? 'up' : 'down',
       format: 'currency',
       currency: 'EUR',
     },
@@ -221,6 +235,45 @@ export function calculateKPIs(orders: Order[]): KPIData[] {
       currency: 'EUR',
     },
   ];
+}
+
+// Get B2C SKU breakdown with fatturato (completed) and ordini raccolti (all)
+export function getB2CSkuBreakdown(orders: Order[]): Array<{
+  sku: string;
+  name: string;
+  fatturato: number;
+  ordiniRaccolti: number;
+  qtyEvasi: number;
+  qtyTotali: number;
+}> {
+  const skuMap: Record<string, { name: string; fatturato: number; ordiniRaccolti: number; qtyEvasi: number; qtyTotali: number }> = {};
+
+  const b2cOrders = orders.filter(o => o.customerType === 'B2C');
+
+  b2cOrders.forEach(order => {
+    order.products.forEach(product => {
+      if (!skuMap[product.sku]) {
+        skuMap[product.sku] = { name: product.name, fatturato: 0, ordiniRaccolti: 0, qtyEvasi: 0, qtyTotali: 0 };
+      }
+      skuMap[product.sku].ordiniRaccolti += product.totalPrice;
+      skuMap[product.sku].qtyTotali += product.quantity;
+      if (order.status === 'completed') {
+        skuMap[product.sku].fatturato += product.totalPrice;
+        skuMap[product.sku].qtyEvasi += product.quantity;
+      }
+    });
+  });
+
+  return Object.entries(skuMap)
+    .map(([sku, data]) => ({
+      sku,
+      name: data.name,
+      fatturato: Math.round(data.fatturato * 100) / 100,
+      ordiniRaccolti: Math.round(data.ordiniRaccolti * 100) / 100,
+      qtyEvasi: data.qtyEvasi,
+      qtyTotali: data.qtyTotali,
+    }))
+    .sort((a, b) => b.ordiniRaccolti - a.ordiniRaccolti);
 }
 
 // Get top products
