@@ -337,6 +337,14 @@ export default function MetaAds() {
     downloadCsv('meta-ads-mer', ['Categoria', 'Spesa Ads', 'Net Sales B2C', 'MER'],
       merData.map(r => [r.category, r.spend.toFixed(2), r.revenue.toFixed(2), r.mer.toFixed(2)]));
   };
+  const handleExportUtmContent = () => {
+    downloadCsv('utm-content-sales', ['UTM Content', 'Net Sales B2C', 'N. Ordini'],
+      utmContentSales.map(r => [r.utmContent, r.netSales.toFixed(2), r.orderCount]));
+  };
+  const handleExportAdsetMer = () => {
+    downloadCsv('adset-mer', ['Gruppo Inserzioni', 'Campagna', 'Categoria', 'Spesa Ads', 'Net Sales B2C Allocato', 'MER'],
+      adsetMerData.map(r => [r.name, r.campaignName, r.category, r.spend.toFixed(2), r.allocatedRevenue.toFixed(2), r.mer.toFixed(2)]));
+  };
   const handleExportUtm = () => {
     downloadCsv('meta-utm-match', ['Ordine', 'Data', 'Importo Netto', 'UTM Source', 'UTM Campaign', 'UTM Content', 'Ad Matched', 'Campagna Meta'],
       utmCrossRef.map(r => [r.orderNumber, r.orderDate, r.netAmount.toFixed(2), r.utmSource, r.utmCampaign, r.utmContent, r.matchedAd, r.matchedCampaign]));
