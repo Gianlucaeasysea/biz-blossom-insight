@@ -242,6 +242,9 @@ serve(async (req) => {
 
       const category = get(iCollection) || 'B2B';
 
+      const orderTypeValue = get(iType);
+      const countryValue = get(iCountry);
+
       orders.push({
         id: `gsheets-${i}`,
         orderNumber: code || `GS-${i}`,
@@ -266,6 +269,8 @@ serve(async (req) => {
         channel: 'wholesale',
         agent: get(iSender) || get(iOwner),
         status,
+        orderType: orderTypeValue || undefined,
+        country: countryValue || undefined,
       });
     }
 
