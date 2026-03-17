@@ -88,12 +88,20 @@ export default function Index() {
       <div className="max-w-[1600px] mx-auto">
         <DashboardHeader onRefresh={handleRefresh} isLoading={isFetching} />
 
-        {/* Error Banner */}
-        {isError && (
+        {/* Error Banners */}
+        {isErrorShopify && (
           <div className="mb-6 p-4 rounded-lg bg-destructive/10 border border-destructive/20 flex items-center gap-3">
             <AlertCircle className="w-5 h-5 text-destructive shrink-0" />
             <p className="text-sm text-destructive">
-              Errore nel caricamento dati Shopify: {error instanceof Error ? error.message : 'Errore sconosciuto'}
+              Errore Shopify: {errorShopify instanceof Error ? errorShopify.message : 'Errore sconosciuto'}
+            </p>
+          </div>
+        )}
+        {isErrorGS && (
+          <div className="mb-6 p-4 rounded-lg bg-destructive/10 border border-destructive/20 flex items-center gap-3">
+            <AlertCircle className="w-5 h-5 text-destructive shrink-0" />
+            <p className="text-sm text-destructive">
+              Errore Google Sheets: {errorGS instanceof Error ? errorGS.message : 'Errore sconosciuto'}
             </p>
           </div>
         )}
