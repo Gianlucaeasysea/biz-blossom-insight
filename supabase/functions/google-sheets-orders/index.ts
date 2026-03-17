@@ -18,8 +18,19 @@ serve(async (req) => {
       throw new Error('Missing GOOGLE_SHEETS_API_KEY secret');
     }
 
-    // Fetch all rows from the first sheet
-    const range = 'A1:AG5000'; // Cover all columns up to Collection (col AG)
+    // First, get spreadsheet metadata to find the correct sheet name
+    const metaUrl = `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}?key=${apiKey}&fields=sheets.properties.title`;
+    const metaResponse = await fetch(metaUrl);
+    if (!metaResponse.ok) {
+      const errorText = await metaResponse.text();
+      throw new Error(`Google Sheets metadata error: ${metaResponse.status} - ${errorText}`);
+    }
+    const metaData = await metaResponse.json();
+    const sheetName = metaData.sheets?.[0]?.properties?.title || 'Sheet1';
+    console.log('Sheet name:', sheetName);
+
+    // Fetch all rows from the sheet
+    const range = `'${sheetName}'!A1:AG5000`;
     const sheetsUrl = `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/${encodeURIComponent(range)}?key=${apiKey}`;
 
     console.log('Fetching Google Sheets data...');
