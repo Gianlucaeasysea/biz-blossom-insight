@@ -131,9 +131,9 @@ export function OrdersTrendChart({ orders, dateRange }: OrdersTrendChartProps) {
             <XAxis dataKey="date" stroke="hsl(215, 15%, 35%)" fontSize={10} tickLine={false} axisLine={false} />
             <YAxis stroke="hsl(215, 15%, 35%)" fontSize={10} tickLine={false} axisLine={false} tickFormatter={formatCurrency} />
             <Tooltip content={<CustomTooltip />} />
-            <Line type="monotone" dataKey="b2c" name="B2C" stroke="hsl(215, 85%, 55%)" strokeWidth={2} dot={false} />
-            <Line type="monotone" dataKey="b2b" name="B2B" stroke="hsl(25, 95%, 55%)" strokeWidth={2} dot={false} />
-            <Line type="monotone" dataKey="b2bCustom" name="B2B Custom" stroke="hsl(40, 90%, 55%)" strokeWidth={2} strokeDasharray="5 5" dot={false} />
+            <Line type="monotone" dataKey="b2c" name="B2C" stroke="hsl(215, 85%, 55%)" strokeWidth={2} dot={createPeakDot('b2c', 'hsl(215, 85%, 55%)')} activeDot={{ r: 5 }} />
+            <Line type="monotone" dataKey="b2b" name="B2B" stroke="hsl(25, 95%, 55%)" strokeWidth={2} dot={createPeakDot('b2b', 'hsl(25, 95%, 55%)')} activeDot={{ r: 5 }} />
+            <Line type="monotone" dataKey="b2bCustom" name="B2B Custom" stroke="hsl(40, 90%, 55%)" strokeWidth={2} strokeDasharray="5 5" dot={createPeakDot('b2bCustom', 'hsl(40, 90%, 55%)')} activeDot={{ r: 5 }} />
           </LineChart>
         </ResponsiveContainer>
       </div>
