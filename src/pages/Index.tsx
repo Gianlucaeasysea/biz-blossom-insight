@@ -19,8 +19,10 @@ import {
   getTopProducts,
   getTopCustomers,
   getB2CSkuBreakdown,
+  getB2BSkuBreakdown,
 } from '@/lib/mock-data';
 import { B2CSkuTable } from '@/components/dashboard/B2CSkuTable';
+import { B2BSkuTable } from '@/components/dashboard/B2BSkuTable';
 import { Loader2, AlertCircle } from 'lucide-react';
 
 export default function Index() {
