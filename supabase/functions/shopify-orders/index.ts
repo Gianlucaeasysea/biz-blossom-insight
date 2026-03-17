@@ -65,8 +65,9 @@ serve(async (req) => {
     const createdAtMin = url.searchParams.get('created_at_min');
     const createdAtMax = url.searchParams.get('created_at_max');
 
-    // Build Shopify API URL
-    let shopifyUrl = `https://${storeName}.myshopify.com/admin/api/2024-01/orders.json?limit=${limit}&status=${status}`;
+    // Build base Shopify API URL
+    const baseParams = `limit=${limit}&status=${status}`;
+    let shopifyUrl = `https://${storeName}.myshopify.com/admin/api/2024-01/orders.json?${baseParams}`;
     
     if (createdAtMin) {
       shopifyUrl += `&created_at_min=${createdAtMin}`;
@@ -75,57 +76,89 @@ serve(async (req) => {
       shopifyUrl += `&created_at_max=${createdAtMax}`;
     }
 
-    console.log(`Fetching orders from: ${shopifyUrl}`);
+    // Paginate through all orders using cursor-based pagination
+    const allOrders: ShopifyOrder[] = [];
+    let nextPageUrl: string | null = shopifyUrl;
+    let pageCount = 0;
+    const maxPages = 20; // Safety limit: 20 pages × 250 = up to 5000 orders
 
-    // Fetch with retry logic for transient errors (429/5xx) and network/body-read errors
-    let data: { orders?: ShopifyOrder[] } | null = null;
-    const maxRetries = 3;
-    let lastError: Error | null = null;
+    while (nextPageUrl && pageCount < maxPages) {
+      pageCount++;
+      console.log(`Fetching orders page ${pageCount}: ${nextPageUrl}`);
 
-    for (let attempt = 0; attempt < maxRetries; attempt++) {
-      try {
-        const response = await fetch(shopifyUrl, {
-          method: 'GET',
-          headers: {
-            'X-Shopify-Access-Token': accessToken,
-            'Content-Type': 'application/json',
-          },
-        });
+      let data: { orders?: ShopifyOrder[] } | null = null;
+      const maxRetries = 3;
+      let lastError: Error | null = null;
 
-        if (!response.ok) {
-          const errorText = await response.text().catch(() => 'Unable to read error body');
+      for (let attempt = 0; attempt < maxRetries; attempt++) {
+        try {
+          const response = await fetch(nextPageUrl, {
+            method: 'GET',
+            headers: {
+              'X-Shopify-Access-Token': accessToken,
+              'Content-Type': 'application/json',
+            },
+          });
 
-          if ((response.status === 429 || response.status >= 500) && attempt < maxRetries - 1) {
-            const retryAfter = response.headers.get('Retry-After');
-            const waitMs = retryAfter ? parseInt(retryAfter, 10) * 1000 : Math.pow(2, attempt) * 1000;
-            console.log(`Shopify returned ${response.status}, retrying in ${waitMs}ms (attempt ${attempt + 1}/${maxRetries})`);
-            await new Promise((r) => setTimeout(r, Math.min(waitMs, 60000)));
-            continue;
+          if (!response.ok) {
+            const errorText = await response.text().catch(() => 'Unable to read error body');
+
+            if ((response.status === 429 || response.status >= 500) && attempt < maxRetries - 1) {
+              const retryAfter = response.headers.get('Retry-After');
+              const waitMs = retryAfter ? parseInt(retryAfter, 10) * 1000 : Math.pow(2, attempt) * 1000;
+              console.log(`Shopify returned ${response.status}, retrying in ${waitMs}ms (attempt ${attempt + 1}/${maxRetries})`);
+              await new Promise((r) => setTimeout(r, Math.min(waitMs, 60000)));
+              continue;
+            }
+
+            throw new Error(`Shopify API error: ${response.status} - ${errorText}`);
           }
 
-          throw new Error(`Shopify API error: ${response.status} - ${errorText}`);
-        }
+          // Parse next page URL from Link header before reading body
+          const linkHeader = response.headers.get('Link');
+          nextPageUrl = null;
+          if (linkHeader) {
+            const nextMatch = linkHeader.match(/<([^>]+)>;\s*rel="next"/);
+            if (nextMatch) {
+              nextPageUrl = nextMatch[1];
+            }
+          }
 
-        const responseText = await response.text();
-        data = JSON.parse(responseText);
-        break;
-      } catch (error) {
-        lastError = error instanceof Error ? error : new Error(String(error));
+          const responseText = await response.text();
+          data = JSON.parse(responseText);
+          break;
+        } catch (error) {
+          lastError = error instanceof Error ? error : new Error(String(error));
 
-        if (attempt < maxRetries - 1) {
-          const waitMs = Math.pow(2, attempt) * 1000;
-          console.log(`Shopify request/body read failed on attempt ${attempt + 1}/${maxRetries}: ${lastError.message}. Retrying in ${waitMs}ms...`);
-          await new Promise((r) => setTimeout(r, waitMs));
-          continue;
+          if (attempt < maxRetries - 1) {
+            const waitMs = Math.pow(2, attempt) * 1000;
+            console.log(`Shopify request failed on attempt ${attempt + 1}/${maxRetries}: ${lastError.message}. Retrying in ${waitMs}ms...`);
+            await new Promise((r) => setTimeout(r, waitMs));
+            continue;
+          }
         }
+      }
+
+      if (!data) {
+        throw lastError ?? new Error(`Failed to fetch orders page ${pageCount} after ${maxRetries} attempts.`);
+      }
+
+      const pageOrders = data.orders || [];
+      allOrders.push(...pageOrders);
+
+      // If we got fewer orders than the limit, there are no more pages
+      if (pageOrders.length < parseInt(limit, 10)) {
+        nextPageUrl = null;
+      }
+
+      // Small delay between pages to respect rate limits
+      if (nextPageUrl) {
+        await new Promise((r) => setTimeout(r, 500));
       }
     }
 
-    if (!data) {
-      throw lastError ?? new Error(`Failed to fetch orders from Shopify after ${maxRetries} attempts.`);
-    }
-
-    const orders: ShopifyOrder[] = data.orders || [];
+    console.log(`Fetched ${allOrders.length} total orders across ${pageCount} pages`);
+    const orders = allOrders;
 
     // Transform Shopify orders to our unified format
     const transformedOrders = orders.map((order) => {
