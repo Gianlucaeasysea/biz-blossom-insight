@@ -10,6 +10,7 @@ import { TopProducts, TopCustomers } from '@/components/dashboard/TopList';
 import { ConnectionStatus } from '@/components/dashboard/ConnectionStatus';
 import { CustomerType } from '@/types/analytics';
 import { useShopifyOrders } from '@/hooks/useShopifyOrders';
+import { useGoogleSheetsOrders } from '@/hooks/useGoogleSheetsOrders';
 import {
   generateTimeSeriesData,
   generateCategoryData,
@@ -28,22 +29,30 @@ export default function Index() {
   });
 
   // Fetch real Shopify orders
-  const { data: shopifyOrders = [], isLoading, isError, error, refetch, isFetching } = useShopifyOrders({
+  const { data: shopifyOrders = [], isLoading: isLoadingShopify, isError: isErrorShopify, error: errorShopify, refetch: refetchShopify, isFetching: isFetchingShopify } = useShopifyOrders({
     limit: 250,
     status: 'any',
     createdAtMin: subDays(new Date(), 365),
     enabled: true,
   });
 
+  // Fetch Google Sheets B2B orders
+  const { data: gsOrders = [], isLoading: isLoadingGS, isError: isErrorGS, error: errorGS, refetch: refetchGS, isFetching: isFetchingGS } = useGoogleSheetsOrders(true);
+
+  // Merge all orders
+  const allOrders = useMemo(() => [...shopifyOrders, ...gsOrders], [shopifyOrders, gsOrders]);
+  const isLoading = isLoadingShopify || isLoadingGS;
+  const isFetching = isFetchingShopify || isFetchingGS;
+
   // Filter orders based on current filters
   const filteredOrders = useMemo(() => {
-    return shopifyOrders.filter((order) => {
+    return allOrders.filter((order) => {
       const orderDate = order.date instanceof Date ? order.date : new Date(order.date);
       const inDateRange = orderDate >= dateRange.start && orderDate <= dateRange.end;
       const matchesType = customerTypeFilter === 'all' || order.customerType === customerTypeFilter;
       return inDateRange && matchesType;
     });
-  }, [shopifyOrders, dateRange, customerTypeFilter]);
+  }, [allOrders, dateRange, customerTypeFilter]);
 
   // Calculate derived data
   const kpis = useMemo(() => calculateKPIs(filteredOrders), [filteredOrders]);
