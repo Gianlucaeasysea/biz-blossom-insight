@@ -155,9 +155,9 @@ export function calculateKPIs(orders: Order[]): KPIData[] {
   const calcB2CFatturato = (list: Order[]) => list.filter(o => o.customerType === 'B2C' && o.status === 'completed').reduce((sum, o) => sum + o.totalAmount, 0);
   const calcB2CRaccolti = (list: Order[]) => list.filter(o => o.customerType === 'B2C').reduce((sum, o) => sum + o.totalAmount, 0);
 
-  // B2B: Fatturato = filter by deliveryDate in period, sum product prices
+  // B2B: Fatturato = filter by status 'completed' (DELIVERED) + deliveryDate in period, sum product prices
   const calcB2BFatturato = (allOrders: Order[], start: Date, end: Date) => allOrders
-    .filter(o => o.customerType === 'B2B' && o.deliveryDate && o.deliveryDate >= start && o.deliveryDate <= end)
+    .filter(o => o.customerType === 'B2B' && o.status === 'completed' && o.deliveryDate && o.deliveryDate >= start && o.deliveryDate <= end)
     .reduce((sum, o) => sum + o.products.reduce((ps, p) => ps + p.totalPrice, 0), 0);
 
   // B2B: Ordini Raccolti = all B2B orders, sum product prices (filtered by order date - already done via currentPeriod)
