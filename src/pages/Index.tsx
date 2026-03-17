@@ -12,6 +12,7 @@ import { CountryBreakdown } from '@/components/dashboard/CountryBreakdown';
 import { CollectionBreakdown } from '@/components/dashboard/CollectionBreakdown';
 import { ConnectionStatus } from '@/components/dashboard/ConnectionStatus';
 import { CustomerType } from '@/types/analytics';
+import { NavLink } from '@/components/NavLink';
 import { useShopifyOrders } from '@/hooks/useShopifyOrders';
 import { useGoogleSheetsOrders } from '@/hooks/useGoogleSheetsOrders';
 import {
