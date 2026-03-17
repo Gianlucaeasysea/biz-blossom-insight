@@ -29,11 +29,14 @@ serve(async (req) => {
     const sheetNames = metaData.sheets?.map((s: { properties: { title: string } }) => s.properties.title) || [];
     console.log('All sheet names:', JSON.stringify(sheetNames));
 
-    // Find the orders sheet - look for keywords like "order", "ordini", or use the one with most columns
-    const orderSheetKeywords = ['order', 'ordini', 'vendite', 'sales', 'b2b'];
-    let sheetName = sheetNames.find((name: string) => 
-      orderSheetKeywords.some(kw => name.toLowerCase().includes(kw))
-    ) || sheetNames[1] || sheetNames[0]; // fallback to second sheet, then first
+    // Use the "B2B" sheet which contains the order data with proper headers
+    const orderSheetKeywords = ['b2b'];
+    let sheetName = sheetNames.find((name: string) => {
+      const lower = name.toLowerCase().trim();
+      return lower === 'b2b'; // Exact match first
+    }) || sheetNames.find((name: string) => 
+      orderSheetKeywords.some((kw: string) => name.toLowerCase().includes(kw))
+    ) || sheetNames[1] || sheetNames[0];
     
     console.log('Using sheet:', sheetName);
 
