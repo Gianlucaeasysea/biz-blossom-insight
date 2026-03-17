@@ -252,7 +252,6 @@ export function getCombinedCollectionBreakdown(orders: Order[]): Array<{
     }))
     .sort((a, b) => b.totalSales - a.totalSales);
 }
-}
 
 // Country breakdown - B2C uses destination country, B2B uses country field
 export function getCountryBreakdown(orders: Order[], skuFilter?: string): Array<{
