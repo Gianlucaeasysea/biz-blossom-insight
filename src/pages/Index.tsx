@@ -10,6 +10,7 @@ import { TopProducts, TopCustomers } from '@/components/dashboard/TopList';
 import { ConnectionStatus } from '@/components/dashboard/ConnectionStatus';
 import { CustomerType } from '@/types/analytics';
 import { useShopifyOrders } from '@/hooks/useShopifyOrders';
+import { useGoogleSheetsOrders } from '@/hooks/useGoogleSheetsOrders';
 import {
   generateTimeSeriesData,
   generateCategoryData,
@@ -28,22 +29,30 @@ export default function Index() {
   });
 
   // Fetch real Shopify orders
-  const { data: shopifyOrders = [], isLoading, isError, error, refetch, isFetching } = useShopifyOrders({
+  const { data: shopifyOrders = [], isLoading: isLoadingShopify, isError: isErrorShopify, error: errorShopify, refetch: refetchShopify, isFetching: isFetchingShopify } = useShopifyOrders({
     limit: 250,
     status: 'any',
     createdAtMin: subDays(new Date(), 365),
     enabled: true,
   });
 
+  // Fetch Google Sheets B2B orders
+  const { data: gsOrders = [], isLoading: isLoadingGS, isError: isErrorGS, error: errorGS, refetch: refetchGS, isFetching: isFetchingGS } = useGoogleSheetsOrders(true);
+
+  // Merge all orders
+  const allOrders = useMemo(() => [...shopifyOrders, ...gsOrders], [shopifyOrders, gsOrders]);
+  const isLoading = isLoadingShopify || isLoadingGS;
+  const isFetching = isFetchingShopify || isFetchingGS;
+
   // Filter orders based on current filters
   const filteredOrders = useMemo(() => {
-    return shopifyOrders.filter((order) => {
+    return allOrders.filter((order) => {
       const orderDate = order.date instanceof Date ? order.date : new Date(order.date);
       const inDateRange = orderDate >= dateRange.start && orderDate <= dateRange.end;
       const matchesType = customerTypeFilter === 'all' || order.customerType === customerTypeFilter;
       return inDateRange && matchesType;
     });
-  }, [shopifyOrders, dateRange, customerTypeFilter]);
+  }, [allOrders, dateRange, customerTypeFilter]);
 
   // Calculate derived data
   const kpis = useMemo(() => calculateKPIs(filteredOrders), [filteredOrders]);
@@ -58,19 +67,20 @@ export default function Index() {
     {
       name: 'Shopify Store',
       type: 'shopify' as const,
-      status: isLoading ? 'syncing' as const : isError ? 'disconnected' as const : 'connected' as const,
+      status: isLoadingShopify ? 'syncing' as const : isErrorShopify ? 'disconnected' as const : 'connected' as const,
       recordCount: shopifyOrders.length,
     },
     {
       name: 'Google Sheets B2B',
       type: 'google_sheets' as const,
-      status: 'disconnected' as const,
-      recordCount: 0,
+      status: isLoadingGS ? 'syncing' as const : isErrorGS ? 'disconnected' as const : 'connected' as const,
+      recordCount: gsOrders.length,
     },
   ];
 
   const handleRefresh = () => {
-    refetch();
+    refetchShopify();
+    refetchGS();
   };
 
   return (
@@ -78,12 +88,20 @@ export default function Index() {
       <div className="max-w-[1600px] mx-auto">
         <DashboardHeader onRefresh={handleRefresh} isLoading={isFetching} />
 
-        {/* Error Banner */}
-        {isError && (
+        {/* Error Banners */}
+        {isErrorShopify && (
           <div className="mb-6 p-4 rounded-lg bg-destructive/10 border border-destructive/20 flex items-center gap-3">
             <AlertCircle className="w-5 h-5 text-destructive shrink-0" />
             <p className="text-sm text-destructive">
-              Errore nel caricamento dati Shopify: {error instanceof Error ? error.message : 'Errore sconosciuto'}
+              Errore Shopify: {errorShopify instanceof Error ? errorShopify.message : 'Errore sconosciuto'}
+            </p>
+          </div>
+        )}
+        {isErrorGS && (
+          <div className="mb-6 p-4 rounded-lg bg-destructive/10 border border-destructive/20 flex items-center gap-3">
+            <AlertCircle className="w-5 h-5 text-destructive shrink-0" />
+            <p className="text-sm text-destructive">
+              Errore Google Sheets: {errorGS instanceof Error ? errorGS.message : 'Errore sconosciuto'}
             </p>
           </div>
         )}
