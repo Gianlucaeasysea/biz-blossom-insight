@@ -75,7 +75,7 @@ serve(async (req) => {
       const get = (idx: number) => (idx >= 0 && idx < row.length) ? (row[idx] || '').trim() : '';
       
       const business = get(iBusiness);
-      const totalStr = get(iTotFatt);
+      const totalStr = get(iTotFattFallback);
       const orderDateStr = get(iOrderDate);
       const productName = get(iNomeProdotto) || get(iProduct);
       const code = get(iCode);
