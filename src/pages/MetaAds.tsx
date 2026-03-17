@@ -4,7 +4,6 @@ import { it } from 'date-fns/locale';
 import { useMetaAds, parseMetaKPIs, getActionValue } from '@/hooks/useMetaAds';
 import { DashboardHeader } from '@/components/dashboard/DashboardHeader';
 import { KPICard } from '@/components/dashboard/KPICard';
-import { KPIData } from '@/types/analytics';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Calendar } from '@/components/ui/calendar';
