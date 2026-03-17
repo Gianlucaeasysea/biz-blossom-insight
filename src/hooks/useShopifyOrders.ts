@@ -26,6 +26,7 @@ interface ShopifyOrdersResponse {
     channel: string;
     status: 'pending' | 'completed' | 'cancelled' | 'refunded';
     country?: string;
+    destinationCountry?: string;
   }>;
   count: number;
   error?: string;

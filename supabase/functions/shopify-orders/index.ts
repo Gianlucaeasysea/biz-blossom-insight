@@ -207,6 +207,7 @@ serve(async (req) => {
         channel: order.source_name,
         status,
         country,
+        destinationCountry,
       };
     });
 

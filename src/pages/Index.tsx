@@ -143,6 +143,12 @@ export default function Index() {
           </div>
         </div>
 
+        {/* === COLLECTION BREAKDOWN === */}
+        <div className="mb-6">
+          <p className="section-label mb-3">Vendite per Collection</p>
+          <CollectionBreakdown orders={filteredOrders} />
+        </div>
+
         {/* === COUNTRY BREAKDOWN === */}
         <div className="mb-6">
           <p className="section-label mb-3">Vendite per Paese</p>
