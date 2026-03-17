@@ -1,6 +1,7 @@
 import { useState, useMemo } from 'react';
-import { Search, ArrowUpDown } from 'lucide-react';
+import { Search, ArrowUpDown, Download } from 'lucide-react';
 import { Input } from '@/components/ui/input';
+import { downloadCsv } from '@/lib/csv-export';
 
 interface SkuRow { sku: string; name: string; qtySold: number; totalValue: number; b2cValue: number; b2bValue: number; }
 type SortField = 'sku' | 'name' | 'qtySold' | 'totalValue' | 'b2cValue' | 'b2bValue';
@@ -25,13 +26,23 @@ export function CombinedSkuTable({ data }: { data: SkuRow[] }) {
     </button>
   );
 
+  const handleExport = () => {
+    downloadCsv('combined-sku', ['SKU', 'Prodotto', 'Pezzi', 'B2C', 'B2B', 'Totale'],
+      filtered.map(r => [r.sku, r.name, r.qtySold, r.b2cValue, r.b2bValue, r.totalValue]));
+  };
+
   return (
     <div className="chart-container">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
         <h3 className="text-sm font-semibold">Dettaglio Combinato B2C + B2B per SKU</h3>
-        <div className="relative w-full sm:w-56">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
-          <Input placeholder="Cerca SKU..." value={search} onChange={e => setSearch(e.target.value)} className="pl-9 h-8 text-xs bg-muted/50 border-border/50" />
+        <div className="flex items-center gap-2">
+          <div className="relative w-full sm:w-56">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
+            <Input placeholder="Cerca SKU..." value={search} onChange={e => setSearch(e.target.value)} className="pl-9 h-8 text-xs bg-muted/50 border-border/50" />
+          </div>
+          <button onClick={handleExport} className="p-2 rounded-md hover:bg-muted/50 text-muted-foreground hover:text-foreground transition-colors" title="Esporta CSV">
+            <Download className="w-4 h-4" />
+          </button>
         </div>
       </div>
       <div className="overflow-x-auto scrollbar-custom">

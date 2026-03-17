@@ -1,6 +1,7 @@
 import { useState, useMemo } from 'react';
-import { Search, ArrowUpDown } from 'lucide-react';
+import { Search, ArrowUpDown, Download } from 'lucide-react';
 import { Input } from '@/components/ui/input';
+import { downloadCsv } from '@/lib/csv-export';
 
 interface SkuRow { sku: string; name: string; qtySold: number; netSalesTotal: number; netSalesFulfilled: number; }
 type SortField = 'sku' | 'name' | 'qtySold' | 'netSalesTotal' | 'netSalesFulfilled';
@@ -25,13 +26,23 @@ export function B2CSkuTable({ data }: { data: SkuRow[] }) {
     </button>
   );
 
+  const handleExport = () => {
+    downloadCsv('b2c-sku', ['SKU', 'Prodotto', 'Pezzi Venduti', 'Net Sales Totale', 'Net Sales Evasi'],
+      filtered.map(r => [r.sku, r.name, r.qtySold, r.netSalesTotal, r.netSalesFulfilled]));
+  };
+
   return (
     <div className="chart-container">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
         <h3 className="text-sm font-semibold">Dettaglio B2C per SKU</h3>
-        <div className="relative w-full sm:w-56">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
-          <Input placeholder="Cerca SKU..." value={search} onChange={e => setSearch(e.target.value)} className="pl-9 h-8 text-xs bg-muted/50 border-border/50" />
+        <div className="flex items-center gap-2">
+          <div className="relative w-full sm:w-56">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
+            <Input placeholder="Cerca SKU..." value={search} onChange={e => setSearch(e.target.value)} className="pl-9 h-8 text-xs bg-muted/50 border-border/50" />
+          </div>
+          <button onClick={handleExport} className="p-2 rounded-md hover:bg-muted/50 text-muted-foreground hover:text-foreground transition-colors" title="Esporta CSV">
+            <Download className="w-4 h-4" />
+          </button>
         </div>
       </div>
       <div className="overflow-x-auto scrollbar-custom">
