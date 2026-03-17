@@ -9,6 +9,7 @@ import { B2CSkuTable } from '@/components/dashboard/B2CSkuTable';
 import { B2BSkuTable } from '@/components/dashboard/B2BSkuTable';
 import { CombinedSkuTable } from '@/components/dashboard/CombinedSkuTable';
 import { CountryBreakdown } from '@/components/dashboard/CountryBreakdown';
+import { CollectionBreakdown } from '@/components/dashboard/CollectionBreakdown';
 import { ConnectionStatus } from '@/components/dashboard/ConnectionStatus';
 import { CustomerType } from '@/types/analytics';
 import { useShopifyOrders } from '@/hooks/useShopifyOrders';
@@ -140,6 +141,12 @@ export default function Index() {
           <div>
             <CombinedSkuTable data={combinedSkuData} />
           </div>
+        </div>
+
+        {/* === COLLECTION BREAKDOWN === */}
+        <div className="mb-6">
+          <p className="section-label mb-3">Vendite per Collection</p>
+          <CollectionBreakdown orders={filteredOrders} />
         </div>
 
         {/* === COUNTRY BREAKDOWN === */}
