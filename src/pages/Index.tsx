@@ -9,8 +9,8 @@ import { DataTable } from '@/components/dashboard/DataTable';
 import { TopProducts, TopCustomers } from '@/components/dashboard/TopList';
 import { ConnectionStatus } from '@/components/dashboard/ConnectionStatus';
 import { CustomerType } from '@/types/analytics';
+import { useShopifyOrders } from '@/hooks/useShopifyOrders';
 import {
-  generateMockOrders,
   generateTimeSeriesData,
   generateCategoryData,
   generateChannelData,
@@ -18,6 +18,7 @@ import {
   getTopProducts,
   getTopCustomers,
 } from '@/lib/mock-data';
+import { Loader2, AlertCircle } from 'lucide-react';
 
 export default function Index() {
   const [customerTypeFilter, setCustomerTypeFilter] = useState<CustomerType | 'all'>('all');
@@ -25,19 +26,24 @@ export default function Index() {
     start: subDays(new Date(), 30),
     end: new Date(),
   });
-  const [isLoading, setIsLoading] = useState(false);
 
-  // Generate mock data
-  const allOrders = useMemo(() => generateMockOrders(500), []);
+  // Fetch real Shopify orders
+  const { data: shopifyOrders = [], isLoading, isError, error, refetch, isFetching } = useShopifyOrders({
+    limit: 250,
+    status: 'any',
+    createdAtMin: subDays(new Date(), 365),
+    enabled: true,
+  });
 
   // Filter orders based on current filters
   const filteredOrders = useMemo(() => {
-    return allOrders.filter((order) => {
-      const inDateRange = order.date >= dateRange.start && order.date <= dateRange.end;
+    return shopifyOrders.filter((order) => {
+      const orderDate = order.date instanceof Date ? order.date : new Date(order.date);
+      const inDateRange = orderDate >= dateRange.start && orderDate <= dateRange.end;
       const matchesType = customerTypeFilter === 'all' || order.customerType === customerTypeFilter;
       return inDateRange && matchesType;
     });
-  }, [allOrders, dateRange, customerTypeFilter]);
+  }, [shopifyOrders, dateRange, customerTypeFilter]);
 
   // Calculate derived data
   const kpis = useMemo(() => calculateKPIs(filteredOrders), [filteredOrders]);
@@ -47,31 +53,48 @@ export default function Index() {
   const topProducts = useMemo(() => getTopProducts(filteredOrders), [filteredOrders]);
   const topCustomers = useMemo(() => getTopCustomers(filteredOrders), [filteredOrders]);
 
-  // Mock data sources
+  // Data sources status
   const dataSources = [
     {
       name: 'Shopify Store',
       type: 'shopify' as const,
-      status: 'connected' as const,
-      recordCount: allOrders.filter((o) => o.source === 'shopify').length,
+      status: isLoading ? 'syncing' as const : isError ? 'disconnected' as const : 'connected' as const,
+      recordCount: shopifyOrders.length,
     },
     {
       name: 'Google Sheets B2B',
       type: 'google_sheets' as const,
-      status: 'connected' as const,
-      recordCount: allOrders.filter((o) => o.source === 'google_sheets').length,
+      status: 'disconnected' as const,
+      recordCount: 0,
     },
   ];
 
   const handleRefresh = () => {
-    setIsLoading(true);
-    setTimeout(() => setIsLoading(false), 1500);
+    refetch();
   };
 
   return (
     <div className="min-h-screen bg-background p-4 sm:p-6 lg:p-8">
       <div className="max-w-[1600px] mx-auto">
-        <DashboardHeader onRefresh={handleRefresh} isLoading={isLoading} />
+        <DashboardHeader onRefresh={handleRefresh} isLoading={isFetching} />
+
+        {/* Error Banner */}
+        {isError && (
+          <div className="mb-6 p-4 rounded-lg bg-destructive/10 border border-destructive/20 flex items-center gap-3">
+            <AlertCircle className="w-5 h-5 text-destructive shrink-0" />
+            <p className="text-sm text-destructive">
+              Errore nel caricamento dati Shopify: {error instanceof Error ? error.message : 'Errore sconosciuto'}
+            </p>
+          </div>
+        )}
+
+        {/* Loading State */}
+        {isLoading && (
+          <div className="mb-6 flex items-center justify-center gap-3 p-12">
+            <Loader2 className="w-6 h-6 animate-spin text-primary" />
+            <p className="text-muted-foreground">Caricamento dati da Shopify...</p>
+          </div>
+        )}
 
         {/* Filter Bar */}
         <div className="mb-6">
