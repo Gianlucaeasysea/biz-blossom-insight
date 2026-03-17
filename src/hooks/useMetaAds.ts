@@ -38,8 +38,6 @@ export interface MetaAdCreative {
   campaign_name: string;
   effective_status: string;
   thumbnail_url: string | null;
-  creative_title: string | null;
-  creative_body: string | null;
   spend: string;
   impressions: string;
   clicks: string;
@@ -49,14 +47,16 @@ export interface MetaAdCreative {
   action_values?: { action_type: string; value: string }[];
 }
 
-export interface MetaAdsData {
+export interface MetaCoreData {
   daily: MetaDailyInsight[];
   campaigns: MetaCampaignInsight[];
+}
+
+export interface MetaCreativesData {
   ads: MetaAdCreative[];
 }
 
-// Product category mapping based on campaign name patterns
-// Maps campaign name keywords to EasySea product categories
+// Product category mapping
 export const CAMPAIGN_CATEGORY_MAP: Record<string, string> = {
   'flipper': 'Flipper™ Collection',
   'winch': 'Flipper™ Collection',
@@ -124,20 +124,43 @@ export function parseMetaKPIs(daily: MetaDailyInsight[]) {
   return { totalSpend, totalImpressions, totalClicks, totalReach, ctr, cpc, cpm, totalPurchases, totalPurchaseValue, roas, costPerPurchase };
 }
 
+// Core data: daily + campaigns (fast)
 export function useMetaAds(dateRange: { start: Date; end: Date }) {
-  return useQuery<MetaAdsData>({
-    queryKey: ['meta-ads', format(dateRange.start, 'yyyy-MM-dd'), format(dateRange.end, 'yyyy-MM-dd')],
+  return useQuery<MetaCoreData>({
+    queryKey: ['meta-ads-core', format(dateRange.start, 'yyyy-MM-dd'), format(dateRange.end, 'yyyy-MM-dd')],
     queryFn: async () => {
       const { data, error } = await supabase.functions.invoke('meta-ads', {
         body: {
           dateFrom: format(dateRange.start, 'yyyy-MM-dd'),
           dateTo: format(dateRange.end, 'yyyy-MM-dd'),
+          mode: 'core',
         },
       });
       if (error) throw error;
       if (data.error) throw new Error(data.error);
-      return data as MetaAdsData;
+      return data as MetaCoreData;
     },
-    staleTime: 5 * 60 * 1000,
+    staleTime: 10 * 60 * 1000,
+  });
+}
+
+// Creatives: ads with thumbnails (lazy, heavier)
+export function useMetaCreatives(dateRange: { start: Date; end: Date }, enabled: boolean) {
+  return useQuery<MetaCreativesData>({
+    queryKey: ['meta-ads-creatives', format(dateRange.start, 'yyyy-MM-dd'), format(dateRange.end, 'yyyy-MM-dd')],
+    queryFn: async () => {
+      const { data, error } = await supabase.functions.invoke('meta-ads', {
+        body: {
+          dateFrom: format(dateRange.start, 'yyyy-MM-dd'),
+          dateTo: format(dateRange.end, 'yyyy-MM-dd'),
+          mode: 'creatives',
+        },
+      });
+      if (error) throw error;
+      if (data.error) throw new Error(data.error);
+      return data as MetaCreativesData;
+    },
+    staleTime: 10 * 60 * 1000,
+    enabled,
   });
 }
