@@ -163,6 +163,11 @@ export default function Index() {
           <TopCustomers customers={topCustomers} />
         </div>
 
+        {/* B2C SKU Breakdown */}
+        <div className="mb-6">
+          <B2CSkuTable data={b2cSkuData} />
+        </div>
+
         {/* Data Table */}
         <DataTable orders={filteredOrders} title="Ordini Recenti" />
       </div>
