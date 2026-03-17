@@ -29,7 +29,7 @@ export default function Index() {
   }));
 
   // Stable date reference for Shopify query to avoid infinite refetches
-  const [shopifyMinDate] = useState(() => subDays(new Date(), 365));
+  const [shopifyMinDate] = useState(() => new Date('2025-01-01T00:00:00Z'));
 
   // Fetch real Shopify orders
   const { data: shopifyOrders = [], isLoading: isLoadingShopify, isError: isErrorShopify, error: errorShopify, refetch: refetchShopify, isFetching: isFetchingShopify } = useShopifyOrders({
