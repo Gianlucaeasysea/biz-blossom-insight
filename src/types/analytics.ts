@@ -21,6 +21,7 @@ export interface Order {
   status: 'pending' | 'completed' | 'cancelled' | 'refunded';
   orderType?: string; // B2B: 'custom', etc.
   country?: string;
+  destinationCountry?: string; // B2C: shipping destination country
 }
 
 export interface OrderProduct {
