@@ -22,11 +22,15 @@ interface ShopifyOrdersResponse {
       totalPrice: number;
     }>;
     totalAmount: number;
+    netAmount?: number;
     currency: string;
     channel: string;
     status: 'pending' | 'completed' | 'cancelled' | 'refunded';
     country?: string;
     destinationCountry?: string;
+    landingSite?: string | null;
+    referringSite?: string | null;
+    utm?: Record<string, string> | null;
   }>;
   count: number;
   error?: string;
