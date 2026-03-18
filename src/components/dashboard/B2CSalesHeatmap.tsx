@@ -83,7 +83,7 @@ export function B2CSalesHeatmap({ orders, dateRange }: B2CSalesHeatmapProps) {
 
     b2cOrders.forEach(o => {
       const rawName = o.destinationCountry || o.country || '';
-      const iso = COUNTRY_NAME_TO_ISO[rawName] || rawName.toUpperCase().slice(0, 2);
+      const iso = COUNTRY_NAME_TO_ISO.get(rawName) || rawName.toUpperCase().slice(0, 2);
       if (!iso || iso.length !== 2) return;
       const amount = o.netAmount ?? o.totalAmount;
       if (!byIso[iso]) byIso[iso] = { sales: 0, orders: 0, name: rawName };
