@@ -42,7 +42,7 @@ export function OrdersTrendChart({ orders, dateRange }: OrdersTrendChartProps) {
         return isWithinInterval(od, { start: interval.start, end: interval.end });
       });
 
-      const b2c = inRange.filter(o => o.customerType === 'B2C').reduce((s, o) => s + o.totalAmount, 0);
+      const b2c = inRange.filter(o => o.customerType === 'B2C').reduce((s, o) => s + (o.netAmount ?? o.totalAmount), 0);
       const b2bNormal = inRange.filter(o => o.customerType === 'B2B' && (!o.orderType || o.orderType.toLowerCase() !== 'custom')).reduce((s, o) => s + o.totalAmount, 0);
       const b2bCustom = inRange.filter(o => o.customerType === 'B2B' && o.orderType?.toLowerCase() === 'custom').reduce((s, o) => s + o.totalAmount, 0);
 

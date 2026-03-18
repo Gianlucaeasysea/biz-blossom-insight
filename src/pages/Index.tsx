@@ -96,7 +96,7 @@ export default function Index() {
       const c = o.destinationCountry || o.country || 'Sconosciuto';
       if (!countryMap[c]) countryMap[c] = { orders: 0, revenue: 0 };
       countryMap[c].orders++;
-      countryMap[c].revenue += o.totalAmount;
+      countryMap[c].revenue += o.customerType === 'B2C' ? (o.netAmount ?? o.totalAmount) : o.totalAmount;
     });
     lines.push('--- Vendite per Paese ---');
     Object.entries(countryMap).sort((a, b) => b[1].revenue - a[1].revenue).slice(0, 10).forEach(([c, d]) =>

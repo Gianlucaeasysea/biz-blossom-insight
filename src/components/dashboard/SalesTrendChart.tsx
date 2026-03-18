@@ -53,7 +53,9 @@ export function SalesTrendChart({ orders, dateRange }: SalesTrendChartProps) {
       });
       keys.forEach(key => {
         if (viewMode === 'channel') {
-          row[key] = intervalOrders.filter(o => (o.channel || 'Altro') === key).reduce((sum, o) => sum + o.totalAmount, 0);
+          row[key] = intervalOrders
+            .filter(o => (o.channel || 'Altro') === key)
+            .reduce((sum, o) => sum + (o.customerType === 'B2C' ? (o.netAmount ?? o.totalAmount) : o.totalAmount), 0);
         } else {
           row[key] = intervalOrders.reduce((sum, o) => sum + o.products.filter(p => p.name === key).reduce((ps, p) => ps + p.totalPrice, 0), 0);
         }
