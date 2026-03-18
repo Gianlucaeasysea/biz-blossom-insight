@@ -565,7 +565,12 @@ serve(async (req) => {
 
     console.log(`Successfully fetched ${transformedOrders.length} orders from Shopify`);
 
-    const summary = analyticsSummary ?? (reportMode === 'summary' ? buildSummaryFromOrders(transformedOrders) : null);
+    const summary = analyticsSummary ?? (reportMode === 'summary'
+      ? {
+          ...buildSummaryFromOrders(transformedOrders),
+          warning: 'Report Shopify non disponibile: sto mostrando un fallback calcolato dagli ordini, che può non coincidere con la reportistica ufficiale.',
+        }
+      : null);
 
     return new Response(
       JSON.stringify({

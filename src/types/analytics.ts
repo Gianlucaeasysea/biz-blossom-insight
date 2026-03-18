@@ -122,6 +122,7 @@ export interface ShopifySalesSummary {
   totalSales: number;
   source: 'shopify_analytics' | 'orders_fallback';
   dayCount: number;
+  warning?: string;
 }
 
 export interface SavedView {
