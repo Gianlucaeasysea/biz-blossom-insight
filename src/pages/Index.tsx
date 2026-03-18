@@ -43,7 +43,10 @@ export default function Index() {
   const filteredOrders = useMemo(() => {
     return allOrders.filter(order => {
       const orderDate = order.date instanceof Date ? order.date : new Date(order.date);
-      const inDateRange = orderDate >= dateRange.start && orderDate <= dateRange.end;
+      // Ensure end date includes the full day (23:59:59.999)
+      const endOfDay = new Date(dateRange.end);
+      endOfDay.setHours(23, 59, 59, 999);
+      const inDateRange = orderDate >= dateRange.start && orderDate <= endOfDay;
       const matchesType = customerTypeFilter === 'all' || order.customerType === customerTypeFilter;
       return inDateRange && matchesType;
     });
