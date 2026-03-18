@@ -16,6 +16,9 @@ export interface Order {
   products: OrderProduct[];
   totalAmount: number;
   netAmount?: number;
+  grossSales?: number;
+  totalDiscounts?: number;
+  totalRefunds?: number;
   currency: string;
   channel?: string;
   agent?: string;

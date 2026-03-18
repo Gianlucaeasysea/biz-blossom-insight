@@ -12,6 +12,7 @@ import { CountryBreakdown } from '@/components/dashboard/CountryBreakdown';
 import { CollectionBreakdown } from '@/components/dashboard/CollectionBreakdown';
 import { ConnectionStatus } from '@/components/dashboard/ConnectionStatus';
 import { AiAssistant } from '@/components/dashboard/AiAssistant';
+import { B2CSalesBreakdown } from '@/components/dashboard/B2CSalesBreakdown';
 import { CustomerType } from '@/types/analytics';
 import { NavLink } from '@/components/NavLink';
 import { useShopifyOrders } from '@/hooks/useShopifyOrders';
@@ -164,7 +165,11 @@ export default function Index() {
           {kpiMap['Totale Ordini B2B'] && <KPICard data={kpiMap['Totale Ordini B2B']} />}
         </div>
 
-        {/* === TREND CHART: B2C + B2B + Custom === */}
+        {/* === B2C SALES BREAKDOWN === */}
+        <div className="mb-6">
+          <B2CSalesBreakdown orders={filteredOrders} />
+        </div>
+
         <div className="mb-6">
           <OrdersTrendChart orders={filteredOrders} dateRange={dateRange} />
         </div>
