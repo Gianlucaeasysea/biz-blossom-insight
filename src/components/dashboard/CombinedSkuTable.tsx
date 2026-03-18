@@ -35,8 +35,12 @@ export function CombinedSkuTable({ data }: { data: SkuRow[] }) {
     <div className="chart-container">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
         <div className="flex items-center gap-2">
-          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold tracking-wider uppercase bg-[hsl(160,55%,14%)] text-[hsl(160,60%,60%)] border border-[hsl(160,55%,24%)] shadow-[0_0_8px_hsl(160,60%,40%/0.3)]">B2C+B2B</span>
-          <h3 className="text-sm font-semibold text-[hsl(160,60%,60%)]">Dettaglio Combinato per SKU</h3>
+          <span className="inline-flex items-center gap-0.5 px-2 py-0.5 rounded-full text-[10px] font-bold tracking-wider uppercase">
+            <span className="badge-b2c px-1.5 py-px rounded">B2C</span>
+            <span className="text-muted-foreground/40">+</span>
+            <span className="badge-b2b px-1.5 py-px rounded">B2B</span>
+          </span>
+          <h3 className="text-sm font-semibold text-foreground">Dettaglio Combinato per SKU</h3>
         </div>
         <div className="flex items-center gap-2">
           <div className="relative w-full sm:w-56">

@@ -32,20 +32,34 @@ export function FilterBar({
   return (
     <div className="flex flex-wrap items-center gap-3">
       {/* Type toggle */}
-      <div className="flex rounded-md bg-muted p-0.5">
-        {(['all', 'B2C', 'B2B'] as const).map(type => (
-          <button
-            key={type}
-            onClick={() => onCustomerTypeChange(type)}
-            className={`px-3 py-1.5 text-xs font-medium rounded transition-colors ${
-              customerTypeFilter === type
-                ? 'bg-primary text-primary-foreground'
-                : 'text-muted-foreground hover:text-foreground'
-            }`}
-          >
-            {type === 'all' ? 'Tutti' : type}
-          </button>
-        ))}
+      <div className="flex rounded-lg bg-muted/60 p-0.5 gap-0.5">
+        {(['all', 'B2C', 'B2B'] as const).map(type => {
+          const isActive = customerTypeFilter === type;
+          const b2cActive = type === 'B2C' && isActive;
+          const b2bActive = type === 'B2B' && isActive;
+          return (
+            <button
+              key={type}
+              onClick={() => onCustomerTypeChange(type)}
+              className={`px-3 py-1.5 text-xs font-semibold rounded-md transition-all duration-150 ${
+                isActive && type === 'all'
+                  ? 'bg-primary text-primary-foreground shadow-sm'
+                  : !isActive
+                  ? 'text-muted-foreground hover:text-foreground'
+                  : ''
+              }`}
+              style={
+                b2cActive
+                  ? { background: 'hsl(168,70%,14%)', color: 'hsl(168,70%,60%)', border: '1px solid hsl(168,70%,26%)', boxShadow: '0 0 8px hsl(168,70%,30%/0.4)' }
+                  : b2bActive
+                  ? { background: 'hsl(42,96%,12%)', color: 'hsl(42,96%,62%)', border: '1px solid hsl(42,90%,26%)', boxShadow: '0 0 8px hsl(42,96%,36%/0.4)' }
+                  : {}
+              }
+            >
+              {type === 'all' ? 'Tutti' : type}
+            </button>
+          );
+        })}
       </div>
 
       {/* Quick presets */}
