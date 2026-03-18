@@ -78,7 +78,7 @@ export function calculateKPIs(orders: Order[]): KPIData[] {
   const totalOrder = totalOrderB2C + totalOrderB2B;
 
   // Fatturato B2C = net sales solo ordini evasi (completed)
-  const fatturatoB2C = b2cOrders.filter(o => o.status === 'completed').reduce((s, o) => s + (o.netAmount ?? o.totalAmount), 0);
+  const fatturatoB2C = b2cOrders.filter(o => o.status === 'completed').reduce((s, o) => s + getB2CNetSales(o), 0);
   // Fatturato B2B = sum price for DELIVERED (completed) + delivery date exists, excl custom
   const fatturatoB2B = b2bOrdersNoCustom
     .filter(o => o.status === 'completed' && o.deliveryDate)
