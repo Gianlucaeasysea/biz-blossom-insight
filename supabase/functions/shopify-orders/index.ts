@@ -185,11 +185,13 @@ serve(async (req) => {
         orderStatus = 'completed';
       }
 
-      // Calculate gross sales (sum of line item price * quantity, before discounts)
-      const grossSales = order.line_items.reduce((sum, item) => sum + parseFloat(item.price) * item.quantity, 0);
-
-      // Calculate total discounts
+      // Use subtotal_price as anchor: it's the sum of line items after discounts, before shipping/tax
+      // This is the most reliable field from Shopify
+      const subtotalPrice = parseFloat(order.subtotal_price || '0');
       const totalDiscounts = parseFloat(order.total_discounts || '0');
+
+      // Gross Sales = subtotal + discounts (reverses discount to get true gross)
+      const grossSales = subtotalPrice + totalDiscounts;
 
       // Calculate total refunds
       let refundTotal = 0;
@@ -203,8 +205,8 @@ serve(async (req) => {
         }
       }
 
-      // Net Sales = Gross Sales - Discounts - Returns (no shipping, no tax)
-      const netAmount = grossSales - totalDiscounts - refundTotal;
+      // Net Sales = subtotal_price - refunds = Gross - Discounts - Returns
+      const netAmount = subtotalPrice - refundTotal;
 
       // Extract UTM parameters from landing_site and referring_site
       const utmFromLanding = extractUtmParams(order.landing_site);
