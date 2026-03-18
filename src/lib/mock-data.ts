@@ -70,8 +70,8 @@ export function calculateKPIs(orders: Order[]): KPIData[] {
   const b2cOrders = orders.filter(o => o.customerType === 'B2C');
   const b2bOrdersNoCustom = orders.filter(o => o.customerType === 'B2B' && isNotCustom(o));
 
-  // Total Order B2C = net sales totale (netAmount = gross - discounts - returns)
-  const totalOrderB2C = b2cOrders.reduce((s, o) => s + (o.netAmount ?? o.totalAmount), 0);
+  // Total Order B2C = net sales totale Shopify (gross - discounts - returns)
+  const totalOrderB2C = b2cOrders.reduce((s, o) => s + getB2CNetSales(o), 0);
   // Total Order B2B = sum price by order date (already filtered by date range upstream), excl custom
   const totalOrderB2B = b2bOrdersNoCustom.reduce((s, o) => s + o.products.reduce((ps, p) => ps + p.totalPrice, 0), 0);
   // Total Order = B2C + B2B
