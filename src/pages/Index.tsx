@@ -16,6 +16,7 @@ import { B2CSalesBreakdown } from '@/components/dashboard/B2CSalesBreakdown';
 import { CustomerType } from '@/types/analytics';
 import { NavLink } from '@/components/NavLink';
 import { useShopifyOrders } from '@/hooks/useShopifyOrders';
+import { useShopifySalesSummary } from '@/hooks/useShopifySalesSummary';
 import { useGoogleSheetsOrders } from '@/hooks/useGoogleSheetsOrders';
 import {
   calculateKPIs,
