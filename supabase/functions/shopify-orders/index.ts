@@ -39,6 +39,7 @@ interface ShopifyOrder {
   line_items: Array<{
     id: number;
     title: string;
+    variant_title: string | null;
     sku: string;
     quantity: number;
     price: string;
