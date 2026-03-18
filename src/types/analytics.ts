@@ -111,6 +111,19 @@ export interface CategoryData {
   fill?: string;
 }
 
+export interface ShopifySalesSummary {
+  grossSales: number;
+  discounts: number;
+  returns: number;
+  netSales: number;
+  shippingCharges: number;
+  returnFees: number;
+  taxes: number;
+  totalSales: number;
+  source: 'shopify_analytics' | 'orders_fallback';
+  dayCount: number;
+}
+
 export interface SavedView {
   id: string;
   name: string;

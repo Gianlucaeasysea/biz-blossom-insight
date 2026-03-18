@@ -177,7 +177,11 @@ export default function Index() {
 
         {/* === B2C SALES BREAKDOWN === */}
         <div className="mb-6">
-          <B2CSalesBreakdown orders={filteredOrders} />
+          <B2CSalesBreakdown
+            summary={shopifySalesSummary}
+            orderCount={filteredOrders.filter((order) => order.customerType === 'B2C').length}
+            isLoading={isLoadingShopifySummary}
+          />
         </div>
 
         <div className="mb-6">
