@@ -86,16 +86,46 @@
 
 @layer components {
   .glass-card {
-    @apply bg-card border border-border rounded-lg;
-    box-shadow: var(--shadow-card);
+    @apply bg-card rounded-lg;
+    border: 1px solid rgba(255, 255, 255, 0.09);
+    box-shadow:
+      0 0 0 1px rgba(255, 255, 255, 0.04),
+      0 4px 24px rgba(0, 0, 0, 0.45),
+      inset 0 1px 0 rgba(255, 255, 255, 0.07),
+      inset 0 -1px 0 rgba(0, 0, 0, 0.2);
   }
 
   .kpi-card {
-    @apply glass-card p-4 transition-all duration-200 hover:border-primary/30 hover:shadow-lg hover:shadow-primary/5;
+    @apply glass-card p-4 transition-all duration-200;
+  }
+  .kpi-card:hover {
+    border-color: rgba(255, 255, 255, 0.16);
+    box-shadow:
+      0 0 0 1px rgba(255, 255, 255, 0.07),
+      0 6px 32px rgba(0, 0, 0, 0.5),
+      0 0 16px rgba(var(--primary) / 0.08),
+      inset 0 1px 0 rgba(255, 255, 255, 0.10),
+      inset 0 -1px 0 rgba(0, 0, 0, 0.2);
   }
 
   .chart-container {
-    @apply glass-card p-4 sm:p-5;
+    @apply bg-card rounded-lg p-4 sm:p-5;
+    border: 1px solid rgba(255, 255, 255, 0.09);
+    box-shadow:
+      0 0 0 1px rgba(255, 255, 255, 0.04),
+      0 6px 32px rgba(0, 0, 0, 0.5),
+      0 1px 0 rgba(255, 255, 255, 0.06) inset,
+      inset 0 1px 0 rgba(255, 255, 255, 0.07),
+      inset 0 -1px 0 rgba(0, 0, 0, 0.25);
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  }
+  .chart-container:hover {
+    border-color: rgba(255, 255, 255, 0.14);
+    box-shadow:
+      0 0 0 1px rgba(255, 255, 255, 0.06),
+      0 8px 40px rgba(0, 0, 0, 0.55),
+      inset 0 1px 0 rgba(255, 255, 255, 0.10),
+      inset 0 -1px 0 rgba(0, 0, 0, 0.25);
   }
 
   .section-label {
