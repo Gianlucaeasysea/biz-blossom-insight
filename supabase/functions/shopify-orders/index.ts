@@ -205,22 +205,10 @@ serve(async (req) => {
         orderStatus = 'completed';
       }
 
-      const subtotalPrice = parseFloat(order.subtotal_price || '0');
-      const totalDiscounts = parseFloat(order.total_discounts || '0');
-      const grossSales = subtotalPrice + totalDiscounts;
-
-      let refundTotal = 0;
-      if (order.refunds) {
-        for (const refund of order.refunds) {
-          if (refund.refund_line_items) {
-            for (const rli of refund.refund_line_items) {
-              refundTotal += rli.subtotal || 0;
-            }
-          }
-        }
-      }
-
-      const netAmount = subtotalPrice - refundTotal;
+      const grossSales = roundMoney(parseMoney(order.total_line_items_price || order.subtotal_price));
+      const discountsValue = roundMoney(-parseMoney(order.current_total_discounts || order.total_discounts));
+      const netAmount = roundMoney(parseMoney(order.current_subtotal_price || order.subtotal_price));
+      const returnsValue = roundMoney(netAmount - (grossSales + discountsValue));
 
       const utmFromLanding = extractUtmParams(order.landing_site);
       const utmFromReferring = extractUtmParams(order.referring_site);
@@ -236,10 +224,12 @@ serve(async (req) => {
 
       const country = order.shipping_address?.country || order.billing_address?.country || undefined;
       const destinationCountry = order.shipping_address?.country || undefined;
-      const shippingCharges = parseFloat(order.total_shipping_price_set?.shop_money?.amount || '0');
-      const taxes = parseFloat(order.current_total_tax || order.total_tax || '0');
-      const fees = parseFloat(order.current_total_additional_fees_set?.shop_money?.amount || '0');
-      const totalSales = netAmount + shippingCharges + taxes + fees;
+      const shippingCharges = roundMoney(parseMoney(
+        order.current_total_shipping_price_set?.shop_money?.amount || order.total_shipping_price_set?.shop_money?.amount,
+      ));
+      const taxes = roundMoney(parseMoney(order.current_total_tax || order.total_tax));
+      const fees = roundMoney(parseMoney(order.current_total_additional_fees_set?.shop_money?.amount));
+      const totalSales = roundMoney(netAmount + shippingCharges + taxes + fees);
 
       return {
         id: `shopify-${order.id}`,
