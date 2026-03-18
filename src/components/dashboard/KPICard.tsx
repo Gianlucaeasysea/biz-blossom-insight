@@ -4,21 +4,13 @@ interface KPICardProps {
   data: KPIData;
 }
 
-function getCardTheme(label: string): { accent: string; bar: string; badge?: string; badgeLabel?: string } {
+type CardTheme = { accentHsl: string; badge: string; badgeLabel: string } | { accentHsl?: undefined; badge?: undefined; badgeLabel?: undefined };
+
+function getCardTheme(label: string): CardTheme {
   const l = label.toLowerCase();
-  if (l.includes('b2c')) return {
-    accent: 'hsl(168,70%,42%)',
-    bar: 'hsl(168,70%,42%)',
-    badge: 'badge-b2c',
-    badgeLabel: 'B2C',
-  };
-  if (l.includes('b2b')) return {
-    accent: 'hsl(42,96%,48%)',
-    bar: 'hsl(42,96%,48%)',
-    badge: 'badge-b2b',
-    badgeLabel: 'B2B',
-  };
-  return { accent: 'hsl(215,85%,50%)', bar: 'hsl(215,85%,50%)' };
+  if (l.includes('b2c')) return { accentHsl: 'hsl(168,42%,38%)', badge: 'badge-b2c', badgeLabel: 'B2C' };
+  if (l.includes('b2b')) return { accentHsl: 'hsl(38,55%,46%)', badge: 'badge-b2b', badgeLabel: 'B2B' };
+  return {};
 }
 
 export function KPICard({ data }: KPICardProps) {
@@ -36,36 +28,24 @@ export function KPICard({ data }: KPICardProps) {
   };
 
   const theme = getCardTheme(data.label);
-
-  // Strip "B2C" / "B2B" suffix from label for cleaner display
   const displayLabel = data.label.replace(/ B2C$/, '').replace(/ B2B$/, '');
 
   return (
     <div
-      className="kpi-card group relative overflow-hidden"
-      style={{ borderLeft: `3px solid ${theme.accent}` }}
+      className="kpi-card"
+      style={theme.accentHsl ? { borderLeft: `2px solid ${theme.accentHsl}` } : { borderLeft: '2px solid hsl(220,20%,22%)' }}
     >
-      {/* Top glow line */}
-      <div
-        className="absolute top-0 left-0 right-0 h-px opacity-60"
-        style={{ background: `linear-gradient(90deg, ${theme.accent}, transparent)` }}
-      />
-
-      <div className="flex items-start justify-between mb-2.5 gap-1">
-        <p className="text-[10px] text-muted-foreground font-semibold uppercase tracking-[0.12em] leading-tight">
+      <div className="flex items-center justify-between gap-1 mb-2">
+        <p className="text-[10px] font-semibold uppercase tracking-[0.1em] text-muted-foreground leading-tight truncate">
           {displayLabel}
         </p>
         {theme.badge && (
-          <span className={`shrink-0 inline-flex items-center px-1.5 py-px rounded text-[8px] font-bold tracking-wider uppercase ${theme.badge}`}>
+          <span className={`shrink-0 inline-flex items-center px-1.5 py-px rounded text-[9px] font-bold tracking-wider uppercase ${theme.badge}`}>
             {theme.badgeLabel}
           </span>
         )}
       </div>
-
-      <p
-        className="text-2xl font-bold tracking-tight font-mono"
-        style={{ color: theme.accent }}
-      >
+      <p className="text-2xl font-bold tracking-tight font-mono text-foreground">
         {formatValue(data.value)}
       </p>
     </div>

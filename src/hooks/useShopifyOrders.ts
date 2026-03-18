@@ -35,6 +35,8 @@ interface ShopifyOrdersResponse {
     status: 'pending' | 'completed' | 'cancelled' | 'refunded';
     country?: string;
     destinationCountry?: string;
+    destinationCity?: string;
+    destinationProvince?: string;
     landingSite?: string | null;
     referringSite?: string | null;
     utm?: Record<string, string> | null;

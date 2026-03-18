@@ -50,9 +50,9 @@ export function FilterBar({
               }`}
               style={
                 b2cActive
-                  ? { background: 'hsl(168,70%,14%)', color: 'hsl(168,70%,60%)', border: '1px solid hsl(168,70%,26%)', boxShadow: '0 0 8px hsl(168,70%,30%/0.4)' }
+                  ? { background: 'hsl(168,30%,12%)', color: 'hsl(168,38%,54%)', border: '1px solid hsl(168,30%,22%)' }
                   : b2bActive
-                  ? { background: 'hsl(42,96%,12%)', color: 'hsl(42,96%,62%)', border: '1px solid hsl(42,90%,26%)', boxShadow: '0 0 8px hsl(42,96%,36%/0.4)' }
+                  ? { background: 'hsl(38,40%,11%)', color: 'hsl(38,50%,58%)', border: '1px solid hsl(38,38%,22%)' }
                   : {}
               }
             >
