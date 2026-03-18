@@ -58,10 +58,16 @@ interface ShopifyOrder {
     }>;
   }>;
   shipping_address?: {
+    city?: string;
+    province?: string;
     country?: string;
     country_code?: string;
+    province_code?: string;
+    zip?: string;
   } | null;
   billing_address?: {
+    city?: string;
+    province?: string;
     country?: string;
     country_code?: string;
   } | null;
@@ -498,6 +504,8 @@ serve(async (req) => {
 
       const country = order.shipping_address?.country || order.billing_address?.country || undefined;
       const destinationCountry = order.shipping_address?.country || undefined;
+      const destinationCity = order.shipping_address?.city || undefined;
+      const destinationProvince = order.shipping_address?.province || order.shipping_address?.province_code || undefined;
       const shippingCharges = roundMoney(parseMoney(
         order.current_total_shipping_price_set?.shop_money?.amount || order.total_shipping_price_set?.shop_money?.amount,
       ));
@@ -562,6 +570,8 @@ serve(async (req) => {
         status: orderStatus,
         country,
         destinationCountry,
+        destinationCity,
+        destinationProvince,
         landingSite: order.landing_site || null,
         referringSite: order.referring_site || null,
         utm: Object.keys(utm).length > 0 ? utm : null,

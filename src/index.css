@@ -42,19 +42,19 @@
 
     --radius: 0.5rem;
 
-    /* Brand colors — B2C=teal (mare), B2B=amber */
-    --b2c: 168 70% 42%;
-    --b2c-light: 168 70% 58%;
-    --b2c-bg: 168 70% 10%;
-    --b2c-border: 168 70% 22%;
-    --b2b: 42 96% 48%;
-    --b2b-light: 42 96% 62%;
-    --b2b-bg: 42 96% 10%;
-    --b2b-border: 42 90% 22%;
+    /* Brand colors — B2C=teal (mare), B2B=amber (caldo) — toni morbidi */
+    --b2c: 168 42% 38%;
+    --b2c-light: 168 38% 52%;
+    --b2c-bg: 168 30% 9%;
+    --b2c-border: 168 35% 20%;
+    --b2b: 38 55% 46%;
+    --b2b-light: 38 52% 60%;
+    --b2b-bg: 38 40% 9%;
+    --b2b-border: 38 45% 20%;
 
     /* Chart colors */
-    --chart-b2c: 168 70% 42%;
-    --chart-b2b: 42 96% 48%;
+    --chart-b2c: 168 42% 40%;
+    --chart-b2b: 38 55% 46%;
     --chart-combined: 160 60% 45%;
     --chart-1: 215 85% 55%;
     --chart-2: 25 95% 55%;
@@ -142,45 +142,55 @@
     @apply text-[10px] font-semibold tracking-[0.15em] uppercase text-muted-foreground mb-3;
   }
 
-  /* B2C / B2B color utilities */
+  /* B2C / B2B color utilities — toni morbidi, non neon */
   .badge-b2c {
     background: hsl(var(--b2c-bg));
     color: hsl(var(--b2c-light));
     border: 1px solid hsl(var(--b2c-border));
-    box-shadow: 0 0 8px hsl(var(--b2c) / 0.25);
   }
   .badge-b2b {
     background: hsl(var(--b2b-bg));
     color: hsl(var(--b2b-light));
     border: 1px solid hsl(var(--b2b-border));
-    box-shadow: 0 0 8px hsl(var(--b2b) / 0.25);
   }
   .badge-combined {
-    background: hsl(160 55% 10%);
-    color: hsl(160 60% 58%);
-    border: 1px solid hsl(160 55% 22%);
-    box-shadow: 0 0 8px hsl(160 60% 40% / 0.25);
+    background: hsl(160 25% 10%);
+    color: hsl(160 35% 52%);
+    border: 1px solid hsl(160 30% 18%);
   }
   .accent-b2c { color: hsl(var(--b2c-light)); }
   .accent-b2b { color: hsl(var(--b2b-light)); }
   .border-b2c { border-color: hsl(var(--b2c)); }
   .border-b2b { border-color: hsl(var(--b2b)); }
 
+  .table-scroll {
+    @apply overflow-y-auto scrollbar-custom;
+    max-height: 280px;
+  }
+
   .data-table {
     @apply w-full text-sm;
   }
 
   .data-table th {
-    @apply text-left px-3 py-2 text-muted-foreground text-[10px] font-semibold uppercase tracking-wider border-b border-border sticky top-0;
+    @apply text-left px-3 py-1.5 text-muted-foreground text-[10px] font-semibold uppercase tracking-wider border-b border-border sticky top-0 z-10;
     background: hsl(var(--card));
   }
 
   .data-table td {
-    @apply px-3 py-2 border-b border-border/30 text-xs;
+    @apply px-3 py-1.5 border-b border-border/20 text-xs;
+  }
+
+  .data-table tfoot td {
+    @apply px-3 py-2 text-xs font-semibold;
+    background: hsl(var(--card));
+    position: sticky;
+    bottom: 0;
+    border-top: 1px solid hsl(var(--border));
   }
 
   .data-table tr:hover td {
-    @apply bg-muted/20;
+    @apply bg-muted/15;
   }
 
   .scrollbar-custom::-webkit-scrollbar {
