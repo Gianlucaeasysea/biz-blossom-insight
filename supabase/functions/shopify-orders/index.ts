@@ -39,6 +39,7 @@ interface ShopifyOrder {
   line_items: Array<{
     id: number;
     title: string;
+    variant_title: string | null;
     sku: string;
     quantity: number;
     price: string;
@@ -514,7 +515,7 @@ serve(async (req) => {
           ? `${order.customer.first_name} ${order.customer.last_name}`.trim()
           : 'Ospite',
         date: order.created_at,
-        products: order.line_items.map((item) => {
+      products: order.line_items.map((item) => {
           const grossPrice = parseMoney(item.price) * item.quantity;
           const itemDiscount = (item.discount_allocations || []).reduce(
             (sum, discount) => sum + parseMoney(discount.amount),
@@ -522,23 +523,27 @@ serve(async (req) => {
           );
 
           let itemRefund = 0;
+          let refundedQty = 0;
           if (order.refunds) {
             for (const refund of order.refunds) {
               for (const rli of refund.refund_line_items || []) {
                 if (rli.line_item_id === item.id) {
                   itemRefund += rli.subtotal || 0;
+                  refundedQty += rli.quantity || 0;
                 }
               }
             }
           }
 
+          const netQty = item.quantity - refundedQty;
           const netPrice = roundMoney(grossPrice - itemDiscount - itemRefund);
+          const displayName = item.variant_title ? `${item.title} - ${item.variant_title}` : item.title;
           return {
             id: `shopify-item-${item.id}`,
-            name: item.title,
+            name: displayName,
             sku: item.sku || `SKU-${item.product_id}`,
             category: 'Shopify',
-            quantity: item.quantity,
+            quantity: netQty,
             unitPrice: parseMoney(item.price),
             totalPrice: netPrice,
           };
