@@ -27,17 +27,19 @@ export function KPICard({ data }: KPICardProps) {
     : 'text-muted-foreground';
 
   return (
-    <div className="kpi-card">
-      <p className="text-xs text-muted-foreground mb-2 truncate">{data.label}</p>
-      <p className="text-xl font-semibold tracking-tight font-mono">
+    <div className="kpi-card group">
+      <div className="flex items-center justify-between mb-2">
+        <p className="text-[11px] text-muted-foreground font-medium uppercase tracking-wider truncate">{data.label}</p>
+        {data.changePercent !== undefined && (
+          <div className={`flex items-center gap-1 text-[10px] ${trendColor}`}>
+            <TrendIcon className="w-3 h-3" />
+            <span>{Math.abs(data.changePercent)}%</span>
+          </div>
+        )}
+      </div>
+      <p className="text-2xl font-bold tracking-tight font-mono text-foreground">
         {formatValue(data.value)}
       </p>
-      {data.changePercent !== undefined && (
-        <div className={`flex items-center gap-1 mt-2 text-xs ${trendColor}`}>
-          <TrendIcon className="w-3 h-3" />
-          <span>{Math.abs(data.changePercent)}%</span>
-        </div>
-      )}
     </div>
   );
 }
