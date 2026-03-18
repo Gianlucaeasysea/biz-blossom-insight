@@ -185,7 +185,13 @@ serve(async (req) => {
         orderStatus = 'completed';
       }
 
-      // Calculate net amount (total - discounts - refunds)
+      // Calculate gross sales (sum of line item price * quantity, before discounts)
+      const grossSales = order.line_items.reduce((sum, item) => sum + parseFloat(item.price) * item.quantity, 0);
+
+      // Calculate total discounts
+      const totalDiscounts = parseFloat(order.total_discounts || '0');
+
+      // Calculate total refunds
       let refundTotal = 0;
       if (order.refunds) {
         for (const refund of order.refunds) {
@@ -196,7 +202,9 @@ serve(async (req) => {
           }
         }
       }
-      const netAmount = parseFloat(order.total_price) - refundTotal;
+
+      // Net Sales = Gross Sales - Discounts - Returns (no shipping, no tax)
+      const netAmount = grossSales - totalDiscounts - refundTotal;
 
       // Extract UTM parameters from landing_site and referring_site
       const utmFromLanding = extractUtmParams(order.landing_site);
