@@ -27,7 +27,7 @@ const NUM_TO_A2: Record<string, string> = {
   '031':'AZ','051':'AM','070':'BA','112':'BY','116':'KH','158':'TW','188':'CR',
   '214':'DO','268':'GE','340':'HN','398':'KZ','417':'KG','496':'MN','498':'MD',
   '499':'ME','562':'NE','600':'PY','688':'RS','694':'SL','706':'SO','728':'SS',
-  '748':'SZ','760':'SY','800':'UG','807':'MK','860':'UZ','887':'YE','894':'ZM',
+  '748':'SZ','760':'SY','800':'UG','807':'MK','860':'UZ','894':'ZM',
   '702':'SG','344':'HK',
 };
 
@@ -74,7 +74,7 @@ const NAME_TO_A2: Record<string, string> = {
   'Polonia':'PL','Poland':'PL',
   'Repubblica Ceca':'CZ','Rep. Ceca':'CZ','Czech Republic':'CZ','Czechia':'CZ',
   'Ungheria':'HU','Hungary':'HU',
-  'Romania':'RO','Romania':'RO',
+  'Romania':'RO',
   'Grecia':'GR','Greece':'GR',
   'Croazia':'HR','Croatia':'HR',
   'Slovenia':'SI',
