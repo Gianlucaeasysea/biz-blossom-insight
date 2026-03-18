@@ -16,7 +16,7 @@ export function generateTimeSeriesData(orders: Order[], days: number = 30): Time
 
     const b2c = dayOrders
       .filter(o => o.customerType === 'B2C')
-      .reduce((sum, o) => sum + o.totalAmount, 0);
+      .reduce((sum, o) => sum + (o.netAmount ?? o.totalAmount), 0);
 
     const b2b = dayOrders
       .filter(o => o.customerType === 'B2B' && isNotCustom(o))
@@ -65,19 +65,18 @@ export function generateChannelData(orders: Order[]): CategoryData[] {
 
 // Calculate KPIs - new structure
 export function calculateKPIs(orders: Order[]): KPIData[] {
-  // B2C: net sales = totalAmount
   const b2cOrders = orders.filter(o => o.customerType === 'B2C');
   const b2bOrdersNoCustom = orders.filter(o => o.customerType === 'B2B' && isNotCustom(o));
 
-  // Total Order B2C = net sales totale
-  const totalOrderB2C = b2cOrders.reduce((s, o) => s + o.totalAmount, 0);
+  // Total Order B2C = net sales totale (netAmount = gross - discounts - returns)
+  const totalOrderB2C = b2cOrders.reduce((s, o) => s + (o.netAmount ?? o.totalAmount), 0);
   // Total Order B2B = sum price by order date (already filtered by date range upstream), excl custom
   const totalOrderB2B = b2bOrdersNoCustom.reduce((s, o) => s + o.products.reduce((ps, p) => ps + p.totalPrice, 0), 0);
   // Total Order = B2C + B2B
   const totalOrder = totalOrderB2C + totalOrderB2B;
 
   // Fatturato B2C = net sales solo ordini evasi (completed)
-  const fatturatoB2C = b2cOrders.filter(o => o.status === 'completed').reduce((s, o) => s + o.totalAmount, 0);
+  const fatturatoB2C = b2cOrders.filter(o => o.status === 'completed').reduce((s, o) => s + (o.netAmount ?? o.totalAmount), 0);
   // Fatturato B2B = sum price for DELIVERED (completed) + delivery date exists, excl custom
   const fatturatoB2B = b2bOrdersNoCustom
     .filter(o => o.status === 'completed' && o.deliveryDate)
@@ -268,7 +267,8 @@ export function getCountryBreakdown(orders: Order[], skuFilter?: string): Array<
     if (skuFilter) {
       amount = order.products.filter(p => p.sku === skuFilter).reduce((s, p) => s + p.totalPrice, 0);
     } else {
-      amount = order.totalAmount;
+      // B2C uses netAmount (gross - discounts - returns), B2B uses totalAmount
+      amount = order.customerType === 'B2C' ? (order.netAmount ?? order.totalAmount) : order.totalAmount;
     }
     if (amount <= 0) return;
     if (!countryMap[country]) countryMap[country] = { b2c: 0, b2b: 0 };
