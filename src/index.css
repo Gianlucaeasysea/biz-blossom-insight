@@ -91,11 +91,11 @@
   }
 
   .kpi-card {
-    @apply glass-card p-5 transition-all duration-200 hover:border-primary/20;
+    @apply glass-card p-4 transition-all duration-200 hover:border-primary/30 hover:shadow-lg hover:shadow-primary/5;
   }
 
   .chart-container {
-    @apply glass-card p-5;
+    @apply glass-card p-4 sm:p-5;
   }
 
   .section-label {
