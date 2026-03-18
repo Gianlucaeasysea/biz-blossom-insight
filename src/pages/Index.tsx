@@ -18,9 +18,9 @@ import { NavLink } from '@/components/NavLink';
 import { useShopifyOrders } from '@/hooks/useShopifyOrders';
 import { useShopifySalesSummary } from '@/hooks/useShopifySalesSummary';
 import { useGoogleSheetsOrders } from '@/hooks/useGoogleSheetsOrders';
+import { useShopifySkuBreakdown } from '@/hooks/useShopifySkuBreakdown';
 import {
   calculateKPIs,
-  getB2CSkuBreakdown,
   getB2BSkuBreakdown,
   getCombinedSkuBreakdown,
 } from '@/lib/mock-data';
@@ -58,16 +58,16 @@ export default function Index() {
     enabled: customerTypeFilter !== 'B2B',
   });
 
+  // B2C SKU breakdown from ShopifyQL (official Shopify report data)
+  const { data: b2cSkuData = [], isLoading: isLoadingSkuBreakdown } = useShopifySkuBreakdown({
+    start: dateRange.start,
+    end: dateRange.end,
+    enabled: customerTypeFilter !== 'B2B',
+  });
+
   const kpis = useMemo(() => calculateKPIs(filteredOrders), [filteredOrders]);
-  const b2cSkuData = useMemo(() => getB2CSkuBreakdown(filteredOrders), [filteredOrders]);
   const b2bSkuData = useMemo(() => getB2BSkuBreakdown(filteredOrders), [filteredOrders]);
   const combinedSkuData = useMemo(() => getCombinedSkuBreakdown(filteredOrders), [filteredOrders]);
-
-  const allSkus = useMemo(() => {
-    const skuSet = new Set<string>();
-    filteredOrders.forEach(o => o.products.forEach(p => skuSet.add(p.sku)));
-    return Array.from(skuSet).sort();
-  }, [filteredOrders]);
 
   const kpiMap = useMemo(() => Object.fromEntries(kpis.map(k => [k.label, k])), [kpis]);
 
@@ -84,26 +84,14 @@ export default function Index() {
       lines.push(`${k.label}: ${val}`);
     });
     lines.push('');
-    lines.push('--- Top SKU B2C (per net sales) ---');
-    b2cSkuData.slice(0, 15).forEach(s => lines.push(`${s.sku} (${s.name}): qty ${s.qtySold}, net sales €${s.netSalesTotal.toLocaleString('it-IT', { minimumFractionDigits: 2 })}, evasi €${s.netSalesFulfilled.toLocaleString('it-IT', { minimumFractionDigits: 2 })}`));
+    lines.push('--- Top SKU B2C (ShopifyQL Net Sales) ---');
+    b2cSkuData.slice(0, 15).forEach(s => lines.push(`${s.sku} (${s.name}): qty ${s.netQuantity}, net sales €${s.netSales.toLocaleString('it-IT', { minimumFractionDigits: 2 })}`));
     lines.push('');
     lines.push('--- Top SKU B2B (per price raccolto) ---');
     b2bSkuData.slice(0, 15).forEach(s => lines.push(`${s.sku} (${s.name}): qty ${s.qtySold}, raccolto €${s.priceRaccolto.toLocaleString('it-IT', { minimumFractionDigits: 2 })}, consegnato €${s.priceConsegnato.toLocaleString('it-IT', { minimumFractionDigits: 2 })}`));
     lines.push('');
     lines.push('--- Top SKU Combinato ---');
     combinedSkuData.slice(0, 15).forEach(s => lines.push(`${s.sku} (${s.name}): qty ${s.qtySold}, totale €${s.totalValue.toLocaleString('it-IT', { minimumFractionDigits: 2 })}`));
-    lines.push('');
-    const countryMap: Record<string, { orders: number; revenue: number }> = {};
-    filteredOrders.forEach(o => {
-      const c = o.destinationCountry || o.country || 'Sconosciuto';
-      if (!countryMap[c]) countryMap[c] = { orders: 0, revenue: 0 };
-      countryMap[c].orders++;
-      countryMap[c].revenue += o.customerType === 'B2C' ? (o.netAmount ?? o.totalAmount) : o.totalAmount;
-    });
-    lines.push('--- Vendite per Paese ---');
-    Object.entries(countryMap).sort((a, b) => b[1].revenue - a[1].revenue).slice(0, 10).forEach(([c, d]) =>
-      lines.push(`${c}: ${d.orders} ordini, €${d.revenue.toLocaleString('it-IT', { minimumFractionDigits: 2 })}`)
-    );
     return lines.join('\n');
   }, [dateRange, customerTypeFilter, allOrders, shopifyOrders, gsOrders, filteredOrders, kpis, b2cSkuData, b2bSkuData, combinedSkuData]);
 
@@ -151,9 +139,8 @@ export default function Index() {
           <FilterBar customerTypeFilter={customerTypeFilter} onCustomerTypeChange={setCustomerTypeFilter} dateRange={dateRange} onDateRangeChange={setDateRange} />
         </div>
 
-        {/* === KPI + B2C SALES BREAKDOWN SIDE BY SIDE === */}
+        {/* === KPI + B2C SALES BREAKDOWN === */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-6">
-          {/* Left: KPIs stacked */}
           <div className="lg:col-span-2 space-y-4">
             <p className="section-label">Overview</p>
             <div className="grid grid-cols-3 gap-3">
@@ -168,8 +155,6 @@ export default function Index() {
               {kpiMap['Totale Ordini B2B'] && <KPICard data={kpiMap['Totale Ordini B2B']} />}
             </div>
           </div>
-
-          {/* Right: B2C Sales Breakdown */}
           <div>
             <B2CSalesBreakdown
               summary={shopifySalesSummary}
@@ -186,24 +171,24 @@ export default function Index() {
 
         {/* === SKU DETAIL SECTION === */}
         <div className="mb-6">
-          <p className="section-label mb-3">Dettaglio Vendite SKU</p>
+          <p className="section-label mb-3">Dettaglio Vendite per SKU</p>
           <div className="space-y-4">
-            <B2CSkuTable data={b2cSkuData} />
+            <B2CSkuTable data={b2cSkuData} isLoading={isLoadingSkuBreakdown} />
             <B2BSkuTable data={b2bSkuData} />
             <CombinedSkuTable data={combinedSkuData} />
           </div>
         </div>
 
-        {/* === COLLECTION + COUNTRY SIDE BY SIDE === */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6">
-          <div>
-            <p className="section-label mb-3">Vendite per Collection</p>
-            <CollectionBreakdown orders={filteredOrders} />
-          </div>
-          <div>
-            <p className="section-label mb-3">Vendite per Paese</p>
-            <CountryBreakdown orders={filteredOrders} allSkus={allSkus} />
-          </div>
+        {/* === COLLECTION === */}
+        <div className="mb-6">
+          <p className="section-label mb-3">Vendite per Collection</p>
+          <CollectionBreakdown orders={filteredOrders} />
+        </div>
+
+        {/* === COUNTRY === */}
+        <div className="mb-6">
+          <p className="section-label mb-3">Vendite per Paese</p>
+          <CountryBreakdown orders={filteredOrders} />
         </div>
 
         {/* === Sales Trend by Channel/Product === */}
