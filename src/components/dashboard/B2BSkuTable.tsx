@@ -35,8 +35,8 @@ export function B2BSkuTable({ data }: { data: SkuRow[] }) {
     <div className="chart-container">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
         <div className="flex items-center gap-2">
-          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold tracking-wider uppercase bg-[hsl(25,90%,18%)] text-[hsl(25,95%,65%)] border border-[hsl(25,90%,28%)] shadow-[0_0_8px_hsl(25,95%,40%/0.3)]">B2B</span>
-          <h3 className="text-sm font-semibold text-[hsl(25,95%,65%)]">Dettaglio B2B per SKU</h3>
+          <span className="badge-b2b inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold tracking-wider uppercase">B2B</span>
+          <h3 className="text-sm font-semibold accent-b2b">Dettaglio B2B per SKU</h3>
         </div>
         <div className="flex items-center gap-2">
           <div className="relative w-full sm:w-56">

@@ -620,7 +620,7 @@ export function B2CSalesHeatmap({ orders, dateRange }: B2CSalesHeatmapProps) {
         <div>
           <div className="flex items-center gap-2">
             <h3 className="text-sm font-semibold text-foreground">Mappa Vendite B2C</h3>
-            <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-[hsl(215,85%,18%)] text-[hsl(215,85%,65%)] border border-[hsl(215,85%,30%)]">B2C</span>
+            <span className="badge-b2c text-[10px] font-bold px-2 py-0.5 rounded-full">B2C</span>
           </div>
           <p className="text-xs text-muted-foreground mt-0.5">{periodLabel} · {fmtCurrency(totalB2CSales)} totale</p>
         </div>
