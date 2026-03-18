@@ -34,7 +34,10 @@ export function B2CSkuTable({ data }: { data: SkuRow[] }) {
   return (
     <div className="chart-container">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
-        <h3 className="text-sm font-semibold">Dettaglio B2C per SKU</h3>
+        <div className="flex items-center gap-2">
+          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold tracking-wider uppercase bg-[hsl(215,85%,18%)] text-[hsl(215,85%,65%)] border border-[hsl(215,85%,28%)] shadow-[0_0_8px_hsl(215,85%,40%/0.3)]">B2C</span>
+          <h3 className="text-sm font-semibold text-[hsl(215,85%,70%)]">Dettaglio B2C per SKU</h3>
+        </div>
         <div className="flex items-center gap-2">
           <div className="relative w-full sm:w-56">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
