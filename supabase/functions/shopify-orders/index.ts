@@ -12,10 +12,16 @@ interface ShopifyOrder {
   created_at: string;
   total_price: string;
   subtotal_price: string;
+  current_subtotal_price?: string;
+  total_line_items_price?: string;
   total_discounts: string;
+  current_total_discounts?: string;
   total_tax?: string;
   current_total_tax?: string;
   total_shipping_price_set?: {
+    shop_money?: { amount: string };
+  };
+  current_total_shipping_price_set?: {
     shop_money?: { amount: string };
   };
   current_total_additional_fees_set?: {
@@ -61,6 +67,15 @@ interface ShopifyOrder {
   landing_site?: string | null;
   referring_site?: string | null;
   note_attributes?: Array<{ name: string; value: string }>;
+}
+
+function parseMoney(value: string | number | null | undefined): number {
+  const parsed = typeof value === 'number' ? value : parseFloat(value || '0');
+  return Number.isFinite(parsed) ? parsed : 0;
+}
+
+function roundMoney(value: number): number {
+  return Math.round(value * 100) / 100;
 }
 
 function extractUtmParams(url: string | null | undefined): Record<string, string> {
