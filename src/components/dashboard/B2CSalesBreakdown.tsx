@@ -6,7 +6,7 @@ interface B2CSalesBreakdownProps {
 }
 
 export function B2CSalesBreakdown({ orders }: B2CSalesBreakdownProps) {
-  const b2cOrders = useMemo(() => orders.filter(o => o.customerType === 'B2C'), [orders]);
+  const b2cOrders = useMemo(() => orders.filter((o) => o.customerType === 'B2C'), [orders]);
 
   const breakdown = useMemo(() => {
     const grossSales = b2cOrders.reduce((s, o) => s + (o.grossSales ?? o.totalAmount), 0);
@@ -15,10 +15,13 @@ export function B2CSalesBreakdown({ orders }: B2CSalesBreakdownProps) {
     const shippingCharges = b2cOrders.reduce((s, o) => s + (o.shippingCharges ?? 0), 0);
     const taxes = b2cOrders.reduce((s, o) => s + (o.taxes ?? 0), 0);
     const fees = b2cOrders.reduce((s, o) => s + (o.fees ?? 0), 0);
-    const netSales = b2cOrders.reduce((s, o) => s + (o.netAmount ?? o.totalAmount), 0);
+    const netSales = b2cOrders.reduce(
+      (s, o) => s + (o.netAmount ?? ((o.grossSales ?? o.totalAmount) + (o.totalDiscounts ?? 0) + (o.totalRefunds ?? 0))),
+      0,
+    );
     const totalSales = b2cOrders.reduce(
-      (s, o) => s + (o.totalSales ?? ((o.netAmount ?? o.totalAmount) + (o.shippingCharges ?? 0) + (o.taxes ?? 0) + (o.fees ?? 0))),
-      0
+      (s, o) => s + (o.totalSales ?? ((o.netAmount ?? 0) + (o.shippingCharges ?? 0) + (o.taxes ?? 0) + (o.fees ?? 0))),
+      0,
     );
 
     return { grossSales, discounts, returns, shippingCharges, taxes, fees, netSales, totalSales, orderCount: b2cOrders.length };
@@ -27,10 +30,10 @@ export function B2CSalesBreakdown({ orders }: B2CSalesBreakdownProps) {
   const fmt = (v: number) =>
     new Intl.NumberFormat('it-IT', { style: 'currency', currency: 'EUR' }).format(v);
 
-  const rows: Array<{ label: string; value: number; negative?: boolean; highlight?: boolean }> = [
+  const rows: Array<{ label: string; value: number; highlight?: boolean }> = [
     { label: 'Gross Sales B2C', value: breakdown.grossSales },
-    { label: 'Discounts B2C', value: breakdown.discounts, negative: true },
-    { label: 'Returns B2C', value: breakdown.returns, negative: true },
+    { label: 'Discounts B2C', value: breakdown.discounts },
+    { label: 'Returns B2C', value: breakdown.returns },
     { label: 'Net Sales B2C', value: breakdown.netSales, highlight: true },
     { label: 'Shipping Charges B2C', value: breakdown.shippingCharges },
     { label: 'Taxes B2C', value: breakdown.taxes },
@@ -47,27 +50,32 @@ export function B2CSalesBreakdown({ orders }: B2CSalesBreakdownProps) {
         </div>
       </div>
       <div className="space-y-0">
-        {rows.map((row) => (
-          <div
-            key={row.label}
-            className={`flex items-center justify-between py-3 px-3 text-sm ${
-              row.highlight
-                ? 'bg-primary/10 rounded-md font-semibold'
-                : 'border-b border-border/30'
-            }`}
-          >
-            <span className={`${row.highlight ? 'text-primary' : 'text-muted-foreground'}`}>
-              {row.label}
-            </span>
-            <span className={`font-mono text-xs ${
-              row.negative ? 'text-destructive' : row.highlight ? 'text-primary' : 'text-foreground'
-            }`}>
-              {row.negative ? '-' : ''}{fmt(Math.abs(row.value))}
-            </span>
-          </div>
-        ))}
+        {rows.map((row) => {
+          const valueClass = row.highlight
+            ? 'text-primary'
+            : row.value < 0
+              ? 'text-destructive'
+              : 'text-foreground';
+
+          return (
+            <div
+              key={row.label}
+              className={`flex items-center justify-between py-3 px-3 text-sm ${
+                row.highlight
+                  ? 'bg-primary/10 rounded-md font-semibold'
+                  : 'border-b border-border/30'
+              }`}
+            >
+              <span className={row.highlight ? 'text-primary' : 'text-muted-foreground'}>
+                {row.label}
+              </span>
+              <span className={`font-mono text-xs ${valueClass}`}>
+                {fmt(row.value)}
+              </span>
+            </div>
+          );
+        })}
       </div>
     </div>
   );
 }
-

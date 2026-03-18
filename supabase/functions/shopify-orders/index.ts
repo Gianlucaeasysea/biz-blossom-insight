@@ -242,9 +242,9 @@ serve(async (req) => {
           : 'Ospite',
         date: order.created_at,
         products: order.line_items.map((item) => {
-          const grossPrice = parseFloat(item.price) * item.quantity;
+          const grossPrice = parseMoney(item.price) * item.quantity;
           const itemDiscount = (item.discount_allocations || []).reduce(
-            (sum, discount) => sum + parseFloat(discount.amount || '0'),
+            (sum, discount) => sum + parseMoney(discount.amount),
             0,
           );
 
@@ -259,22 +259,22 @@ serve(async (req) => {
             }
           }
 
-          const netPrice = grossPrice - itemDiscount - itemRefund;
+          const netPrice = roundMoney(grossPrice - itemDiscount - itemRefund);
           return {
             id: `shopify-item-${item.id}`,
             name: item.title,
             sku: item.sku || `SKU-${item.product_id}`,
             category: 'Shopify',
             quantity: item.quantity,
-            unitPrice: parseFloat(item.price),
-            totalPrice: Math.round(netPrice * 100) / 100,
+            unitPrice: parseMoney(item.price),
+            totalPrice: netPrice,
           };
         }),
-        totalAmount: parseFloat(order.total_price),
+        totalAmount: roundMoney(parseMoney(order.total_price)),
         netAmount,
         grossSales,
-        totalDiscounts,
-        totalRefunds: refundTotal,
+        totalDiscounts: discountsValue,
+        totalRefunds: returnsValue,
         shippingCharges,
         taxes,
         fees,
