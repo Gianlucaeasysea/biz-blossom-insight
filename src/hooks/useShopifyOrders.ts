@@ -23,6 +23,9 @@ interface ShopifyOrdersResponse {
     }>;
     totalAmount: number;
     netAmount?: number;
+    grossSales?: number;
+    totalDiscounts?: number;
+    totalRefunds?: number;
     currency: string;
     channel: string;
     status: 'pending' | 'completed' | 'cancelled' | 'refunded';
