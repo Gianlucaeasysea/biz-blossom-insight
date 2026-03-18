@@ -233,15 +233,34 @@ serve(async (req) => {
           ? `${order.customer.first_name} ${order.customer.last_name}`.trim() 
           : 'Ospite',
         date: order.created_at,
-        products: order.line_items.map((item) => ({
-          id: `shopify-item-${item.id}`,
-          name: item.title,
-          sku: item.sku || `SKU-${item.product_id}`,
-          category: 'Shopify',
-          quantity: item.quantity,
-          unitPrice: parseFloat(item.price),
-          totalPrice: parseFloat(item.price) * item.quantity,
-        })),
+        products: order.line_items.map((item) => {
+          const grossPrice = parseFloat(item.price) * item.quantity;
+          // Subtract line-item discount allocations
+          const itemDiscount = (item.discount_allocations || []).reduce(
+            (s, d) => s + parseFloat(d.amount || '0'), 0
+          );
+          // Subtract refunds for this line item
+          let itemRefund = 0;
+          if (order.refunds) {
+            for (const refund of order.refunds) {
+              for (const rli of (refund.refund_line_items || [])) {
+                if (rli.line_item_id === item.id) {
+                  itemRefund += rli.subtotal || 0;
+                }
+              }
+            }
+          }
+          const netPrice = grossPrice - itemDiscount - itemRefund;
+          return {
+            id: `shopify-item-${item.id}`,
+            name: item.title,
+            sku: item.sku || `SKU-${item.product_id}`,
+            category: 'Shopify',
+            quantity: item.quantity,
+            unitPrice: parseFloat(item.price),
+            totalPrice: Math.round(netPrice * 100) / 100,
+          };
+        }),
         totalAmount: parseFloat(order.total_price),
         netAmount,
         currency: order.currency,
