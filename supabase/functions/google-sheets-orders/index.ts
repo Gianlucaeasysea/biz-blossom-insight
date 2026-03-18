@@ -58,7 +58,7 @@ serve(async (req) => {
     const sheetsUrl = `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/${encodeURIComponent(range)}?key=${apiKey}&majorDimension=ROWS&valueRenderOption=FORMATTED_VALUE`;
 
     console.log(`Fetching sheet: ${sheetName}, range: ${range}`);
-    const response = await fetch(sheetsUrl);
+    const response = await fetchWithRetry(sheetsUrl);
 
     if (!response.ok) {
       const errorText = await response.text();
