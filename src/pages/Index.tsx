@@ -53,6 +53,12 @@ export default function Index() {
     });
   }, [allOrders, dateRange, customerTypeFilter]);
 
+  const { data: shopifySalesSummary, isLoading: isLoadingShopifySummary } = useShopifySalesSummary({
+    start: dateRange.start,
+    end: dateRange.end,
+    enabled: customerTypeFilter !== 'B2B',
+  });
+
   const kpis = useMemo(() => calculateKPIs(filteredOrders), [filteredOrders]);
   const b2cSkuData = useMemo(() => getB2CSkuBreakdown(filteredOrders), [filteredOrders]);
   const b2bSkuData = useMemo(() => getB2BSkuBreakdown(filteredOrders), [filteredOrders]);
