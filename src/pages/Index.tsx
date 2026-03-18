@@ -44,7 +44,6 @@ export default function Index() {
   const filteredOrders = useMemo(() => {
     return allOrders.filter(order => {
       const orderDate = order.date instanceof Date ? order.date : new Date(order.date);
-      // Ensure end date includes the full day (23:59:59.999)
       const endOfDay = new Date(dateRange.end);
       endOfDay.setHours(23, 59, 59, 999);
       const inDateRange = orderDate >= dateRange.start && orderDate <= endOfDay;
@@ -64,17 +63,14 @@ export default function Index() {
   const b2bSkuData = useMemo(() => getB2BSkuBreakdown(filteredOrders), [filteredOrders]);
   const combinedSkuData = useMemo(() => getCombinedSkuBreakdown(filteredOrders), [filteredOrders]);
 
-  // All unique SKUs for country filter
   const allSkus = useMemo(() => {
     const skuSet = new Set<string>();
     filteredOrders.forEach(o => o.products.forEach(p => skuSet.add(p.sku)));
     return Array.from(skuSet).sort();
   }, [filteredOrders]);
 
-  // KPIs by label
   const kpiMap = useMemo(() => Object.fromEntries(kpis.map(k => [k.label, k])), [kpis]);
 
-  // Build AI context string from dashboard data
   const aiDashboardContext = useMemo(() => {
     const lines: string[] = [];
     lines.push(`Periodo: ${format(dateRange.start, 'dd/MM/yyyy')} - ${format(dateRange.end, 'dd/MM/yyyy')}`);
@@ -97,7 +93,6 @@ export default function Index() {
     lines.push('--- Top SKU Combinato ---');
     combinedSkuData.slice(0, 15).forEach(s => lines.push(`${s.sku} (${s.name}): qty ${s.qtySold}, totale €${s.totalValue.toLocaleString('it-IT', { minimumFractionDigits: 2 })}`));
     lines.push('');
-    // Country breakdown
     const countryMap: Record<string, { orders: number; revenue: number }> = {};
     filteredOrders.forEach(o => {
       const c = o.destinationCountry || o.country || 'Sconosciuto';
@@ -156,68 +151,59 @@ export default function Index() {
           <FilterBar customerTypeFilter={customerTypeFilter} onCustomerTypeChange={setCustomerTypeFilter} dateRange={dateRange} onDateRangeChange={setDateRange} />
         </div>
 
-        {/* === KPI SECTION === */}
-        {/* Total Order */}
-        <div className="mb-6">
-          <p className="section-label mb-2">Overview</p>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-            {kpiMap['Total Order'] && <KPICard data={kpiMap['Total Order']} />}
-            {kpiMap['Total Order B2C'] && <KPICard data={kpiMap['Total Order B2C']} />}
-            {kpiMap['Total Order B2B'] && <KPICard data={kpiMap['Total Order B2B']} />}
+        {/* === KPI + B2C SALES BREAKDOWN SIDE BY SIDE === */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-6">
+          {/* Left: KPIs stacked */}
+          <div className="lg:col-span-2 space-y-4">
+            <p className="section-label">Overview</p>
+            <div className="grid grid-cols-3 gap-3">
+              {kpiMap['Total Order'] && <KPICard data={kpiMap['Total Order']} />}
+              {kpiMap['Total Order B2C'] && <KPICard data={kpiMap['Total Order B2C']} />}
+              {kpiMap['Total Order B2B'] && <KPICard data={kpiMap['Total Order B2B']} />}
+            </div>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+              {kpiMap['Fatturato B2C'] && <KPICard data={kpiMap['Fatturato B2C']} />}
+              {kpiMap['Fatturato B2B'] && <KPICard data={kpiMap['Fatturato B2B']} />}
+              {kpiMap['Totale Ordini B2C'] && <KPICard data={kpiMap['Totale Ordini B2C']} />}
+              {kpiMap['Totale Ordini B2B'] && <KPICard data={kpiMap['Totale Ordini B2B']} />}
+            </div>
+          </div>
+
+          {/* Right: B2C Sales Breakdown */}
+          <div>
+            <B2CSalesBreakdown
+              summary={shopifySalesSummary}
+              orderCount={filteredOrders.filter((order) => order.customerType === 'B2C').length}
+              isLoading={isLoadingShopifySummary}
+            />
           </div>
         </div>
 
-        {/* Fatturato + Ordini count */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
-          {kpiMap['Fatturato B2C'] && <KPICard data={kpiMap['Fatturato B2C']} />}
-          {kpiMap['Fatturato B2B'] && <KPICard data={kpiMap['Fatturato B2B']} />}
-          {kpiMap['Totale Ordini B2C'] && <KPICard data={kpiMap['Totale Ordini B2C']} />}
-          {kpiMap['Totale Ordini B2B'] && <KPICard data={kpiMap['Totale Ordini B2B']} />}
-        </div>
-
-        {/* === B2C SALES BREAKDOWN === */}
-        <div className="mb-6">
-          <B2CSalesBreakdown
-            summary={shopifySalesSummary}
-            orderCount={filteredOrders.filter((order) => order.customerType === 'B2C').length}
-            isLoading={isLoadingShopifySummary}
-          />
-        </div>
-
+        {/* === ORDERS TREND === */}
         <div className="mb-6">
           <OrdersTrendChart orders={filteredOrders} dateRange={dateRange} />
         </div>
 
         {/* === SKU DETAIL SECTION === */}
-        <div className="mb-8">
+        <div className="mb-6">
           <p className="section-label mb-3">Dettaglio Vendite SKU</p>
-          
-          {/* B2C SKU */}
-          <div className="mb-4">
+          <div className="space-y-4">
             <B2CSkuTable data={b2cSkuData} />
-          </div>
-
-          {/* B2B SKU */}
-          <div className="mb-4">
             <B2BSkuTable data={b2bSkuData} />
-          </div>
-
-          {/* Combined */}
-          <div>
             <CombinedSkuTable data={combinedSkuData} />
           </div>
         </div>
 
-        {/* === COLLECTION BREAKDOWN === */}
-        <div className="mb-6">
-          <p className="section-label mb-3">Vendite per Collection</p>
-          <CollectionBreakdown orders={filteredOrders} />
-        </div>
-
-        {/* === COUNTRY BREAKDOWN === */}
-        <div className="mb-6">
-          <p className="section-label mb-3">Vendite per Paese</p>
-          <CountryBreakdown orders={filteredOrders} allSkus={allSkus} />
+        {/* === COLLECTION + COUNTRY SIDE BY SIDE === */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6">
+          <div>
+            <p className="section-label mb-3">Vendite per Collection</p>
+            <CollectionBreakdown orders={filteredOrders} />
+          </div>
+          <div>
+            <p className="section-label mb-3">Vendite per Paese</p>
+            <CountryBreakdown orders={filteredOrders} allSkus={allSkus} />
+          </div>
         </div>
 
         {/* === Sales Trend by Channel/Product === */}
