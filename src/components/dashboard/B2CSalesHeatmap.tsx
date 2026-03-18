@@ -8,37 +8,35 @@ import { ZoomIn, ZoomOut, RotateCcw } from 'lucide-react';
 const GEO_URL = 'https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json';
 
 // Mapping country names (English + Italian variants) → ISO alpha-2
-const COUNTRY_NAME_TO_ISO: Record<string, string> = {
+const COUNTRY_NAME_TO_ISO = new Map<string, string>([
   // Italian names
-  'Italia': 'IT', 'Francia': 'FR', 'Germania': 'DE', 'Spagna': 'ES',
-  'Regno Unito': 'GB', 'Stati Uniti': 'US', 'Svizzera': 'CH',
-  'Paesi Bassi': 'NL', 'Olanda': 'NL', 'Belgio': 'BE', 'Austria': 'AT',
-  'Portogallo': 'PT', 'Svezia': 'SE', 'Norvegia': 'NO', 'Danimarca': 'DK',
-  'Finlandia': 'FI', 'Polonia': 'PL', 'Repubblica Ceca': 'CZ',
-  'Ungheria': 'HU', 'Romania': 'RO', 'Grecia': 'GR', 'Croazia': 'HR',
-  'Slovenia': 'SI', 'Slovacchia': 'SK', 'Bulgaria': 'BG', 'Serbia': 'RS',
-  'Ucraina': 'UA', 'Russia': 'RU', 'Turchia': 'TR', 'Giappone': 'JP',
-  'Cina': 'CN', 'Corea del Sud': 'KR', 'India': 'IN', 'Australia': 'AU',
-  'Canada': 'CA', 'Brasile': 'BR', 'Messico': 'MX', 'Argentina': 'AR',
-  'Sudafrica': 'ZA', 'Sud Africa': 'ZA', 'Emirati Arabi Uniti': 'AE',
-  'Arabia Saudita': 'SA', 'Israele': 'IL', 'Lussemburgo': 'LU',
-  'Irlanda': 'IE', 'Malta': 'MT', 'Cipro': 'CY', 'Estonia': 'EE',
-  'Lettonia': 'LV', 'Lituania': 'LT',
+  ['Italia', 'IT'], ['Francia', 'FR'], ['Germania', 'DE'], ['Spagna', 'ES'],
+  ['Regno Unito', 'GB'], ['Stati Uniti', 'US'], ['Svizzera', 'CH'],
+  ['Paesi Bassi', 'NL'], ['Olanda', 'NL'], ['Belgio', 'BE'], ['Austria', 'AT'],
+  ['Portogallo', 'PT'], ['Svezia', 'SE'], ['Norvegia', 'NO'], ['Danimarca', 'DK'],
+  ['Finlandia', 'FI'], ['Polonia', 'PL'], ['Repubblica Ceca', 'CZ'],
+  ['Ungheria', 'HU'], ['Romania', 'RO'], ['Grecia', 'GR'], ['Croazia', 'HR'],
+  ['Slovenia', 'SI'], ['Slovacchia', 'SK'], ['Bulgaria', 'BG'], ['Serbia', 'RS'],
+  ['Ucraina', 'UA'], ['Russia', 'RU'], ['Turchia', 'TR'], ['Giappone', 'JP'],
+  ['Cina', 'CN'], ['Corea del Sud', 'KR'], ['India', 'IN'], ['Australia', 'AU'],
+  ['Canada', 'CA'], ['Brasile', 'BR'], ['Messico', 'MX'], ['Argentina', 'AR'],
+  ['Sudafrica', 'ZA'], ['Sud Africa', 'ZA'], ['Emirati Arabi Uniti', 'AE'],
+  ['Arabia Saudita', 'SA'], ['Israele', 'IL'], ['Lussemburgo', 'LU'],
+  ['Irlanda', 'IE'], ['Malta', 'MT'], ['Cipro', 'CY'], ['Estonia', 'EE'],
+  ['Lettonia', 'LV'], ['Lituania', 'LT'],
   // English names
-  'Italy': 'IT', 'France': 'FR', 'Germany': 'DE', 'Spain': 'ES',
-  'United Kingdom': 'GB', 'United States': 'US', 'Switzerland': 'CH',
-  'Netherlands': 'NL', 'Belgium': 'BE', 'Austria': 'AT', 'Portugal': 'PT',
-  'Sweden': 'SE', 'Norway': 'NO', 'Denmark': 'DK', 'Finland': 'FI',
-  'Poland': 'PL', 'Czech Republic': 'CZ', 'Hungary': 'HU', 'Romania': 'RO',
-  'Greece': 'GR', 'Croatia': 'HR', 'Slovenia': 'SI', 'Slovakia': 'SK',
-  'Bulgaria': 'BG', 'Serbia': 'RS', 'Ukraine': 'UA', 'Russia': 'RU',
-  'Turkey': 'TR', 'Japan': 'JP', 'China': 'CN', 'South Korea': 'KR',
-  'India': 'IN', 'Australia': 'AU', 'Canada': 'CA', 'Brazil': 'BR',
-  'Mexico': 'MX', 'Argentina': 'AR', 'South Africa': 'ZA',
-  'United Arab Emirates': 'AE', 'Saudi Arabia': 'SA', 'Israel': 'IL',
-  'Luxembourg': 'LU', 'Ireland': 'IE', 'Malta': 'MT', 'Cyprus': 'CY',
-  'Estonia': 'EE', 'Latvia': 'LV', 'Lithuania': 'LT',
-};
+  ['Italy', 'IT'], ['France', 'FR'], ['Germany', 'DE'], ['Spain', 'ES'],
+  ['United Kingdom', 'GB'], ['United States', 'US'], ['Switzerland', 'CH'],
+  ['Netherlands', 'NL'], ['Belgium', 'BE'], ['Portugal', 'PT'],
+  ['Sweden', 'SE'], ['Norway', 'NO'], ['Denmark', 'DK'], ['Finland', 'FI'],
+  ['Poland', 'PL'], ['Czech Republic', 'CZ'], ['Hungary', 'HU'],
+  ['Greece', 'GR'], ['Croatia', 'HR'], ['Slovenia', 'SI'], ['Slovakia', 'SK'],
+  ['Ukraine', 'UA'], ['Turkey', 'TR'], ['Japan', 'JP'], ['China', 'CN'],
+  ['South Korea', 'KR'], ['Brazil', 'BR'], ['Mexico', 'MX'],
+  ['South Africa', 'ZA'], ['United Arab Emirates', 'AE'], ['Saudi Arabia', 'SA'],
+  ['Israel', 'IL'], ['Luxembourg', 'LU'], ['Ireland', 'IE'], ['Cyprus', 'CY'],
+  ['Latvia', 'LV'], ['Lithuania', 'LT'],
+]);
 
 // Map GeoJSON country name → ISO alpha-2
 const GEO_NAME_TO_ISO: Record<string, string> = {
@@ -85,7 +83,7 @@ export function B2CSalesHeatmap({ orders, dateRange }: B2CSalesHeatmapProps) {
 
     b2cOrders.forEach(o => {
       const rawName = o.destinationCountry || o.country || '';
-      const iso = COUNTRY_NAME_TO_ISO[rawName] || rawName.toUpperCase().slice(0, 2);
+      const iso = COUNTRY_NAME_TO_ISO.get(rawName) || rawName.toUpperCase().slice(0, 2);
       if (!iso || iso.length !== 2) return;
       const amount = o.netAmount ?? o.totalAmount;
       if (!byIso[iso]) byIso[iso] = { sales: 0, orders: 0, name: rawName };

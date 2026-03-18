@@ -129,4 +129,32 @@
   .scrollbar-custom::-webkit-scrollbar-thumb {
     @apply bg-muted-foreground/20 rounded-full;
   }
+
+  /* react-grid-layout overrides */
+  .dashboard-grid .react-grid-item {
+    transition: all 200ms ease;
+  }
+
+  .dashboard-grid .react-grid-item.react-grid-placeholder {
+    @apply bg-primary/15 rounded-lg border-2 border-dashed border-primary/30;
+    opacity: 1 !important;
+  }
+
+  .dashboard-grid .react-grid-item > .react-resizable-handle {
+    @apply opacity-0 transition-opacity;
+  }
+
+  .dashboard-grid .react-grid-item:hover > .react-resizable-handle {
+    @apply opacity-100;
+  }
+
+  .dashboard-grid .react-grid-item > .react-resizable-handle::after {
+    border-color: hsl(var(--muted-foreground) / 0.4) !important;
+    width: 8px !important;
+    height: 8px !important;
+  }
+
+  .dashboard-grid .react-grid-item > div {
+    height: 100%;
+  }
 }
