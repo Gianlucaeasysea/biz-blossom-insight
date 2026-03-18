@@ -3,6 +3,8 @@ import { subDays, format, eachDayOfInterval } from 'date-fns';
 
 // Helper: is a B2B order NOT custom?
 const isNotCustom = (o: Order) => !o.orderType || o.orderType.toLowerCase() !== 'custom';
+const getB2CNetSales = (o: Order) => o.netAmount ?? o.totalAmount;
+const getReportingAmount = (o: Order) => o.customerType === 'B2C' ? getB2CNetSales(o) : o.totalAmount;
 
 // Generate time series data with B2C, B2B (excl custom), B2B custom
 export function generateTimeSeriesData(orders: Order[], days: number = 30): TimeSeriesData[] {
