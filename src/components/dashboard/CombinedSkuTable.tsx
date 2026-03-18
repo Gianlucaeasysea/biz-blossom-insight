@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { Search, ArrowUpDown, Download, Layers } from 'lucide-react';
+import { Search, ArrowUpDown, Download } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { downloadCsv } from '@/lib/csv-export';
 
@@ -34,11 +34,7 @@ export function CombinedSkuTable({ data }: { data: SkuRow[] }) {
   return (
     <div className="chart-container">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
-        <div className="flex items-center gap-2">
-          <Layers className="w-4 h-4 text-muted-foreground" />
-          <h3 className="text-sm font-semibold">Dettaglio Combinato per SKU</h3>
-          <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-muted text-muted-foreground font-medium">B2C + B2B</span>
-        </div>
+        <h3 className="text-sm font-semibold">Dettaglio Combinato B2C + B2B per SKU</h3>
         <div className="flex items-center gap-2">
           <div className="relative w-full sm:w-56">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />

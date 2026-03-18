@@ -328,72 +328,6 @@ async function fetchAnalyticsSummary(
   };
 }
 
-async function fetchSkuBreakdown(
-  storeName: string,
-  accessToken: string,
-  createdAtMin: string | null,
-  createdAtMax: string | null,
-): Promise<Array<{
-  sku: string;
-  productTitle: string;
-  variantTitle: string;
-  netQuantity: number;
-  grossSales: number;
-  discounts: number;
-  returns: number;
-  netSales: number;
-}> | null> {
-  const since = extractDateOnly(createdAtMin);
-  const until = extractDateOnly(createdAtMax);
-  if (!since || !until) return null;
-
-  const shopifyQlQuery = `FROM sales SHOW net_quantity, gross_sales, discounts, returns, net_sales GROUP BY product_title, product_variant_title, product_variant_sku SINCE ${since} UNTIL ${until} ORDER BY net_sales DESC`;
-
-  const graphqlQuery = `query ShopifyQlSkuBreakdown($query: String!) {
-    shopifyqlQuery(query: $query) {
-      tableData {
-        columns { name dataType displayName }
-        rows
-      }
-      parseErrors
-    }
-  }`;
-
-  const payload = await fetchShopifyGraphql<ShopifyQlResponse>(storeName, accessToken, graphqlQuery, { query: shopifyQlQuery });
-
-  if (payload.errors?.length) {
-    throw new Error(payload.errors.map(e => e.message).filter(Boolean).join('; '));
-  }
-
-  const parseErrors = (payload.data?.shopifyqlQuery?.parseErrors ?? []).flat().filter(Boolean);
-  if (parseErrors.length > 0) {
-    throw new Error(parseErrors.join('; '));
-  }
-
-  const columns = payload.data?.shopifyqlQuery?.tableData?.columns ?? [];
-  const rows = payload.data?.shopifyqlQuery?.tableData?.rows ?? [];
-
-  const skuKey = findColumnKey(columns, ['product_variant_sku', 'product variant sku']);
-  const titleKey = findColumnKey(columns, ['product_title', 'product title']);
-  const variantKey = findColumnKey(columns, ['product_variant_title', 'product variant title']);
-  const qtyKey = findColumnKey(columns, ['net_quantity', 'net quantity', 'net items sold']);
-  const grossKey = findColumnKey(columns, ['gross_sales', 'gross sales']);
-  const discountsKey = findColumnKey(columns, ['discounts']);
-  const returnsKey = findColumnKey(columns, ['returns']);
-  const netKey = findColumnKey(columns, ['net_sales', 'net sales']);
-
-  return rows.map(row => ({
-    sku: String(getRowValue(row, columns, skuKey) ?? ''),
-    productTitle: String(getRowValue(row, columns, titleKey) ?? ''),
-    variantTitle: String(getRowValue(row, columns, variantKey) ?? ''),
-    netQuantity: Math.round(parseMoney(getRowValue(row, columns, qtyKey) as string | number | null | undefined)),
-    grossSales: roundMoney(parseMoney(getRowValue(row, columns, grossKey) as string | number | null | undefined)),
-    discounts: roundMoney(parseMoney(getRowValue(row, columns, discountsKey) as string | number | null | undefined)),
-    returns: roundMoney(parseMoney(getRowValue(row, columns, returnsKey) as string | number | null | undefined)),
-    netSales: roundMoney(parseMoney(getRowValue(row, columns, netKey) as string | number | null | undefined)),
-  }));
-}
-
 function buildSummaryFromOrders(transformedOrders: Array<Record<string, unknown>>): ShopifySalesSummary {
   const grossSales = transformedOrders.reduce((sum, order) => sum + toCents(parseMoney(order.grossSales as number | string | null | undefined)), 0);
   const discounts = transformedOrders.reduce((sum, order) => sum + toCents(parseMoney(order.totalDiscounts as number | string | null | undefined)), 0);
@@ -458,24 +392,6 @@ serve(async (req) => {
           status: 200,
         },
       );
-    }
-
-    if (reportMode === 'sku_breakdown' && createdAtMin && createdAtMax) {
-      try {
-        const skuData = await fetchSkuBreakdown(storeName, accessToken, createdAtMin, createdAtMax);
-        if (skuData) {
-          return new Response(
-            JSON.stringify({ success: true, skuBreakdown: skuData }),
-            { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 }
-          );
-        }
-      } catch (error) {
-        console.error('Error fetching SKU breakdown from ShopifyQL:', error);
-        return new Response(
-          JSON.stringify({ success: false, error: error instanceof Error ? error.message : 'ShopifyQL SKU breakdown failed' }),
-          { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
-        );
-      }
     }
 
     const baseParams = `limit=${limit}&status=${status}`;
