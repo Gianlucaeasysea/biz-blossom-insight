@@ -16,7 +16,7 @@ export function generateTimeSeriesData(orders: Order[], days: number = 30): Time
 
     const b2c = dayOrders
       .filter(o => o.customerType === 'B2C')
-      .reduce((sum, o) => sum + o.totalAmount, 0);
+      .reduce((sum, o) => sum + (o.netAmount ?? o.totalAmount), 0);
 
     const b2b = dayOrders
       .filter(o => o.customerType === 'B2B' && isNotCustom(o))
