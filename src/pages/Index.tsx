@@ -165,7 +165,11 @@ export default function Index() {
           {kpiMap['Totale Ordini B2B'] && <KPICard data={kpiMap['Totale Ordini B2B']} />}
         </div>
 
-        {/* === TREND CHART: B2C + B2B + Custom === */}
+        {/* === B2C SALES BREAKDOWN === */}
+        <div className="mb-6">
+          <B2CSalesBreakdown orders={filteredOrders} />
+        </div>
+
         <div className="mb-6">
           <OrdersTrendChart orders={filteredOrders} dateRange={dateRange} />
         </div>
