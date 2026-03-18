@@ -1,44 +1,24 @@
-import { useMemo } from 'react';
-import { Order } from '@/types/analytics';
+import { ShopifySalesSummary } from '@/types/analytics';
 
 interface B2CSalesBreakdownProps {
-  orders: Order[];
+  summary?: ShopifySalesSummary;
+  orderCount: number;
+  isLoading?: boolean;
 }
 
-export function B2CSalesBreakdown({ orders }: B2CSalesBreakdownProps) {
-  const b2cOrders = useMemo(() => orders.filter((o) => o.customerType === 'B2C'), [orders]);
-
-  const breakdown = useMemo(() => {
-    const grossSales = b2cOrders.reduce((s, o) => s + (o.grossSales ?? o.totalAmount), 0);
-    const discounts = b2cOrders.reduce((s, o) => s + (o.totalDiscounts ?? 0), 0);
-    const returns = b2cOrders.reduce((s, o) => s + (o.totalRefunds ?? 0), 0);
-    const shippingCharges = b2cOrders.reduce((s, o) => s + (o.shippingCharges ?? 0), 0);
-    const taxes = b2cOrders.reduce((s, o) => s + (o.taxes ?? 0), 0);
-    const fees = b2cOrders.reduce((s, o) => s + (o.fees ?? 0), 0);
-    const netSales = b2cOrders.reduce(
-      (s, o) => s + (o.netAmount ?? ((o.grossSales ?? o.totalAmount) + (o.totalDiscounts ?? 0) + (o.totalRefunds ?? 0))),
-      0,
-    );
-    const totalSales = b2cOrders.reduce(
-      (s, o) => s + (o.totalSales ?? ((o.netAmount ?? 0) + (o.shippingCharges ?? 0) + (o.taxes ?? 0) + (o.fees ?? 0))),
-      0,
-    );
-
-    return { grossSales, discounts, returns, shippingCharges, taxes, fees, netSales, totalSales, orderCount: b2cOrders.length };
-  }, [b2cOrders]);
-
+export function B2CSalesBreakdown({ summary, orderCount, isLoading = false }: B2CSalesBreakdownProps) {
   const fmt = (v: number) =>
     new Intl.NumberFormat('it-IT', { style: 'currency', currency: 'EUR' }).format(v);
 
   const rows: Array<{ label: string; value: number; highlight?: boolean }> = [
-    { label: 'Gross Sales B2C', value: breakdown.grossSales },
-    { label: 'Discounts B2C', value: breakdown.discounts },
-    { label: 'Returns B2C', value: breakdown.returns },
-    { label: 'Net Sales B2C', value: breakdown.netSales, highlight: true },
-    { label: 'Shipping Charges B2C', value: breakdown.shippingCharges },
-    { label: 'Taxes B2C', value: breakdown.taxes },
-    { label: 'Fees B2C', value: breakdown.fees },
-    { label: 'Total Sales B2C', value: breakdown.totalSales },
+    { label: 'Gross Sales B2C', value: summary?.grossSales ?? 0 },
+    { label: 'Discounts B2C', value: summary?.discounts ?? 0 },
+    { label: 'Returns B2C', value: summary?.returns ?? 0 },
+    { label: 'Net Sales B2C', value: summary?.netSales ?? 0, highlight: true },
+    { label: 'Shipping Charges B2C', value: summary?.shippingCharges ?? 0 },
+    { label: 'Taxes B2C', value: summary?.taxes ?? 0 },
+    { label: 'Fees B2C', value: summary?.returnFees ?? 0 },
+    { label: 'Total Sales B2C', value: summary?.totalSales ?? 0 },
   ];
 
   return (
@@ -46,7 +26,9 @@ export function B2CSalesBreakdown({ orders }: B2CSalesBreakdownProps) {
       <div className="flex items-center justify-between mb-4">
         <div>
           <h3 className="text-sm font-semibold">Spaccato Vendite B2C</h3>
-          <p className="text-xs text-muted-foreground mt-0.5">{breakdown.orderCount} ordini</p>
+          <p className="text-xs text-muted-foreground mt-0.5">
+            {orderCount} ordini · {summary?.source === 'shopify_analytics' ? 'fonte report Shopify' : 'fallback ordini'}
+          </p>
         </div>
       </div>
       <div className="space-y-0">
@@ -70,7 +52,7 @@ export function B2CSalesBreakdown({ orders }: B2CSalesBreakdownProps) {
                 {row.label}
               </span>
               <span className={`font-mono text-xs ${valueClass}`}>
-                {fmt(row.value)}
+                {isLoading ? '…' : fmt(row.value)}
               </span>
             </div>
           );

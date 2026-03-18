@@ -16,6 +16,7 @@ import { B2CSalesBreakdown } from '@/components/dashboard/B2CSalesBreakdown';
 import { CustomerType } from '@/types/analytics';
 import { NavLink } from '@/components/NavLink';
 import { useShopifyOrders } from '@/hooks/useShopifyOrders';
+import { useShopifySalesSummary } from '@/hooks/useShopifySalesSummary';
 import { useGoogleSheetsOrders } from '@/hooks/useGoogleSheetsOrders';
 import {
   calculateKPIs,
@@ -51,6 +52,12 @@ export default function Index() {
       return inDateRange && matchesType;
     });
   }, [allOrders, dateRange, customerTypeFilter]);
+
+  const { data: shopifySalesSummary, isLoading: isLoadingShopifySummary } = useShopifySalesSummary({
+    start: dateRange.start,
+    end: dateRange.end,
+    enabled: customerTypeFilter !== 'B2B',
+  });
 
   const kpis = useMemo(() => calculateKPIs(filteredOrders), [filteredOrders]);
   const b2cSkuData = useMemo(() => getB2CSkuBreakdown(filteredOrders), [filteredOrders]);
@@ -170,7 +177,11 @@ export default function Index() {
 
         {/* === B2C SALES BREAKDOWN === */}
         <div className="mb-6">
-          <B2CSalesBreakdown orders={filteredOrders} />
+          <B2CSalesBreakdown
+            summary={shopifySalesSummary}
+            orderCount={filteredOrders.filter((order) => order.customerType === 'B2C').length}
+            isLoading={isLoadingShopifySummary}
+          />
         </div>
 
         <div className="mb-6">
