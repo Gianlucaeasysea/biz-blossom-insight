@@ -12,10 +12,16 @@ interface ShopifyOrder {
   created_at: string;
   total_price: string;
   subtotal_price: string;
+  current_subtotal_price?: string;
+  total_line_items_price?: string;
   total_discounts: string;
+  current_total_discounts?: string;
   total_tax?: string;
   current_total_tax?: string;
   total_shipping_price_set?: {
+    shop_money?: { amount: string };
+  };
+  current_total_shipping_price_set?: {
     shop_money?: { amount: string };
   };
   current_total_additional_fees_set?: {
@@ -61,6 +67,15 @@ interface ShopifyOrder {
   landing_site?: string | null;
   referring_site?: string | null;
   note_attributes?: Array<{ name: string; value: string }>;
+}
+
+function parseMoney(value: string | number | null | undefined): number {
+  const parsed = typeof value === 'number' ? value : parseFloat(value || '0');
+  return Number.isFinite(parsed) ? parsed : 0;
+}
+
+function roundMoney(value: number): number {
+  return Math.round(value * 100) / 100;
 }
 
 function extractUtmParams(url: string | null | undefined): Record<string, string> {
@@ -190,22 +205,10 @@ serve(async (req) => {
         orderStatus = 'completed';
       }
 
-      const subtotalPrice = parseFloat(order.subtotal_price || '0');
-      const totalDiscounts = parseFloat(order.total_discounts || '0');
-      const grossSales = subtotalPrice + totalDiscounts;
-
-      let refundTotal = 0;
-      if (order.refunds) {
-        for (const refund of order.refunds) {
-          if (refund.refund_line_items) {
-            for (const rli of refund.refund_line_items) {
-              refundTotal += rli.subtotal || 0;
-            }
-          }
-        }
-      }
-
-      const netAmount = subtotalPrice - refundTotal;
+      const grossSales = roundMoney(parseMoney(order.total_line_items_price || order.subtotal_price));
+      const discountsValue = roundMoney(-parseMoney(order.current_total_discounts || order.total_discounts));
+      const netAmount = roundMoney(parseMoney(order.current_subtotal_price || order.subtotal_price));
+      const returnsValue = roundMoney(netAmount - (grossSales + discountsValue));
 
       const utmFromLanding = extractUtmParams(order.landing_site);
       const utmFromReferring = extractUtmParams(order.referring_site);
@@ -221,10 +224,12 @@ serve(async (req) => {
 
       const country = order.shipping_address?.country || order.billing_address?.country || undefined;
       const destinationCountry = order.shipping_address?.country || undefined;
-      const shippingCharges = parseFloat(order.total_shipping_price_set?.shop_money?.amount || '0');
-      const taxes = parseFloat(order.current_total_tax || order.total_tax || '0');
-      const fees = parseFloat(order.current_total_additional_fees_set?.shop_money?.amount || '0');
-      const totalSales = netAmount + shippingCharges + taxes + fees;
+      const shippingCharges = roundMoney(parseMoney(
+        order.current_total_shipping_price_set?.shop_money?.amount || order.total_shipping_price_set?.shop_money?.amount,
+      ));
+      const taxes = roundMoney(parseMoney(order.current_total_tax || order.total_tax));
+      const fees = roundMoney(parseMoney(order.current_total_additional_fees_set?.shop_money?.amount));
+      const totalSales = roundMoney(netAmount + shippingCharges + taxes + fees);
 
       return {
         id: `shopify-${order.id}`,
@@ -237,9 +242,9 @@ serve(async (req) => {
           : 'Ospite',
         date: order.created_at,
         products: order.line_items.map((item) => {
-          const grossPrice = parseFloat(item.price) * item.quantity;
+          const grossPrice = parseMoney(item.price) * item.quantity;
           const itemDiscount = (item.discount_allocations || []).reduce(
-            (sum, discount) => sum + parseFloat(discount.amount || '0'),
+            (sum, discount) => sum + parseMoney(discount.amount),
             0,
           );
 
@@ -254,22 +259,22 @@ serve(async (req) => {
             }
           }
 
-          const netPrice = grossPrice - itemDiscount - itemRefund;
+          const netPrice = roundMoney(grossPrice - itemDiscount - itemRefund);
           return {
             id: `shopify-item-${item.id}`,
             name: item.title,
             sku: item.sku || `SKU-${item.product_id}`,
             category: 'Shopify',
             quantity: item.quantity,
-            unitPrice: parseFloat(item.price),
-            totalPrice: Math.round(netPrice * 100) / 100,
+            unitPrice: parseMoney(item.price),
+            totalPrice: netPrice,
           };
         }),
-        totalAmount: parseFloat(order.total_price),
+        totalAmount: roundMoney(parseMoney(order.total_price)),
         netAmount,
         grossSales,
-        totalDiscounts,
-        totalRefunds: refundTotal,
+        totalDiscounts: discountsValue,
+        totalRefunds: returnsValue,
         shippingCharges,
         taxes,
         fees,
