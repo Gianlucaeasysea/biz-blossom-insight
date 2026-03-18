@@ -11,7 +11,11 @@ interface ShopifyOrder {
   name: string;
   created_at: string;
   total_price: string;
+  subtotal_price: string;
   total_discounts: string;
+  total_shipping_price_set?: {
+    shop_money?: { amount: string };
+  };
   currency: string;
   financial_status: string;
   fulfillment_status: string | null;
@@ -28,6 +32,9 @@ interface ShopifyOrder {
     quantity: number;
     price: string;
     product_id: number;
+    discount_allocations?: Array<{
+      amount: string;
+    }>;
   }>;
   source_name: string;
   cancelled_at: string | null;
