@@ -30,6 +30,8 @@ export interface Order {
   orderType?: string; // B2B: 'custom', etc.
   country?: string;
   destinationCountry?: string; // B2C: shipping destination country
+  destinationCity?: string;    // B2C: shipping city
+  destinationProvince?: string; // B2C: shipping province/state
   landingSite?: string | null;
   referringSite?: string | null;
   utm?: Record<string, string> | null;

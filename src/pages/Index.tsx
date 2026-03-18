@@ -1,8 +1,10 @@
 import { useState, useMemo, useCallback } from 'react';
 import { subDays, format } from 'date-fns';
-import { Responsive, WidthProvider, Layout, Layouts } from 'react-grid-layout';
+import { ResponsiveGridLayout, Responsive } from 'react-grid-layout';
+import type { Layout, Layouts } from 'react-grid-layout';
 import 'react-grid-layout/css/styles.css';
 import 'react-resizable/css/styles.css';
+import { PieChart, Pie, Cell, Tooltip as ReTooltip, ResponsiveContainer } from 'recharts';
 import { DashboardHeader } from '@/components/dashboard/DashboardHeader';
 import { FilterBar } from '@/components/dashboard/FilterBar';
 import { KPICard } from '@/components/dashboard/KPICard';
@@ -28,65 +30,66 @@ import {
   getB2CSkuBreakdown,
   getB2BSkuBreakdown,
   getCombinedSkuBreakdown,
+  getTop3ProductsByQty,
 } from '@/lib/mock-data';
-import { Loader2, AlertCircle, Lock, Unlock } from 'lucide-react';
+import { Loader2, AlertCircle, Lock, Unlock, Package } from 'lucide-react';
 
-const ResponsiveGridLayout = WidthProvider(Responsive);
+
 
 const STORAGE_KEY = 'dashboard-layouts';
 
 const DEFAULT_LAYOUTS: Layouts = {
   lg: [
-    { i: 'kpis', x: 0, y: 0, w: 8, h: 4, minW: 4, minH: 3 },
-    { i: 'b2c-breakdown', x: 8, y: 0, w: 4, h: 4, minW: 3, minH: 3 },
-    { i: 'orders-trend', x: 0, y: 4, w: 12, h: 5, minW: 6, minH: 4 },
-    { i: 'b2c-sku', x: 0, y: 9, w: 12, h: 6, minW: 6, minH: 4 },
-    { i: 'b2b-sku', x: 0, y: 15, w: 12, h: 6, minW: 6, minH: 4 },
-    { i: 'combined-sku', x: 0, y: 21, w: 12, h: 6, minW: 6, minH: 4 },
-    { i: 'heatmap', x: 0, y: 27, w: 12, h: 7, minW: 6, minH: 5 },
-    { i: 'collections', x: 0, y: 34, w: 6, h: 6, minW: 4, minH: 4 },
-    { i: 'countries', x: 6, y: 34, w: 6, h: 6, minW: 4, minH: 4 },
-    { i: 'sales-trend', x: 0, y: 40, w: 12, h: 5, minW: 6, minH: 4 },
-    { i: 'connection', x: 0, y: 45, w: 12, h: 3, minW: 4, minH: 2 },
+    { i: 'kpis', x: 0, y: 0, w: 8, h: 6, minW: 4, minH: 5 },
+    { i: 'b2c-breakdown', x: 8, y: 0, w: 4, h: 6, minW: 3, minH: 4 },
+    { i: 'orders-trend', x: 0, y: 6, w: 12, h: 6, minW: 6, minH: 4 },
+    { i: 'b2c-sku', x: 0, y: 12, w: 12, h: 6, minW: 6, minH: 4 },
+    { i: 'b2b-sku', x: 0, y: 18, w: 12, h: 6, minW: 6, minH: 4 },
+    { i: 'combined-sku', x: 0, y: 24, w: 12, h: 6, minW: 6, minH: 4 },
+    { i: 'heatmap', x: 0, y: 30, w: 12, h: 8, minW: 6, minH: 6 },
+    { i: 'collections', x: 0, y: 38, w: 6, h: 6, minW: 4, minH: 4 },
+    { i: 'countries', x: 6, y: 38, w: 6, h: 6, minW: 4, minH: 4 },
+    { i: 'sales-trend', x: 0, y: 44, w: 12, h: 5, minW: 6, minH: 4 },
+    { i: 'connection', x: 0, y: 49, w: 12, h: 3, minW: 4, minH: 2 },
   ],
   md: [
-    { i: 'kpis', x: 0, y: 0, w: 6, h: 4, minW: 4, minH: 3 },
-    { i: 'b2c-breakdown', x: 6, y: 0, w: 4, h: 4, minW: 3, minH: 3 },
-    { i: 'orders-trend', x: 0, y: 4, w: 10, h: 5, minW: 5, minH: 4 },
-    { i: 'b2c-sku', x: 0, y: 9, w: 10, h: 6, minW: 5, minH: 4 },
-    { i: 'b2b-sku', x: 0, y: 15, w: 10, h: 6, minW: 5, minH: 4 },
-    { i: 'combined-sku', x: 0, y: 21, w: 10, h: 6, minW: 5, minH: 4 },
-    { i: 'heatmap', x: 0, y: 27, w: 10, h: 7, minW: 5, minH: 5 },
-    { i: 'collections', x: 0, y: 34, w: 5, h: 6, minW: 4, minH: 4 },
-    { i: 'countries', x: 5, y: 34, w: 5, h: 6, minW: 4, minH: 4 },
-    { i: 'sales-trend', x: 0, y: 40, w: 10, h: 5, minW: 5, minH: 4 },
-    { i: 'connection', x: 0, y: 45, w: 10, h: 3, minW: 4, minH: 2 },
+    { i: 'kpis', x: 0, y: 0, w: 6, h: 6, minW: 4, minH: 5 },
+    { i: 'b2c-breakdown', x: 6, y: 0, w: 4, h: 6, minW: 3, minH: 4 },
+    { i: 'orders-trend', x: 0, y: 6, w: 10, h: 6, minW: 5, minH: 4 },
+    { i: 'b2c-sku', x: 0, y: 12, w: 10, h: 6, minW: 5, minH: 4 },
+    { i: 'b2b-sku', x: 0, y: 18, w: 10, h: 6, minW: 5, minH: 4 },
+    { i: 'combined-sku', x: 0, y: 24, w: 10, h: 6, minW: 5, minH: 4 },
+    { i: 'heatmap', x: 0, y: 30, w: 10, h: 8, minW: 5, minH: 6 },
+    { i: 'collections', x: 0, y: 38, w: 5, h: 6, minW: 4, minH: 4 },
+    { i: 'countries', x: 5, y: 38, w: 5, h: 6, minW: 4, minH: 4 },
+    { i: 'sales-trend', x: 0, y: 44, w: 10, h: 5, minW: 5, minH: 4 },
+    { i: 'connection', x: 0, y: 49, w: 10, h: 3, minW: 4, minH: 2 },
   ],
   sm: [
-    { i: 'kpis', x: 0, y: 0, w: 6, h: 5, minW: 3, minH: 4 },
-    { i: 'b2c-breakdown', x: 0, y: 5, w: 6, h: 4, minW: 3, minH: 3 },
-    { i: 'orders-trend', x: 0, y: 9, w: 6, h: 5, minW: 3, minH: 4 },
-    { i: 'b2c-sku', x: 0, y: 14, w: 6, h: 6, minW: 3, minH: 4 },
-    { i: 'b2b-sku', x: 0, y: 20, w: 6, h: 6, minW: 3, minH: 4 },
-    { i: 'combined-sku', x: 0, y: 26, w: 6, h: 6, minW: 3, minH: 4 },
-    { i: 'heatmap', x: 0, y: 32, w: 6, h: 6, minW: 3, minH: 4 },
-    { i: 'collections', x: 0, y: 38, w: 6, h: 5, minW: 3, minH: 4 },
-    { i: 'countries', x: 0, y: 43, w: 6, h: 5, minW: 3, minH: 4 },
-    { i: 'sales-trend', x: 0, y: 48, w: 6, h: 5, minW: 3, minH: 4 },
-    { i: 'connection', x: 0, y: 53, w: 6, h: 3, minW: 3, minH: 2 },
+    { i: 'kpis', x: 0, y: 0, w: 6, h: 7, minW: 3, minH: 5 },
+    { i: 'b2c-breakdown', x: 0, y: 7, w: 6, h: 5, minW: 3, minH: 4 },
+    { i: 'orders-trend', x: 0, y: 12, w: 6, h: 6, minW: 3, minH: 4 },
+    { i: 'b2c-sku', x: 0, y: 18, w: 6, h: 6, minW: 3, minH: 4 },
+    { i: 'b2b-sku', x: 0, y: 24, w: 6, h: 6, minW: 3, minH: 4 },
+    { i: 'combined-sku', x: 0, y: 30, w: 6, h: 6, minW: 3, minH: 4 },
+    { i: 'heatmap', x: 0, y: 36, w: 6, h: 7, minW: 3, minH: 5 },
+    { i: 'collections', x: 0, y: 43, w: 6, h: 5, minW: 3, minH: 4 },
+    { i: 'countries', x: 0, y: 48, w: 6, h: 5, minW: 3, minH: 4 },
+    { i: 'sales-trend', x: 0, y: 53, w: 6, h: 5, minW: 3, minH: 4 },
+    { i: 'connection', x: 0, y: 58, w: 6, h: 3, minW: 3, minH: 2 },
   ],
   xs: [
-    { i: 'kpis', x: 0, y: 0, w: 4, h: 6, minW: 2, minH: 5 },
-    { i: 'b2c-breakdown', x: 0, y: 6, w: 4, h: 4, minW: 2, minH: 3 },
-    { i: 'orders-trend', x: 0, y: 10, w: 4, h: 5, minW: 2, minH: 4 },
-    { i: 'b2c-sku', x: 0, y: 15, w: 4, h: 6, minW: 2, minH: 4 },
-    { i: 'b2b-sku', x: 0, y: 21, w: 4, h: 6, minW: 2, minH: 4 },
-    { i: 'combined-sku', x: 0, y: 27, w: 4, h: 6, minW: 2, minH: 4 },
-    { i: 'heatmap', x: 0, y: 33, w: 4, h: 5, minW: 2, minH: 4 },
-    { i: 'collections', x: 0, y: 38, w: 4, h: 5, minW: 2, minH: 4 },
-    { i: 'countries', x: 0, y: 43, w: 4, h: 5, minW: 2, minH: 4 },
-    { i: 'sales-trend', x: 0, y: 48, w: 4, h: 5, minW: 2, minH: 4 },
-    { i: 'connection', x: 0, y: 53, w: 4, h: 3, minW: 2, minH: 2 },
+    { i: 'kpis', x: 0, y: 0, w: 4, h: 8, minW: 2, minH: 6 },
+    { i: 'b2c-breakdown', x: 0, y: 8, w: 4, h: 5, minW: 2, minH: 4 },
+    { i: 'orders-trend', x: 0, y: 13, w: 4, h: 6, minW: 2, minH: 4 },
+    { i: 'b2c-sku', x: 0, y: 19, w: 4, h: 6, minW: 2, minH: 4 },
+    { i: 'b2b-sku', x: 0, y: 25, w: 4, h: 6, minW: 2, minH: 4 },
+    { i: 'combined-sku', x: 0, y: 31, w: 4, h: 6, minW: 2, minH: 4 },
+    { i: 'heatmap', x: 0, y: 37, w: 4, h: 7, minW: 2, minH: 5 },
+    { i: 'collections', x: 0, y: 44, w: 4, h: 5, minW: 2, minH: 4 },
+    { i: 'countries', x: 0, y: 49, w: 4, h: 5, minW: 2, minH: 4 },
+    { i: 'sales-trend', x: 0, y: 54, w: 4, h: 5, minW: 2, minH: 4 },
+    { i: 'connection', x: 0, y: 59, w: 4, h: 3, minW: 2, minH: 2 },
   ],
 };
 
@@ -136,6 +139,7 @@ export default function Index() {
   const b2cSkuData = useMemo(() => getB2CSkuBreakdown(filteredOrders), [filteredOrders]);
   const b2bSkuData = useMemo(() => getB2BSkuBreakdown(filteredOrders), [filteredOrders]);
   const combinedSkuData = useMemo(() => getCombinedSkuBreakdown(filteredOrders), [filteredOrders]);
+  const top3Products = useMemo(() => getTop3ProductsByQty(filteredOrders), [filteredOrders]);
 
   const allSkus = useMemo(() => {
     const skuSet = new Set<string>();
@@ -198,49 +202,42 @@ export default function Index() {
     localStorage.removeItem(STORAGE_KEY);
   }, []);
 
+  const b2cVal = kpiMap['Total Order B2C']?.value ?? 0;
+  const b2bVal = kpiMap['Total Order B2B']?.value ?? 0;
+  const totalVal = b2cVal + b2bVal;
+  const pieData = [
+    { name: 'B2C', value: b2cVal, fill: 'hsl(215, 85%, 55%)' },
+    { name: 'B2B', value: b2bVal, fill: 'hsl(25, 95%, 55%)' },
+  ];
+
   return (
     <div className="min-h-screen bg-background p-3 sm:p-4 lg:p-6">
       <div className="max-w-[1600px] mx-auto">
         <DashboardHeader onRefresh={handleRefresh} isLoading={isFetching} />
 
-        {/* Navigation + Layout Controls */}
         <div className="flex items-center justify-between gap-2 mb-4">
           <div className="flex gap-2">
             <NavLink to="/" className="px-4 py-2 rounded-lg text-sm font-medium bg-secondary text-secondary-foreground hover:bg-secondary/80 transition-colors" activeClassName="bg-primary text-primary-foreground">Sales Dashboard</NavLink>
             <NavLink to="/meta-ads" className="px-4 py-2 rounded-lg text-sm font-medium bg-secondary text-secondary-foreground hover:bg-secondary/80 transition-colors" activeClassName="bg-primary text-primary-foreground">Meta Ads</NavLink>
           </div>
           <div className="flex items-center gap-1.5">
-            <button
-              onClick={() => setIsLocked(l => !l)}
-              className="p-2 rounded-lg border border-border/50 bg-muted/50 hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
-              title={isLocked ? 'Sblocca layout' : 'Blocca layout'}
-            >
+            <button onClick={() => setIsLocked(l => !l)} className="p-2 rounded-lg border border-border/50 bg-muted/50 hover:bg-muted text-muted-foreground hover:text-foreground transition-colors" title={isLocked ? 'Sblocca layout' : 'Blocca layout'}>
               {isLocked ? <Lock className="w-3.5 h-3.5" /> : <Unlock className="w-3.5 h-3.5" />}
             </button>
-            <button
-              onClick={resetLayout}
-              className="px-3 py-2 rounded-lg border border-border/50 bg-muted/50 hover:bg-muted text-muted-foreground hover:text-foreground transition-colors text-xs"
-              title="Reset layout"
-            >
-              Reset
-            </button>
+            <button onClick={resetLayout} className="px-3 py-2 rounded-lg border border-border/50 bg-muted/50 hover:bg-muted text-muted-foreground hover:text-foreground transition-colors text-xs">Reset layout</button>
           </div>
         </div>
 
-        {/* Errors */}
         {isErrorShopify && (
           <div className="mb-3 p-3 rounded-md bg-destructive/10 border border-destructive/20 flex items-center gap-2 text-xs text-destructive">
-            <AlertCircle className="w-4 h-4 shrink-0" />
-            Shopify: {errorShopify instanceof Error ? errorShopify.message : 'Errore'}
+            <AlertCircle className="w-4 h-4 shrink-0" />Shopify: {errorShopify instanceof Error ? errorShopify.message : 'Errore'}
           </div>
         )}
         {isErrorGS && (
           <div className="mb-3 p-3 rounded-md bg-destructive/10 border border-destructive/20 flex items-center gap-2 text-xs text-destructive">
-            <AlertCircle className="w-4 h-4 shrink-0" />
-            Google Sheets: {errorGS instanceof Error ? errorGS.message : 'Errore'}
+            <AlertCircle className="w-4 h-4 shrink-0" />Google Sheets: {errorGS instanceof Error ? errorGS.message : 'Errore'}
           </div>
         )}
-
         {isLoading && (
           <div className="mb-4 flex items-center justify-center gap-2 p-12">
             <Loader2 className="w-5 h-5 animate-spin text-primary" />
@@ -248,12 +245,10 @@ export default function Index() {
           </div>
         )}
 
-        {/* Filters */}
         <div className="mb-4">
           <FilterBar customerTypeFilter={customerTypeFilter} onCustomerTypeChange={setCustomerTypeFilter} dateRange={dateRange} onDateRangeChange={setDateRange} />
         </div>
 
-        {/* Drag & Drop Grid */}
         <ResponsiveGridLayout
           className="dashboard-grid"
           layouts={layouts}
@@ -268,7 +263,7 @@ export default function Index() {
           containerPadding={[0, 0]}
           useCSSTransforms
         >
-          {/* KPIs */}
+          {/* KPIs — Overview */}
           <div key="kpis">
             <DashboardWidget title="Overview" subtitle="KPI principali">
               <div className="space-y-3">
@@ -283,78 +278,115 @@ export default function Index() {
                   {kpiMap['Totale Ordini B2C'] && <KPICard data={kpiMap['Totale Ordini B2C']} />}
                   {kpiMap['Totale Ordini B2B'] && <KPICard data={kpiMap['Totale Ordini B2B']} />}
                 </div>
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                  {kpiMap['AOV B2C'] && <KPICard data={kpiMap['AOV B2C']} />}
+                  {kpiMap['AOV B2B'] && <KPICard data={kpiMap['AOV B2B']} />}
+                  <div className="kpi-card col-span-2 sm:col-span-1">
+                    <div className="flex items-center gap-1.5 mb-2">
+                      <Package className="w-3 h-3 text-muted-foreground" />
+                      <p className="text-[11px] text-muted-foreground font-medium uppercase tracking-wider">Top 3 Prodotti</p>
+                    </div>
+                    <div className="space-y-1.5">
+                      {top3Products.length === 0 && <p className="text-xs text-muted-foreground">Nessun dato</p>}
+                      {top3Products.map((p, i) => (
+                        <div key={p.sku} className="flex items-center gap-2">
+                          <span className="text-[10px] font-bold text-muted-foreground w-3 shrink-0">{i + 1}.</span>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-[11px] font-medium text-foreground truncate leading-tight">{p.name}</p>
+                            <p className="text-[10px] text-muted-foreground">{p.sku}</p>
+                          </div>
+                          <span className="text-sm font-bold font-mono text-primary shrink-0">{p.qty}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                  <div className="kpi-card col-span-2 sm:col-span-1">
+                    <p className="text-[11px] text-muted-foreground font-medium uppercase tracking-wider mb-1">Incidenza B2C / B2B</p>
+                    {totalVal === 0 ? (
+                      <p className="text-xs text-muted-foreground mt-2">Nessun dato</p>
+                    ) : (
+                      <div className="flex items-center gap-2">
+                        <div className="w-16 h-16 shrink-0">
+                          <ResponsiveContainer width="100%" height="100%">
+                            <PieChart>
+                              <Pie data={pieData} dataKey="value" cx="50%" cy="50%" innerRadius={18} outerRadius={30} strokeWidth={0}>
+                                {pieData.map((entry, idx) => <Cell key={idx} fill={entry.fill} />)}
+                              </Pie>
+                              <ReTooltip formatter={(v: number) => [`€${v.toLocaleString('it-IT', { maximumFractionDigits: 0 })}`, '']} contentStyle={{ background: 'hsl(220,25%,12%)', border: '1px solid hsl(220,20%,22%)', borderRadius: 6, fontSize: 11 }} />
+                            </PieChart>
+                          </ResponsiveContainer>
+                        </div>
+                        <div className="space-y-1.5 min-w-0">
+                          {pieData.map(d => (
+                            <div key={d.name} className="flex items-center gap-1.5">
+                              <div className="w-2 h-2 rounded-full shrink-0" style={{ background: d.fill }} />
+                              <span className="text-[10px] text-muted-foreground">{d.name}</span>
+                              <span className="text-[11px] font-bold font-mono text-foreground ml-auto">{((d.value / totalVal) * 100).toFixed(0)}%</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
               </div>
             </DashboardWidget>
           </div>
 
-          {/* B2C Sales Breakdown */}
           <div key="b2c-breakdown">
             <DashboardWidget title="Spaccato Vendite B2C" subtitle="Report ufficiale">
-              <B2CSalesBreakdown
-                summary={shopifySalesSummary}
-                orderCount={filteredOrders.filter(o => o.customerType === 'B2C').length}
-                isLoading={isLoadingShopifySummary}
-              />
+              <B2CSalesBreakdown summary={shopifySalesSummary} orderCount={filteredOrders.filter(o => o.customerType === 'B2C').length} isLoading={isLoadingShopifySummary} />
             </DashboardWidget>
           </div>
 
-          {/* Orders Trend */}
           <div key="orders-trend">
-            <DashboardWidget title="Andamento Ordini" subtitle="Trend giornaliero">
-              <OrdersTrendChart orders={filteredOrders} dateRange={dateRange} />
+            <DashboardWidget title="Andamento Ordini" subtitle="Trend per periodo / anno">
+              <OrdersTrendChart orders={filteredOrders} allOrders={allOrders} dateRange={dateRange} />
             </DashboardWidget>
           </div>
 
-          {/* B2C SKU */}
           <div key="b2c-sku">
             <DashboardWidget title="Dettaglio SKU B2C" subtitle="Net Sales per variante">
               <B2CSkuTable data={b2cSkuData} />
             </DashboardWidget>
           </div>
 
-          {/* B2B SKU */}
           <div key="b2b-sku">
             <DashboardWidget title="Dettaglio SKU B2B" subtitle="Raccolto e consegnato">
               <B2BSkuTable data={b2bSkuData} />
             </DashboardWidget>
           </div>
 
-          {/* Combined SKU */}
           <div key="combined-sku">
             <DashboardWidget title="SKU Combinato" subtitle="B2C + B2B totale">
               <CombinedSkuTable data={combinedSkuData} />
             </DashboardWidget>
           </div>
 
-          {/* Heatmap */}
           <div key="heatmap">
-            <DashboardWidget title="Mappa Vendite B2C" subtitle="Per paese">
+            <DashboardWidget title="Mappa Vendite B2C" subtitle="Per paese / città">
               <B2CSalesHeatmap orders={filteredOrders} dateRange={dateRange} />
             </DashboardWidget>
           </div>
 
-          {/* Collections */}
           <div key="collections">
             <DashboardWidget title="Vendite per Collection">
               <CollectionBreakdown orders={filteredOrders} />
             </DashboardWidget>
           </div>
 
-          {/* Countries */}
           <div key="countries">
             <DashboardWidget title="Vendite per Paese">
               <CountryBreakdown orders={filteredOrders} allSkus={allSkus} />
             </DashboardWidget>
           </div>
 
-          {/* Sales Trend */}
           <div key="sales-trend">
             <DashboardWidget title="Andamento Vendite" subtitle="Per canale/prodotto">
               <SalesTrendChart orders={filteredOrders} dateRange={dateRange} />
             </DashboardWidget>
           </div>
 
-          {/* Connection Status */}
           <div key="connection">
             <DashboardWidget title="Stato Connessioni">
               <ConnectionStatus sources={dataSources} />
@@ -363,7 +395,6 @@ export default function Index() {
         </ResponsiveGridLayout>
       </div>
 
-      {/* AI Assistant */}
       <AiAssistant dashboardContext={aiDashboardContext} />
     </div>
   );
