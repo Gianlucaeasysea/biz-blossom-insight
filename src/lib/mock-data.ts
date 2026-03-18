@@ -57,7 +57,7 @@ export function generateChannelData(orders: Order[]): CategoryData[] {
   const channels: Record<string, number> = {};
   orders.forEach(order => {
     const channel = order.channel || 'Unknown';
-    channels[channel] = (channels[channel] || 0) + order.totalAmount;
+    channels[channel] = (channels[channel] || 0) + getReportingAmount(order);
   });
   const colors = ['hsl(190, 100%, 50%)', 'hsl(270, 60%, 55%)', 'hsl(160, 60%, 45%)', 'hsl(40, 90%, 55%)', 'hsl(0, 70%, 55%)'];
   return Object.entries(channels)
