@@ -312,7 +312,7 @@ export function getTopCustomers(orders: Order[], limit: number = 5) {
       customers[order.customerId] = { name: order.customerName, type: order.customerType, orders: 0, spent: 0, firstDate: order.date, lastDate: order.date, agent: order.agent };
     }
     customers[order.customerId].orders++;
-    customers[order.customerId].spent += order.totalAmount;
+    customers[order.customerId].spent += getReportingAmount(order);
     if (order.date < customers[order.customerId].firstDate) customers[order.customerId].firstDate = order.date;
     if (order.date > customers[order.customerId].lastDate) customers[order.customerId].lastDate = order.date;
   });
