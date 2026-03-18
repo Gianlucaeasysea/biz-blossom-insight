@@ -293,9 +293,7 @@ async function fetchAnalyticsSummary(
         }
         rows
       }
-      parseErrors {
-        message
-      }
+      parseErrors
     }
   }`;
 
@@ -307,9 +305,9 @@ async function fetchAnalyticsSummary(
     throw new Error(payload.errors.map((error) => error.message).filter(Boolean).join('; '));
   }
 
-  const parseErrors = payload.data?.shopifyqlQuery?.parseErrors ?? [];
+  const parseErrors = (payload.data?.shopifyqlQuery?.parseErrors ?? []).flat().filter(Boolean);
   if (parseErrors.length > 0) {
-    throw new Error(parseErrors.map((error) => error.message).filter(Boolean).join('; '));
+    throw new Error(parseErrors.join('; '));
   }
 
   const columns = payload.data?.shopifyqlQuery?.tableData?.columns ?? [];
