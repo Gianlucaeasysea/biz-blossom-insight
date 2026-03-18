@@ -7,6 +7,19 @@ const corsHeaders = {
 
 const SPREADSHEET_ID = '1S_Si86x7GdKAuRdRkx5wFK231lGnujChZtFXwo9tMzg';
 
+async function fetchWithRetry(url: string, opts?: RequestInit, retries = 3): Promise<Response> {
+  for (let i = 0; i < retries; i++) {
+    try {
+      return await fetch(url, opts);
+    } catch (err) {
+      if (i === retries - 1) throw err;
+      console.warn(`Fetch attempt ${i + 1} failed, retrying in ${(i + 1) * 500}ms...`);
+      await new Promise(r => setTimeout(r, (i + 1) * 500));
+    }
+  }
+  throw new Error('Unreachable');
+}
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders });
@@ -20,7 +33,7 @@ serve(async (req) => {
 
     // Get all sheet names to find the orders sheet
     const metaUrl = `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}?key=${apiKey}&fields=sheets.properties.title`;
-    const metaResponse = await fetch(metaUrl);
+    const metaResponse = await fetchWithRetry(metaUrl);
     if (!metaResponse.ok) {
       const errorText = await metaResponse.text();
       throw new Error(`Google Sheets metadata error: ${metaResponse.status} - ${errorText}`);
