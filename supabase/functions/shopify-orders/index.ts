@@ -282,7 +282,7 @@ async function fetchAnalyticsSummary(
 
   if (!since || !until) return null;
 
-  const shopifyQlQuery = `FROM sales SHOW gross_sales, discounts, sales_reversals, net_sales, shipping, taxes, total_sales GROUP BY day SINCE ${since} UNTIL ${until} ORDER BY day`;
+  const shopifyQlQuery = `FROM sales SHOW gross_sales, discounts, returns, net_sales, shipping_charges, taxes, total_sales GROUP BY day SINCE ${since} UNTIL ${until} ORDER BY day`;
   const graphqlQuery = `query ShopifyQlSummary($query: String!) {
     shopifyqlQuery(query: $query) {
       tableData {
