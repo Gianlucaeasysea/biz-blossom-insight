@@ -10,6 +10,7 @@ import { B2BSkuTable } from '@/components/dashboard/B2BSkuTable';
 import { CombinedSkuTable } from '@/components/dashboard/CombinedSkuTable';
 import { CountryBreakdown } from '@/components/dashboard/CountryBreakdown';
 import { CollectionBreakdown } from '@/components/dashboard/CollectionBreakdown';
+import { B2CSalesHeatmap } from '@/components/dashboard/B2CSalesHeatmap';
 import { ConnectionStatus } from '@/components/dashboard/ConnectionStatus';
 import { AiAssistant } from '@/components/dashboard/AiAssistant';
 import { B2CSalesBreakdown } from '@/components/dashboard/B2CSalesBreakdown';
@@ -192,6 +193,11 @@ export default function Index() {
             <B2BSkuTable data={b2bSkuData} />
             <CombinedSkuTable data={combinedSkuData} />
           </div>
+        </div>
+
+        {/* === B2C SALES HEATMAP PER PAESE === */}
+        <div className="mb-6">
+          <B2CSalesHeatmap orders={filteredOrders} dateRange={dateRange} />
         </div>
 
         {/* === COLLECTION + COUNTRY SIDE BY SIDE === */}
