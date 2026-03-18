@@ -82,9 +82,7 @@ interface ShopifyQlResponse {
         columns?: ShopifyQlColumn[];
         rows?: Array<Record<string, unknown> | unknown[]>;
       };
-      parseErrors?: Array<{
-        message?: string;
-      }>;
+      parseErrors?: string[][];
     };
   };
   errors?: Array<{
