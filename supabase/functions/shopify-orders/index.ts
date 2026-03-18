@@ -13,7 +13,12 @@ interface ShopifyOrder {
   total_price: string;
   subtotal_price: string;
   total_discounts: string;
+  total_tax?: string;
+  current_total_tax?: string;
   total_shipping_price_set?: {
+    shop_money?: { amount: string };
+  };
+  current_total_additional_fees_set?: {
     shop_money?: { amount: string };
   };
   currency: string;
@@ -102,7 +107,7 @@ serve(async (req) => {
 
     const baseParams = `limit=${limit}&status=${status}`;
     let shopifyUrl = `https://${storeName}.myshopify.com/admin/api/2024-01/orders.json?${baseParams}`;
-    
+
     if (createdAtMin) shopifyUrl += `&created_at_min=${createdAtMin}`;
     if (createdAtMax) shopifyUrl += `&created_at_max=${createdAtMax}`;
 
@@ -185,15 +190,10 @@ serve(async (req) => {
         orderStatus = 'completed';
       }
 
-      // Use subtotal_price as anchor: it's the sum of line items after discounts, before shipping/tax
-      // This is the most reliable field from Shopify
       const subtotalPrice = parseFloat(order.subtotal_price || '0');
       const totalDiscounts = parseFloat(order.total_discounts || '0');
-
-      // Gross Sales = subtotal + discounts (reverses discount to get true gross)
       const grossSales = subtotalPrice + totalDiscounts;
 
-      // Calculate total refunds
       let refundTotal = 0;
       if (order.refunds) {
         for (const refund of order.refunds) {
@@ -205,13 +205,10 @@ serve(async (req) => {
         }
       }
 
-      // Net Sales = subtotal_price - refunds = Gross - Discounts - Returns
       const netAmount = subtotalPrice - refundTotal;
 
-      // Extract UTM parameters from landing_site and referring_site
       const utmFromLanding = extractUtmParams(order.landing_site);
       const utmFromReferring = extractUtmParams(order.referring_site);
-      // Also check note_attributes for UTM data
       const utmFromNotes: Record<string, string> = {};
       if (order.note_attributes) {
         for (const attr of order.note_attributes) {
@@ -224,6 +221,10 @@ serve(async (req) => {
 
       const country = order.shipping_address?.country || order.billing_address?.country || undefined;
       const destinationCountry = order.shipping_address?.country || undefined;
+      const shippingCharges = parseFloat(order.total_shipping_price_set?.shop_money?.amount || '0');
+      const taxes = parseFloat(order.current_total_tax || order.total_tax || '0');
+      const fees = parseFloat(order.current_total_additional_fees_set?.shop_money?.amount || '0');
+      const totalSales = netAmount + shippingCharges + taxes + fees;
 
       return {
         id: `shopify-${order.id}`,
@@ -231,27 +232,28 @@ serve(async (req) => {
         customerType: 'B2C' as const,
         source: 'shopify' as const,
         customerId: order.customer ? `shopify-customer-${order.customer.id}` : 'guest',
-        customerName: order.customer 
-          ? `${order.customer.first_name} ${order.customer.last_name}`.trim() 
+        customerName: order.customer
+          ? `${order.customer.first_name} ${order.customer.last_name}`.trim()
           : 'Ospite',
         date: order.created_at,
         products: order.line_items.map((item) => {
           const grossPrice = parseFloat(item.price) * item.quantity;
-          // Subtract line-item discount allocations
           const itemDiscount = (item.discount_allocations || []).reduce(
-            (s, d) => s + parseFloat(d.amount || '0'), 0
+            (sum, discount) => sum + parseFloat(discount.amount || '0'),
+            0,
           );
-          // Subtract refunds for this line item
+
           let itemRefund = 0;
           if (order.refunds) {
             for (const refund of order.refunds) {
-              for (const rli of (refund.refund_line_items || [])) {
+              for (const rli of refund.refund_line_items || []) {
                 if (rli.line_item_id === item.id) {
                   itemRefund += rli.subtotal || 0;
                 }
               }
             }
           }
+
           const netPrice = grossPrice - itemDiscount - itemRefund;
           return {
             id: `shopify-item-${item.id}`,
@@ -268,6 +270,10 @@ serve(async (req) => {
         grossSales,
         totalDiscounts,
         totalRefunds: refundTotal,
+        shippingCharges,
+        taxes,
+        fees,
+        totalSales,
         currency: order.currency,
         channel: order.source_name,
         status: orderStatus,
@@ -282,27 +288,27 @@ serve(async (req) => {
     console.log(`Successfully fetched ${transformedOrders.length} orders from Shopify`);
 
     return new Response(
-      JSON.stringify({ 
-        success: true, 
+      JSON.stringify({
+        success: true,
         orders: transformedOrders,
-        count: transformedOrders.length 
+        count: transformedOrders.length,
       }),
-      { 
+      {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        status: 200 
-      }
+        status: 200,
+      },
     );
   } catch (error) {
     console.error('Error fetching Shopify orders:', error);
     return new Response(
-      JSON.stringify({ 
-        success: false, 
-        error: error instanceof Error ? error.message : 'Unknown error' 
+      JSON.stringify({
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown error',
       }),
-      { 
+      {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        status: 500 
-      }
+        status: 500,
+      },
     );
   }
 });

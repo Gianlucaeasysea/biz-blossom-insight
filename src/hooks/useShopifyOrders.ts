@@ -26,6 +26,10 @@ interface ShopifyOrdersResponse {
     grossSales?: number;
     totalDiscounts?: number;
     totalRefunds?: number;
+    shippingCharges?: number;
+    taxes?: number;
+    fees?: number;
+    totalSales?: number;
     currency: string;
     channel: string;
     status: 'pending' | 'completed' | 'cancelled' | 'refunded';

@@ -12,21 +12,30 @@ export function B2CSalesBreakdown({ orders }: B2CSalesBreakdownProps) {
     const grossSales = b2cOrders.reduce((s, o) => s + (o.grossSales ?? o.totalAmount), 0);
     const discounts = b2cOrders.reduce((s, o) => s + (o.totalDiscounts ?? 0), 0);
     const returns = b2cOrders.reduce((s, o) => s + (o.totalRefunds ?? 0), 0);
-    const netSales = grossSales - discounts - returns;
-    const totalSales = b2cOrders.reduce((s, o) => s + o.totalAmount, 0);
+    const shippingCharges = b2cOrders.reduce((s, o) => s + (o.shippingCharges ?? 0), 0);
+    const taxes = b2cOrders.reduce((s, o) => s + (o.taxes ?? 0), 0);
+    const fees = b2cOrders.reduce((s, o) => s + (o.fees ?? 0), 0);
+    const netSales = b2cOrders.reduce((s, o) => s + (o.netAmount ?? o.totalAmount), 0);
+    const totalSales = b2cOrders.reduce(
+      (s, o) => s + (o.totalSales ?? ((o.netAmount ?? o.totalAmount) + (o.shippingCharges ?? 0) + (o.taxes ?? 0) + (o.fees ?? 0))),
+      0
+    );
 
-    return { grossSales, discounts, returns, netSales, totalSales, orderCount: b2cOrders.length };
+    return { grossSales, discounts, returns, shippingCharges, taxes, fees, netSales, totalSales, orderCount: b2cOrders.length };
   }, [b2cOrders]);
 
   const fmt = (v: number) =>
     new Intl.NumberFormat('it-IT', { style: 'currency', currency: 'EUR' }).format(v);
 
   const rows: Array<{ label: string; value: number; negative?: boolean; highlight?: boolean }> = [
-    { label: 'Gross Sales', value: breakdown.grossSales },
-    { label: 'Sconti', value: breakdown.discounts, negative: true },
-    { label: 'Resi', value: breakdown.returns, negative: true },
-    { label: 'Net Sales', value: breakdown.netSales, highlight: true },
-    { label: 'Total Sales (incl. spedizione + tasse)', value: breakdown.totalSales },
+    { label: 'Gross Sales B2C', value: breakdown.grossSales },
+    { label: 'Discounts B2C', value: breakdown.discounts, negative: true },
+    { label: 'Returns B2C', value: breakdown.returns, negative: true },
+    { label: 'Net Sales B2C', value: breakdown.netSales, highlight: true },
+    { label: 'Shipping Charges B2C', value: breakdown.shippingCharges },
+    { label: 'Taxes B2C', value: breakdown.taxes },
+    { label: 'Fees B2C', value: breakdown.fees },
+    { label: 'Total Sales B2C', value: breakdown.totalSales },
   ];
 
   return (
@@ -61,3 +70,4 @@ export function B2CSalesBreakdown({ orders }: B2CSalesBreakdownProps) {
     </div>
   );
 }
+

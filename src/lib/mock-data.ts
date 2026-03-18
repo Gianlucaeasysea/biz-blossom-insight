@@ -3,6 +3,8 @@ import { subDays, format, eachDayOfInterval } from 'date-fns';
 
 // Helper: is a B2B order NOT custom?
 const isNotCustom = (o: Order) => !o.orderType || o.orderType.toLowerCase() !== 'custom';
+const getB2CNetSales = (o: Order) => o.netAmount ?? o.totalAmount;
+const getReportingAmount = (o: Order) => o.customerType === 'B2C' ? getB2CNetSales(o) : o.totalAmount;
 
 // Generate time series data with B2C, B2B (excl custom), B2B custom
 export function generateTimeSeriesData(orders: Order[], days: number = 30): TimeSeriesData[] {
@@ -55,7 +57,7 @@ export function generateChannelData(orders: Order[]): CategoryData[] {
   const channels: Record<string, number> = {};
   orders.forEach(order => {
     const channel = order.channel || 'Unknown';
-    channels[channel] = (channels[channel] || 0) + order.totalAmount;
+    channels[channel] = (channels[channel] || 0) + getReportingAmount(order);
   });
   const colors = ['hsl(190, 100%, 50%)', 'hsl(270, 60%, 55%)', 'hsl(160, 60%, 45%)', 'hsl(40, 90%, 55%)', 'hsl(0, 70%, 55%)'];
   return Object.entries(channels)
@@ -68,15 +70,15 @@ export function calculateKPIs(orders: Order[]): KPIData[] {
   const b2cOrders = orders.filter(o => o.customerType === 'B2C');
   const b2bOrdersNoCustom = orders.filter(o => o.customerType === 'B2B' && isNotCustom(o));
 
-  // Total Order B2C = net sales totale (netAmount = gross - discounts - returns)
-  const totalOrderB2C = b2cOrders.reduce((s, o) => s + (o.netAmount ?? o.totalAmount), 0);
+  // Total Order B2C = net sales totale Shopify (gross - discounts - returns)
+  const totalOrderB2C = b2cOrders.reduce((s, o) => s + getB2CNetSales(o), 0);
   // Total Order B2B = sum price by order date (already filtered by date range upstream), excl custom
   const totalOrderB2B = b2bOrdersNoCustom.reduce((s, o) => s + o.products.reduce((ps, p) => ps + p.totalPrice, 0), 0);
   // Total Order = B2C + B2B
   const totalOrder = totalOrderB2C + totalOrderB2B;
 
   // Fatturato B2C = net sales solo ordini evasi (completed)
-  const fatturatoB2C = b2cOrders.filter(o => o.status === 'completed').reduce((s, o) => s + (o.netAmount ?? o.totalAmount), 0);
+  const fatturatoB2C = b2cOrders.filter(o => o.status === 'completed').reduce((s, o) => s + getB2CNetSales(o), 0);
   // Fatturato B2B = sum price for DELIVERED (completed) + delivery date exists, excl custom
   const fatturatoB2B = b2bOrdersNoCustom
     .filter(o => o.status === 'completed' && o.deliveryDate)
@@ -267,8 +269,8 @@ export function getCountryBreakdown(orders: Order[], skuFilter?: string): Array<
     if (skuFilter) {
       amount = order.products.filter(p => p.sku === skuFilter).reduce((s, p) => s + p.totalPrice, 0);
     } else {
-      // B2C uses netAmount (gross - discounts - returns), B2B uses totalAmount
-      amount = order.customerType === 'B2C' ? (order.netAmount ?? order.totalAmount) : order.totalAmount;
+      // B2C uses Shopify Net Sales, B2B uses totalAmount
+      amount = getReportingAmount(order);
     }
     if (amount <= 0) return;
     if (!countryMap[country]) countryMap[country] = { b2c: 0, b2b: 0 };
@@ -310,7 +312,7 @@ export function getTopCustomers(orders: Order[], limit: number = 5) {
       customers[order.customerId] = { name: order.customerName, type: order.customerType, orders: 0, spent: 0, firstDate: order.date, lastDate: order.date, agent: order.agent };
     }
     customers[order.customerId].orders++;
-    customers[order.customerId].spent += order.totalAmount;
+    customers[order.customerId].spent += getReportingAmount(order);
     if (order.date < customers[order.customerId].firstDate) customers[order.customerId].firstDate = order.date;
     if (order.date > customers[order.customerId].lastDate) customers[order.customerId].lastDate = order.date;
   });
