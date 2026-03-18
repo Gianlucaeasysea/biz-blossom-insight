@@ -269,8 +269,8 @@ export function getCountryBreakdown(orders: Order[], skuFilter?: string): Array<
     if (skuFilter) {
       amount = order.products.filter(p => p.sku === skuFilter).reduce((s, p) => s + p.totalPrice, 0);
     } else {
-      // B2C uses netAmount (gross - discounts - returns), B2B uses totalAmount
-      amount = order.customerType === 'B2C' ? (order.netAmount ?? order.totalAmount) : order.totalAmount;
+      // B2C uses Shopify Net Sales, B2B uses totalAmount
+      amount = getReportingAmount(order);
     }
     if (amount <= 0) return;
     if (!countryMap[country]) countryMap[country] = { b2c: 0, b2b: 0 };
