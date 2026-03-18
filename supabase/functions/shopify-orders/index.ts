@@ -69,13 +69,78 @@ interface ShopifyOrder {
   note_attributes?: Array<{ name: string; value: string }>;
 }
 
+interface ShopifyQlColumn {
+  name: string;
+  dataType?: string;
+  displayName?: string;
+}
+
+interface ShopifyQlResponse {
+  data?: {
+    shopifyqlQuery?: {
+      tableData?: {
+        columns?: ShopifyQlColumn[];
+        rows?: Array<Record<string, unknown> | unknown[]>;
+      };
+      parseErrors?: Array<{
+        message?: string;
+      }>;
+    };
+  };
+  errors?: Array<{
+    message?: string;
+  }>;
+}
+
+interface ShopifySalesSummary {
+  grossSales: number;
+  discounts: number;
+  returns: number;
+  netSales: number;
+  shippingCharges: number;
+  returnFees: number;
+  taxes: number;
+  totalSales: number;
+  source: 'shopify_analytics' | 'orders_fallback';
+  dayCount: number;
+}
+
 function parseMoney(value: string | number | null | undefined): number {
-  const parsed = typeof value === 'number' ? value : parseFloat(value || '0');
+  if (typeof value === 'number') {
+    return Number.isFinite(value) ? value : 0;
+  }
+
+  if (!value) return 0;
+
+  let normalized = String(value).trim();
+  if (!normalized) return 0;
+
+  normalized = normalized.replace(/[€$£¥\s]/g, '');
+
+  const lastComma = normalized.lastIndexOf(',');
+  const lastDot = normalized.lastIndexOf('.');
+  const commaDecimal = lastComma > lastDot;
+
+  if (commaDecimal) {
+    normalized = normalized.replace(/\./g, '').replace(',', '.');
+  } else {
+    normalized = normalized.replace(/,/g, '');
+  }
+
+  const parsed = parseFloat(normalized);
   return Number.isFinite(parsed) ? parsed : 0;
 }
 
+function toCents(value: number): number {
+  return Math.round(value * 100);
+}
+
+function fromCents(value: number): number {
+  return Math.round(value) / 100;
+}
+
 function roundMoney(value: number): number {
-  return Math.round(value * 100) / 100;
+  return fromCents(toCents(value));
 }
 
 function extractUtmParams(url: string | null | undefined): Record<string, string> {
@@ -93,32 +158,244 @@ function extractUtmParams(url: string | null | undefined): Record<string, string
   }
 }
 
+function normalizeStoreName(storeName: string): string {
+  let normalized = storeName;
+
+  if (normalized.includes('admin.shopify.com/store/')) {
+    const match = normalized.match(/admin\.shopify\.com\/store\/([^\/\?]+)/);
+    if (match) normalized = match[1];
+  } else if (normalized.includes('.myshopify.com')) {
+    normalized = normalized.replace(/https?:\/\//, '').replace('.myshopify.com', '').replace(/\/.*/g, '');
+  }
+
+  return normalized.replace(/https?:\/\//g, '').replace(/\//g, '').trim();
+}
+
+function normalizeColumnName(name: string): string {
+  return name
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[_\s]+/g, ' ')
+    .trim();
+}
+
+function findColumnKey(columns: ShopifyQlColumn[], possibleNames: string[]): string | null {
+  const candidates = possibleNames.map(normalizeColumnName);
+  const mapped = columns.map((column) => ({
+    key: column.name,
+    name: normalizeColumnName(column.name || ''),
+    displayName: normalizeColumnName(column.displayName || ''),
+  }));
+
+  for (const candidate of candidates) {
+    const exact = mapped.find((column) => column.name === candidate || column.displayName === candidate);
+    if (exact) return exact.key;
+  }
+
+  for (const candidate of candidates) {
+    const startsWith = mapped.find((column) => column.name.startsWith(candidate) || column.displayName.startsWith(candidate));
+    if (startsWith) return startsWith.key;
+  }
+
+  for (const candidate of candidates) {
+    const contains = mapped.find((column) => column.name.includes(candidate) || column.displayName.includes(candidate));
+    if (contains) return contains.key;
+  }
+
+  return null;
+}
+
+function getRowValue(
+  row: Record<string, unknown> | unknown[],
+  columns: ShopifyQlColumn[],
+  columnKey: string | null,
+): unknown {
+  if (!columnKey) return null;
+
+  if (Array.isArray(row)) {
+    const index = columns.findIndex((column) => column.name === columnKey);
+    return index >= 0 ? row[index] : null;
+  }
+
+  return row[columnKey] ?? null;
+}
+
+function sumTableColumn(
+  rows: Array<Record<string, unknown> | unknown[]>,
+  columns: ShopifyQlColumn[],
+  possibleNames: string[],
+): number {
+  const columnKey = findColumnKey(columns, possibleNames);
+  if (!columnKey) return 0;
+
+  return rows.reduce((sum, row) => sum + toCents(parseMoney(getRowValue(row, columns, columnKey) as string | number | null | undefined)), 0);
+}
+
+function extractDateOnly(value: string | null): string | null {
+  if (!value) return null;
+  if (/^\d{4}-\d{2}-\d{2}$/.test(value)) return value;
+
+  const parsed = new Date(value);
+  if (Number.isNaN(parsed.getTime())) return null;
+
+  const year = parsed.getUTCFullYear();
+  const month = String(parsed.getUTCMonth() + 1).padStart(2, '0');
+  const day = String(parsed.getUTCDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
+async function sleep(ms: number) {
+  await new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+async function fetchShopifyGraphql<T>(
+  storeName: string,
+  accessToken: string,
+  query: string,
+  variables: Record<string, unknown>,
+): Promise<T> {
+  const response = await fetch(`https://${storeName}.myshopify.com/admin/api/2025-10/graphql.json`, {
+    method: 'POST',
+    headers: {
+      'X-Shopify-Access-Token': accessToken,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ query, variables }),
+  });
+
+  const payload = await response.json().catch(() => ({}));
+
+  if (!response.ok) {
+    throw new Error(`Shopify GraphQL error: ${response.status} - ${JSON.stringify(payload)}`);
+  }
+
+  return payload as T;
+}
+
+async function fetchAnalyticsSummary(
+  storeName: string,
+  accessToken: string,
+  createdAtMin: string | null,
+  createdAtMax: string | null,
+): Promise<ShopifySalesSummary | null> {
+  const since = extractDateOnly(createdAtMin);
+  const until = extractDateOnly(createdAtMax);
+
+  if (!since || !until) return null;
+
+  const shopifyQlQuery = `FROM sales SHOW gross_sales, discounts, sales_reversals, net_sales, shipping, taxes, total_sales GROUP BY day SINCE ${since} UNTIL ${until} ORDER BY day`;
+  const graphqlQuery = `query ShopifyQlSummary($query: String!) {
+    shopifyqlQuery(query: $query) {
+      tableData {
+        columns {
+          name
+          dataType
+          displayName
+        }
+        rows
+      }
+      parseErrors {
+        message
+      }
+    }
+  }`;
+
+  const payload = await fetchShopifyGraphql<ShopifyQlResponse>(storeName, accessToken, graphqlQuery, {
+    query: shopifyQlQuery,
+  });
+
+  if (payload.errors?.length) {
+    throw new Error(payload.errors.map((error) => error.message).filter(Boolean).join('; '));
+  }
+
+  const parseErrors = payload.data?.shopifyqlQuery?.parseErrors ?? [];
+  if (parseErrors.length > 0) {
+    throw new Error(parseErrors.map((error) => error.message).filter(Boolean).join('; '));
+  }
+
+  const columns = payload.data?.shopifyqlQuery?.tableData?.columns ?? [];
+  const rows = payload.data?.shopifyqlQuery?.tableData?.rows ?? [];
+
+  return {
+    grossSales: fromCents(sumTableColumn(rows, columns, ['gross_sales', 'gross sales'])),
+    discounts: fromCents(sumTableColumn(rows, columns, ['discounts'])),
+    returns: fromCents(sumTableColumn(rows, columns, ['sales_reversals', 'sales reversals', 'returns'])),
+    netSales: fromCents(sumTableColumn(rows, columns, ['net_sales', 'net sales'])),
+    shippingCharges: fromCents(sumTableColumn(rows, columns, ['shipping', 'shipping charges'])),
+    returnFees: 0,
+    taxes: fromCents(sumTableColumn(rows, columns, ['taxes'])),
+    totalSales: fromCents(sumTableColumn(rows, columns, ['total_sales', 'total sales'])),
+    source: 'shopify_analytics',
+    dayCount: rows.length,
+  };
+}
+
+function buildSummaryFromOrders(transformedOrders: Array<Record<string, unknown>>): ShopifySalesSummary {
+  const grossSales = transformedOrders.reduce((sum, order) => sum + toCents(parseMoney(order.grossSales as number | string | null | undefined)), 0);
+  const discounts = transformedOrders.reduce((sum, order) => sum + toCents(parseMoney(order.totalDiscounts as number | string | null | undefined)), 0);
+  const returns = transformedOrders.reduce((sum, order) => sum + toCents(parseMoney(order.totalRefunds as number | string | null | undefined)), 0);
+  const netSales = transformedOrders.reduce((sum, order) => sum + toCents(parseMoney(order.netAmount as number | string | null | undefined)), 0);
+  const shippingCharges = transformedOrders.reduce((sum, order) => sum + toCents(parseMoney(order.shippingCharges as number | string | null | undefined)), 0);
+  const taxes = transformedOrders.reduce((sum, order) => sum + toCents(parseMoney(order.taxes as number | string | null | undefined)), 0);
+  const totalSales = transformedOrders.reduce((sum, order) => sum + toCents(parseMoney(order.totalSales as number | string | null | undefined)), 0);
+
+  return {
+    grossSales: fromCents(grossSales),
+    discounts: fromCents(discounts),
+    returns: fromCents(returns),
+    netSales: fromCents(netSales),
+    shippingCharges: fromCents(shippingCharges),
+    returnFees: 0,
+    taxes: fromCents(taxes),
+    totalSales: fromCents(totalSales),
+    source: 'orders_fallback',
+    dayCount: 0,
+  };
+}
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders });
   }
 
   try {
-    let storeName = Deno.env.get('SHOPIFY_STORE_NAME');
+    const storeNameRaw = Deno.env.get('SHOPIFY_STORE_NAME');
     const accessToken = Deno.env.get('SHOPIFY_ACCESS_TOKEN');
 
-    if (!storeName || !accessToken) {
+    if (!storeNameRaw || !accessToken) {
       throw new Error('Missing Shopify credentials. Please configure SHOPIFY_STORE_NAME and SHOPIFY_ACCESS_TOKEN.');
     }
 
-    if (storeName.includes('admin.shopify.com/store/')) {
-      const match = storeName.match(/admin\.shopify\.com\/store\/([^\/\?]+)/);
-      if (match) storeName = match[1];
-    } else if (storeName.includes('.myshopify.com')) {
-      storeName = storeName.replace(/https?:\/\//, '').replace('.myshopify.com', '').replace(/\/.*/g, '');
-    }
-    storeName = storeName.replace(/https?:\/\//g, '').replace(/\//g, '').trim();
-
+    const storeName = normalizeStoreName(storeNameRaw);
     const url = new URL(req.url);
     const limit = url.searchParams.get('limit') || '50';
     const status = url.searchParams.get('status') || 'any';
     const createdAtMin = url.searchParams.get('created_at_min');
     const createdAtMax = url.searchParams.get('created_at_max');
+    const reportMode = url.searchParams.get('report_mode');
+
+    let analyticsSummary: ShopifySalesSummary | null = null;
+    if (createdAtMin && createdAtMax) {
+      try {
+        analyticsSummary = await fetchAnalyticsSummary(storeName, accessToken, createdAtMin, createdAtMax);
+      } catch (error) {
+        console.error('Error fetching Shopify analytics summary:', error);
+      }
+    }
+
+    if (reportMode === 'summary' && analyticsSummary) {
+      return new Response(
+        JSON.stringify({
+          success: true,
+          summary: analyticsSummary,
+        }),
+        {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          status: 200,
+        },
+      );
+    }
 
     const baseParams = `limit=${limit}&status=${status}`;
     let shopifyUrl = `https://${storeName}.myshopify.com/admin/api/2024-01/orders.json?${baseParams}`;
@@ -155,7 +432,7 @@ serve(async (req) => {
               const retryAfter = response.headers.get('Retry-After');
               const waitMs = retryAfter ? parseInt(retryAfter, 10) * 1000 : Math.pow(2, attempt) * 1000;
               console.log(`Shopify returned ${response.status}, retrying in ${waitMs}ms`);
-              await new Promise((r) => setTimeout(r, Math.min(waitMs, 60000)));
+              await sleep(Math.min(waitMs, 60000));
               continue;
             }
             throw new Error(`Shopify API error: ${response.status} - ${errorText}`);
@@ -176,7 +453,7 @@ serve(async (req) => {
           if (attempt < maxRetries - 1) {
             const waitMs = Math.pow(2, attempt) * 1000;
             console.log(`Retry ${attempt + 1}/${maxRetries}: ${lastError.message}`);
-            await new Promise((r) => setTimeout(r, waitMs));
+            await sleep(waitMs);
             continue;
           }
         }
@@ -190,7 +467,7 @@ serve(async (req) => {
       allOrders.push(...pageOrders);
 
       if (pageOrders.length < parseInt(limit, 10)) nextPageUrl = null;
-      if (nextPageUrl) await new Promise((r) => setTimeout(r, 500));
+      if (nextPageUrl) await sleep(500);
     }
 
     console.log(`Fetched ${allOrders.length} total orders across ${pageCount} pages`);
@@ -292,11 +569,14 @@ serve(async (req) => {
 
     console.log(`Successfully fetched ${transformedOrders.length} orders from Shopify`);
 
+    const summary = analyticsSummary ?? (reportMode === 'summary' ? buildSummaryFromOrders(transformedOrders) : null);
+
     return new Response(
       JSON.stringify({
         success: true,
         orders: transformedOrders,
         count: transformedOrders.length,
+        summary,
       }),
       {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
