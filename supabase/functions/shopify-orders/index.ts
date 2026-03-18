@@ -82,9 +82,7 @@ interface ShopifyQlResponse {
         columns?: ShopifyQlColumn[];
         rows?: Array<Record<string, unknown> | unknown[]>;
       };
-      parseErrors?: Array<{
-        message?: string;
-      }>;
+      parseErrors?: string[][];
     };
   };
   errors?: Array<{
@@ -295,9 +293,7 @@ async function fetchAnalyticsSummary(
         }
         rows
       }
-      parseErrors {
-        message
-      }
+      parseErrors
     }
   }`;
 
@@ -309,9 +305,9 @@ async function fetchAnalyticsSummary(
     throw new Error(payload.errors.map((error) => error.message).filter(Boolean).join('; '));
   }
 
-  const parseErrors = payload.data?.shopifyqlQuery?.parseErrors ?? [];
+  const parseErrors = (payload.data?.shopifyqlQuery?.parseErrors ?? []).flat().filter(Boolean);
   if (parseErrors.length > 0) {
-    throw new Error(parseErrors.map((error) => error.message).filter(Boolean).join('; '));
+    throw new Error(parseErrors.join('; '));
   }
 
   const columns = payload.data?.shopifyqlQuery?.tableData?.columns ?? [];
@@ -569,7 +565,12 @@ serve(async (req) => {
 
     console.log(`Successfully fetched ${transformedOrders.length} orders from Shopify`);
 
-    const summary = analyticsSummary ?? (reportMode === 'summary' ? buildSummaryFromOrders(transformedOrders) : null);
+    const summary = analyticsSummary ?? (reportMode === 'summary'
+      ? {
+          ...buildSummaryFromOrders(transformedOrders),
+          warning: 'Report Shopify non disponibile: sto mostrando un fallback calcolato dagli ordini, che può non coincidere con la reportistica ufficiale.',
+        }
+      : null);
 
     return new Response(
       JSON.stringify({

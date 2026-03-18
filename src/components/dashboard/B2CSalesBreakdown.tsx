@@ -29,6 +29,9 @@ export function B2CSalesBreakdown({ summary, orderCount, isLoading = false }: B2
           <p className="text-xs text-muted-foreground mt-0.5">
             {orderCount} ordini · {summary?.source === 'shopify_analytics' ? 'fonte report Shopify' : 'fallback ordini'}
           </p>
+          {summary?.warning ? (
+            <p className="text-xs text-destructive mt-1">{summary.warning}</p>
+          ) : null}
         </div>
       </div>
       <div className="space-y-0">
