@@ -14,9 +14,11 @@ serve(async (req) => {
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY is not configured");
 
+    const { countryData, totalNetSales, productByCountry } = await req.json();
+
     const systemPrompt = `Sei un analista strategico esperto di marketing e vendite nel settore nautico per EasySea, brand che vende accessori nautici (copri timoni, copri tientibene, copri winch, lazy bag, lazy jack, borse, cuscini ecc.).
 
-Il tuo compito è analizzare i dati di vendita B2C per paese e generare insight sulla STAGIONALITÀ.
+Il tuo compito è analizzare i dati di vendita B2C per paese E per prodotto, generando insight su STAGIONALITÀ e PREFERENZE DI PRODOTTO per paese.
 
 CONTESTO CHIAVE:
 - EasySea vende accessori per barche a vela e motore
@@ -25,19 +27,23 @@ CONTESTO CHIAVE:
   • Nord Europa (Germania, Olanda, UK, Scandinavia): Maggio-Settembre  
   • Atlantico (Portogallo, Irlanda): Maggio-Ottobre
   • Tropicale/Subtropicale (Australia, Emirati, ecc.): tutto l'anno o invertito
-- La stagione di RIMESSAGGIO (quando si preparano le barche) è tipicamente:
-  • Pre-stagione: Febbraio-Aprile (acquisto cover, accessori per la messa in acqua)
-  • Post-stagione: Ottobre-Dicembre (acquisto cover per protezione invernale)
+- La stagione di RIMESSAGGIO è tipicamente:
+  • Pre-stagione: Febbraio-Aprile
+  • Post-stagione: Ottobre-Dicembre
 - I PICCHI DI VENDITA di solito anticipano l'inizio stagione o seguono la fine stagione
 
 Per ogni paese con vendite significative, analizza:
 1. 📊 Stagionalità vendite vs stagionalità navigazione
 2. 🎯 Finestra ottimale per campagne marketing (pre-stagione)
-3. 🚀 Opportunità per lancio nuovi prodotti
-4. 💡 Suggerimenti per ottimizzare comunicazione e ads
-5. 🌍 Correlazioni tra paesi con stagionalità simile per raggruppare le campagne
+3. 📦 Analisi prodotti: quali prodotti sono sovra/sotto-rappresentati rispetto alla media
+4. 🔗 Correlazioni prodotto-paese: quali paesi comprano più un tipo di prodotto e perché (tipo di barca prevalente, clima, cultura nautica)
+5. 🚀 Opportunità per lancio nuovi prodotti specifici per paese
+6. 💡 Suggerimenti per ottimizzare comunicazione, ads e catalogo per paese
+7. 🌍 Raggruppamento paesi con pattern simili per campagne unificate
 
-Rispondi SEMPRE in italiano. Usa tabelle markdown quando utile. Sii specifico con mesi e percentuali.`;
+L'INDICE DI CONCENTRAZIONE indica se un prodotto è sovra-rappresentato (>1x) o sotto-rappresentato (<1x) in un paese rispetto alla media generale.
+
+Rispondi SEMPRE in italiano. Usa tabelle markdown quando utile. Sii specifico con mesi, percentuali e nomi prodotto.`;
 
     const userMessage = `Ecco i dati di vendita B2C Net Sales per paese (periodo disponibile):
 
@@ -50,7 +56,16 @@ ${countryData.filter((c: any) => c.monthly && c.monthly.length > 0).map((c: any)
   `${c.country}:\n${c.monthly.map((m: any) => `  ${m.month}: €${m.netSales.toFixed(0)} (${m.orders} ord.)`).join('\n')}`
 ).join('\n\n')}
 
-Analizza la stagionalità di vendita per ogni paese significativo, correla con la stagione di navigazione/rimessaggio e fornisci raccomandazioni strategiche per ottimizzare marketing, comunicazione e lanci prodotto.`;
+PRODOTTI PIÙ VENDUTI PER PAESE (con indice di concentrazione):
+${(productByCountry || []).map((c: any) => 
+  `${c.country}:\n${(c.topProducts || []).map((p: any) => `  - ${p.product}: ${p.qty} pz, €${p.netSales.toFixed(0)}, indice ${p.indexScore.toFixed(2)}x`).join('\n')}`
+).join('\n\n')}
+
+Analizza:
+1. La stagionalità di vendita per ogni paese, correlata alla stagione nautica
+2. Le PREFERENZE DI PRODOTTO per paese: quali prodotti vendono di più/meno e perché
+3. Identifica pattern: certi paesi comprano più cover, altri più accessori? Perché?
+4. Raccomandazioni strategiche per marketing, comunicazione e lanci prodotto per ogni mercato chiave`;
 
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
