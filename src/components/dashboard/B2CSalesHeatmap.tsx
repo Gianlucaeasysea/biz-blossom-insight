@@ -550,12 +550,15 @@ export function B2CSalesHeatmap({ orders, dateRange }: B2CSalesHeatmapProps) {
 
     orders.filter(o => o.customerType === 'B2C').forEach(o => {
       let amount: number;
+      const orderNet = o.netAmount ?? o.totalAmount;
       if (selectedSku === 'all') {
-        amount = o.netAmount ?? o.totalAmount;
+        amount = orderNet;
       } else {
         const prod = o.products.find(p => p.sku === selectedSku);
         if (!prod) return;
-        amount = prod.totalPrice;
+        // Distribute order-level net proportionally to this SKU's share of gross items
+        const itemsGross = o.products.reduce((s, p) => s + p.totalPrice, 0);
+        amount = itemsGross > 0 ? orderNet * (prod.totalPrice / itemsGross) : 0;
       }
       if (amount <= 0) return;
 

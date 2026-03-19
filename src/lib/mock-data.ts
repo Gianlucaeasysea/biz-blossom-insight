@@ -185,13 +185,15 @@ export function getCombinedSkuBreakdown(orders: Order[]): Array<{
   const skuMap: Record<string, { name: string; qtySold: number; b2cValue: number; b2bValue: number }> = {};
 
   orders.filter(o => o.customerType === 'B2C' || isNotCustom(o)).forEach(order => {
+    const orderNet = order.customerType === 'B2C' ? (order.netAmount ?? order.totalAmount) : null;
+    const itemsGross = order.customerType === 'B2C' ? order.products.reduce((s, p) => s + p.totalPrice, 0) : null;
     order.products.forEach(product => {
       if (!skuMap[product.sku]) {
         skuMap[product.sku] = { name: product.name, qtySold: 0, b2cValue: 0, b2bValue: 0 };
       }
       skuMap[product.sku].qtySold += product.quantity;
       if (order.customerType === 'B2C') {
-        skuMap[product.sku].b2cValue += product.totalPrice;
+        skuMap[product.sku].b2cValue += (itemsGross && itemsGross > 0) ? orderNet! * (product.totalPrice / itemsGross) : 0;
       } else {
         skuMap[product.sku].b2bValue += product.totalPrice;
       }
@@ -227,11 +229,13 @@ export function getB2CCollectionBreakdown(orders: Order[]): Array<{
 }> {
   const map: Record<string, { qty: number; sales: number }> = {};
   orders.filter(o => o.customerType === 'B2C').forEach(order => {
+    const orderNet = order.netAmount ?? order.totalAmount;
+    const itemsGross = order.products.reduce((s, p) => s + p.totalPrice, 0);
     order.products.forEach(p => {
       const c = getSkuCollection(p.sku);
       if (!map[c]) map[c] = { qty: 0, sales: 0 };
       map[c].qty += p.quantity;
-      map[c].sales += p.totalPrice;
+      map[c].sales += itemsGross > 0 ? orderNet * (p.totalPrice / itemsGross) : 0;
     });
   });
   return Object.entries(map)
@@ -263,12 +267,17 @@ export function getCombinedCollectionBreakdown(orders: Order[]): Array<{
 }> {
   const map: Record<string, { qty: number; b2c: number; b2b: number }> = {};
   orders.filter(o => o.customerType === 'B2C' || isNotCustom(o)).forEach(order => {
+    const orderNet = order.customerType === 'B2C' ? (order.netAmount ?? order.totalAmount) : null;
+    const itemsGross = order.customerType === 'B2C' ? order.products.reduce((s, p) => s + p.totalPrice, 0) : null;
     order.products.forEach(p => {
       const c = getSkuCollection(p.sku);
       if (!map[c]) map[c] = { qty: 0, b2c: 0, b2b: 0 };
       map[c].qty += p.quantity;
-      if (order.customerType === 'B2C') map[c].b2c += p.totalPrice;
-      else map[c].b2b += p.totalPrice;
+      if (order.customerType === 'B2C') {
+        map[c].b2c += (itemsGross && itemsGross > 0) ? orderNet! * (p.totalPrice / itemsGross) : 0;
+      } else {
+        map[c].b2b += p.totalPrice;
+      }
     });
   });
   return Object.entries(map)
@@ -294,7 +303,18 @@ export function getCountryBreakdown(orders: Order[], skuFilter?: string): Array<
       : order.country) || 'Unknown';
     let amount = 0;
     if (skuFilter) {
-      amount = order.products.filter(p => p.sku === skuFilter).reduce((s, p) => s + p.totalPrice, 0);
+      const matchedItems = order.products.filter(p => p.sku === skuFilter);
+      if (matchedItems.length === 0) {
+        amount = 0;
+      } else if (order.customerType === 'B2C') {
+        // Distribute order-level net proportionally to this SKU's share
+        const orderNet = order.netAmount ?? order.totalAmount;
+        const itemsGross = order.products.reduce((s, p) => s + p.totalPrice, 0);
+        const skuGross = matchedItems.reduce((s, p) => s + p.totalPrice, 0);
+        amount = itemsGross > 0 ? orderNet * (skuGross / itemsGross) : 0;
+      } else {
+        amount = matchedItems.reduce((s, p) => s + p.totalPrice, 0);
+      }
     } else {
       // B2C uses Shopify Net Sales, B2B uses totalAmount
       amount = getReportingAmount(order);
