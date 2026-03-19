@@ -58,6 +58,9 @@ export function RevenueTarget({ currentRevenue }: RevenueTargetProps) {
           <div>
             <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-muted-foreground leading-none">
               Obiettivo Fatturato Annuo
+              <span className="ml-1.5 normal-case tracking-normal opacity-70">
+                (1 Gen – {format(new Date(), 'd MMM yyyy', { locale: it })})
+              </span>
             </p>
             <div className="flex items-center gap-1.5 mt-1">
               {editing ? (
