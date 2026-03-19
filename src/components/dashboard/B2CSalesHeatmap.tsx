@@ -162,12 +162,12 @@ const CITY_COORDS: Record<string, [number, number]> = {
   'Arezzo':[11.8802,43.4636],
   'Brindisi':[17.9374,40.6426],
   'Varese':[8.8259,45.8206],
-  'Ancona':[13.5189,43.6158],
+  // Ancona already defined above
   'Como':[9.0851,45.8103],
   'Barletta':[16.2776,41.3146],
   'Cosenza':[16.2594,39.2910],
   'Torre del Greco':[14.3595,40.7858],
-  'Bergamo':[9.6773,45.6983],
+  // Bergamo already defined above
   'Busto Arsizio':[8.8510,45.6092],
   'Gela':[14.2578,37.0746],
   'Legnano':[8.9143,45.5958],
@@ -185,8 +185,8 @@ const CITY_COORDS: Record<string, [number, number]> = {
   'Aprilia':[12.6551,41.5972],
   'Vigevano':[8.8596,45.3175],
   'Treviso':[12.2427,45.6669],
-  'Udine':[13.2306,46.0748],
-  'Grosseto':[11.1079,42.7635],
+  // Udine already defined above
+  // Grosseto already defined above
   'Mantova':[10.7926,45.1564],
   'Cremona':[10.0230,45.1336],
   'Teramo':[13.7036,42.6589],
@@ -235,10 +235,8 @@ const CITY_COORDS: Record<string, [number, number]> = {
   'Pietrasanta':[10.2302,43.9602],
   'Viareggio':[10.2524,43.8673],
   'Pontedera':[10.6355,43.6611],
-  'Pisa':[10.4036,43.7228],
-  'Grosseto':[11.1079,42.7635],
+  // Pisa, Grosseto, Terni already defined above
   'Follonica':[10.7620,42.9226],
-  'Terni':[12.6469,42.5634],
   'Foligno':[12.7026,42.9559],
   'Spoleto':[12.7383,42.7348],
   'Civitavecchia':[11.7988,42.0932],
@@ -434,7 +432,7 @@ const CITY_COORDS: Record<string, [number, number]> = {
   'Luxembourg':[6.1296,49.8153],'Lussemburgo':[6.1296,49.8153],
   'Dublin':[-6.2603,53.3498],'Dublino':[-6.2603,53.3498],
   'Valletta':[14.5146,35.8989],'La Valletta':[14.5146,35.8989],
-  'Nicosia':[33.3823,35.1856],'Nicosia':[33.3823,35.1856],
+  'Nicosia':[33.3823,35.1856],
   'Tallinn':[24.7536,59.4370],
   'Riga':[24.1052,56.9496],
   'Vilnius':[25.2799,54.6872],
