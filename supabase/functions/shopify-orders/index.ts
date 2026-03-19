@@ -421,7 +421,7 @@ serve(async (req) => {
 
       for (let attempt = 0; attempt < maxRetries; attempt++) {
         try {
-          const response = await fetch(nextPageUrl, {
+          const resp: Response = await fetch(nextPageUrl!, {
             method: 'GET',
             headers: {
               'X-Shopify-Access-Token': accessToken,
@@ -429,26 +429,26 @@ serve(async (req) => {
             },
           });
 
-          if (!response.ok) {
-            const errorText = await response.text().catch(() => 'Unable to read error body');
-            if ((response.status === 429 || response.status >= 500) && attempt < maxRetries - 1) {
-              const retryAfter = response.headers.get('Retry-After');
+          if (!resp.ok) {
+            const errorText = await resp.text().catch(() => 'Unable to read error body');
+            if ((resp.status === 429 || resp.status >= 500) && attempt < maxRetries - 1) {
+              const retryAfter: string | null = resp.headers.get('Retry-After');
               const waitMs = retryAfter ? parseInt(retryAfter, 10) * 1000 : Math.pow(2, attempt) * 1000;
-              console.log(`Shopify returned ${response.status}, retrying in ${waitMs}ms`);
+              console.log(`Shopify returned ${resp.status}, retrying in ${waitMs}ms`);
               await sleep(Math.min(waitMs, 60000));
               continue;
             }
-            throw new Error(`Shopify API error: ${response.status} - ${errorText}`);
+            throw new Error(`Shopify API error: ${resp.status} - ${errorText}`);
           }
 
-          const linkHeader = response.headers.get('Link');
+          const lnkHeader: string | null = resp.headers.get('Link');
           nextPageUrl = null;
-          if (linkHeader) {
-            const nextMatch = linkHeader.match(/<([^>]+)>;\s*rel="next"/);
-            if (nextMatch) nextPageUrl = nextMatch[1];
+          if (lnkHeader) {
+            const nxtMatch: RegExpMatchArray | null = lnkHeader.match(/<([^>]+)>;\s*rel="next"/);
+            if (nxtMatch) nextPageUrl = nxtMatch[1];
           }
 
-          const responseText = await response.text();
+          const responseText = await resp.text();
           data = JSON.parse(responseText);
           break;
         } catch (error) {
