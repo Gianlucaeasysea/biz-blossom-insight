@@ -6,6 +6,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Index from "./pages/Index";
 import MetaAds from "./pages/MetaAds";
 import Budget2026 from "./pages/Budget2026";
+import GeoInsights from "./pages/GeoInsights";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
