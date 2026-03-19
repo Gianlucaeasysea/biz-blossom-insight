@@ -94,6 +94,31 @@ export default function Index() {
     return b2cYtd + b2bYtd;
   }, [allOrders, ytdShopifySummary, ytdStart, ytdEnd]);
 
+  // ── Monthly breakdown for the 12-segment bar ───────────────────────────
+  const monthlyRevenues = useMemo((): number[] => {
+    const currentYear = ytdStart.getFullYear();
+    const b2cMonths = new Array(12).fill(0);
+    const b2bMonths = new Array(12).fill(0);
+
+    allOrders.forEach(o => {
+      const d = o.date instanceof Date ? o.date : new Date(o.date);
+      if (d.getFullYear() !== currentYear) return;
+      const mo = d.getMonth();
+      if (o.customerType === 'B2C') {
+        b2cMonths[mo] += o.netAmount ?? o.totalAmount;
+      } else if (o.customerType === 'B2B') {
+        b2bMonths[mo] += o.totalAmount;
+      }
+    });
+
+    // Scale B2C months to match Shopify Analytics total
+    const rawB2CTotal = b2cMonths.reduce((s, v) => s + v, 0);
+    const factor = ytdShopifySummary?.netSales && rawB2CTotal > 0
+      ? ytdShopifySummary.netSales / rawB2CTotal : 1;
+
+    return b2cMonths.map((v, i) => Math.round(v * factor + b2bMonths[i]));
+  }, [allOrders, ytdShopifySummary, ytdStart]);
+
   const kpis = useMemo(() => {
     const computed = calculateKPIs(filteredOrders);
     // When Shopify Analytics summary is available, use its net_sales as the canonical B2C figure
@@ -221,7 +246,7 @@ export default function Index() {
         <DashboardHeader onRefresh={handleRefresh} isLoading={isFetching} />
 
         {/* ── Revenue Target ─────────────────────────────────── */}
-        <RevenueTarget currentRevenue={ytdRevenue} />
+        <RevenueTarget currentRevenue={ytdRevenue} monthlyRevenues={monthlyRevenues} />
 
         {/* ── Nav + Filters bar ───────────────────────────────── */}
         <div className="flex flex-wrap items-center justify-between gap-3">
