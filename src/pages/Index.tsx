@@ -115,9 +115,44 @@ export default function Index() {
     }
     return computed;
   }, [filteredOrders, shopifySalesSummary, customerTypeFilter]);
-  const b2cSkuData = useMemo(() => getB2CSkuBreakdown(filteredOrders), [filteredOrders]);
+  // Scaling factor: align all order-derived B2C net sales to Shopify Analytics netSales (ground truth).
+  // sum(order.netAmount) can differ from Analytics due to cancelled orders, timing, or custom SKUs.
+  const b2cNetScaleFactor = useMemo(() => {
+    if (!shopifySalesSummary?.netSales || customerTypeFilter === 'B2B') return 1;
+    const rawB2CNet = filteredOrders
+      .filter(o => o.customerType === 'B2C')
+      .reduce((s, o) => s + (o.netAmount ?? o.totalAmount), 0);
+    return rawB2CNet > 0 ? shopifySalesSummary.netSales / rawB2CNet : 1;
+  }, [filteredOrders, shopifySalesSummary, customerTypeFilter]);
+
+  const b2cSkuData = useMemo(() => {
+    const raw = getB2CSkuBreakdown(filteredOrders);
+    if (b2cNetScaleFactor === 1) return raw;
+    return raw.map(r => ({
+      ...r,
+      netSalesTotal: Math.round(r.netSalesTotal * b2cNetScaleFactor * 100) / 100,
+      netSalesFulfilled: Math.round(r.netSalesFulfilled * b2cNetScaleFactor * 100) / 100,
+    }));
+  }, [filteredOrders, b2cNetScaleFactor]);
   const b2bSkuData = useMemo(() => getB2BSkuBreakdown(filteredOrders), [filteredOrders]);
-  const combinedSkuData = useMemo(() => getCombinedSkuBreakdown(filteredOrders), [filteredOrders]);
+  const combinedSkuData = useMemo(() => {
+    const raw = getCombinedSkuBreakdown(filteredOrders);
+    if (b2cNetScaleFactor === 1) return raw;
+    return raw.map(r => ({
+      ...r,
+      b2cValue: Math.round(r.b2cValue * b2cNetScaleFactor * 100) / 100,
+      totalValue: Math.round((r.b2cValue * b2cNetScaleFactor + r.b2bValue) * 100) / 100,
+    }));
+  }, [filteredOrders, b2cNetScaleFactor]);
+  // Orders with B2C netAmount scaled to match Shopify Analytics netSales — used by all charts
+  const scaledOrders = useMemo(() => {
+    if (b2cNetScaleFactor === 1) return filteredOrders;
+    return filteredOrders.map(o => {
+      if (o.customerType !== 'B2C' || o.netAmount === undefined) return o;
+      return { ...o, netAmount: Math.round(o.netAmount * b2cNetScaleFactor * 100) / 100 };
+    });
+  }, [filteredOrders, b2cNetScaleFactor]);
+
   const top3Products = useMemo(() => getTop3ProductsByQty(filteredOrders), [filteredOrders]);
 
   const allSkus = useMemo(() => {
@@ -316,7 +351,7 @@ export default function Index() {
         ═══════════════════════════════════════════════════════ */}
         <div>
           <SectionHeader label="Orders Trend" />
-          <OrdersTrendChart orders={filteredOrders} allOrders={allOrders} dateRange={dateRange} />
+          <OrdersTrendChart orders={scaledOrders} allOrders={allOrders} dateRange={dateRange} />
         </div>
 
         {/* ═══════════════════════════════════════════════════════
@@ -337,7 +372,7 @@ export default function Index() {
         ═══════════════════════════════════════════════════════ */}
         <div>
           <SectionHeader label="Geographic Distribution" badge="B2C" badgeClass="badge-b2c" />
-          <B2CSalesHeatmap orders={filteredOrders} dateRange={dateRange} />
+          <B2CSalesHeatmap orders={scaledOrders} dateRange={dateRange} />
         </div>
 
         {/* ═══════════════════════════════════════════════════════
@@ -346,11 +381,11 @@ export default function Index() {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
           <div>
             <SectionHeader label="Sales by Collection" />
-            <CollectionBreakdown orders={filteredOrders} />
+            <CollectionBreakdown orders={scaledOrders} />
           </div>
           <div>
             <SectionHeader label="Sales by Country" />
-            <CountryBreakdown orders={filteredOrders} allSkus={allSkus} />
+            <CountryBreakdown orders={scaledOrders} allSkus={allSkus} />
           </div>
         </div>
 
@@ -359,7 +394,7 @@ export default function Index() {
         ═══════════════════════════════════════════════════════ */}
         <div>
           <SectionHeader label="Sales Trend Over Time" />
-          <SalesTrendChart orders={filteredOrders} dateRange={dateRange} />
+          <SalesTrendChart orders={scaledOrders} dateRange={dateRange} />
         </div>
 
         {/* ── Connection status ────────────────────────────────── */}
