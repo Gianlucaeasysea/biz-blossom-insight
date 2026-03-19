@@ -155,6 +155,8 @@ serve(async (req) => {
       'Rope deflector': 'ROD-101',
     };
 
+    const normalize = (s: string) => s.toLowerCase().replace(/[™®©]/g, '').replace(/\s*-\s*/g, ' ').replace(/\s+/g, ' ').trim();
+
     const lookupSku = (productName: string): string => {
       if (!productName) return 'UNKNOWN';
       // Exact match first
@@ -163,6 +165,11 @@ serve(async (req) => {
       const lower = productName.toLowerCase().trim();
       for (const [key, sku] of Object.entries(skuMap)) {
         if (key.toLowerCase().trim() === lower) return sku;
+      }
+      // Normalized match (ignore dashes, spaces, trademark symbols)
+      const norm = normalize(productName);
+      for (const [key, sku] of Object.entries(skuMap)) {
+        if (normalize(key) === norm) return sku;
       }
       // Partial match (product name contains or is contained)
       for (const [key, sku] of Object.entries(skuMap)) {
