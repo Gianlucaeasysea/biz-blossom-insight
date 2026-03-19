@@ -9,9 +9,9 @@ interface DashboardHeaderProps {
 
 export function DashboardHeader({ onRefresh, isLoading }: DashboardHeaderProps) {
   return (
-    <header className="flex items-center justify-between mb-8">
-      <div className="flex items-center gap-5">
-        <img src={companyLogo} alt="EasySea Logo" className="h-14 w-auto" />
+    <header className="flex items-center justify-between mb-4 sm:mb-8">
+      <div className="flex items-center gap-3 sm:gap-5">
+        <img src={companyLogo} alt="EasySea Logo" className="h-10 sm:h-14 w-auto" />
         <div className="h-8 w-px bg-border/50" />
         <div>
           <h1 className="text-xl font-bold tracking-tight text-foreground">
