@@ -33,22 +33,14 @@ export function RevenueTarget({ currentRevenue, monthlyRevenues }: RevenueTarget
   const monthPct     = now.getDate() / daysInMonth;
   const pctTotal     = target > 0 ? Math.min((currentRevenue / target) * 100, 100) : 0;
 
-  // YTD budget target (sum of months 0..currentMo)
-  const ytdTarget = BUDGET_MONTHLY_TARGETS.slice(0, currentMo + 1).reduce((s, v) => s + v, 0) * (target / BUDGET_ANNUAL_TARGET);
-  const ytdPct    = ytdTarget > 0 ? (currentRevenue / ytdTarget) * 100 : 0;
-
-  // Dot color for past months
-  const dotColor = (mo: number, actual: number) => {
-    const moTgt = BUDGET_MONTHLY_TARGETS[mo] * (target / BUDGET_ANNUAL_TARGET);
-    const pct = moTgt > 0 ? actual / moTgt : 0;
-    if (pct >= 1.0) return 'hsl(168,70%,42%)';
-    if (pct >= 0.7) return 'hsl(42,96%,58%)';
-    return 'hsl(0,65%,52%)';
-  };
-
   // Use Budget 2026 monthly distribution (scaled to current target if user changed it)
-  const budgetScale = target / BUDGET_ANNUAL_TARGET;
-  const monthlyTgts = BUDGET_MONTHLY_TARGETS.map(v => Math.round(v * budgetScale));
+  const budgetScale  = target / BUDGET_ANNUAL_TARGET;
+  const monthlyTgts  = BUDGET_MONTHLY_TARGETS.map(v => Math.round(v * budgetScale));
+  const totalBudget  = monthlyTgts.reduce((s, v) => s + v, 0);
+
+  // YTD: budget and actual up to (and including) current month
+  const ytdTarget = monthlyTgts.slice(0, currentMo + 1).reduce((s, v) => s + v, 0);
+  const ytdPct    = ytdTarget > 0 ? (currentRevenue / ytdTarget) * 100 : 0;
 
   const startEdit   = () => { setInputValue(String(target)); setEditing(true); };
   const confirmEdit = () => {
@@ -72,6 +64,9 @@ export function RevenueTarget({ currentRevenue, monthlyRevenues }: RevenueTarget
     if (pct >= 0.7) return 'hsl(42,96%,58%)';
     return 'hsl(0,65%,52%)';
   };
+
+  // Dot color for past months
+  const dotColor = (mo: number, actual: number) => fillColor(mo, actual);
 
   // Fill width 0-100 (%)
   const fillPct = (mo: number, actual: number) => {
@@ -143,8 +138,8 @@ export function RevenueTarget({ currentRevenue, monthlyRevenues }: RevenueTarget
         </div>
       </div>
 
-      {/* ── 12-month segmented bar ───────────────────────────────── */}
-      <div className="flex gap-1">
+      {/* ── 12-month segmented bar (variable width by budget) ────── */}
+      <div className="flex gap-0.5">
         {MONTHS_IT.map((label, i) => {
           const actual   = monthlyRevenues?.[i] ?? 0;
           const moTgt    = monthlyTgts[i];
@@ -154,13 +149,20 @@ export function RevenueTarget({ currentRevenue, monthlyRevenues }: RevenueTarget
           const isCurr   = i === currentMo;
           const isFuture = i > currentMo;
 
-          return (
-            <div key={label} className="flex-1 flex flex-col gap-1.5 min-w-0">
+          // Width proportional to budget share; minimum 3% to stay visible
+          const budgetShare = totalBudget > 0 ? (moTgt / totalBudget) * 100 : 100 / 12;
+          const widthPct    = Math.max(budgetShare, 3);
 
+          return (
+            <div
+              key={label}
+              className="flex flex-col gap-1.5 min-w-0 overflow-hidden"
+              style={{ width: `${widthPct}%`, flexShrink: 0 }}
+            >
               {/* "ORA" badge */}
               <div className="h-5 flex items-end justify-center">
                 {isCurr && (
-                  <span className="text-[9px] font-bold tracking-widest text-primary bg-primary/15 rounded px-1.5 py-0.5 leading-none">
+                  <span className="text-[9px] font-bold tracking-widest text-primary bg-primary/15 rounded px-1.5 py-0.5 leading-none whitespace-nowrap">
                     ORA
                   </span>
                 )}
@@ -192,7 +194,7 @@ export function RevenueTarget({ currentRevenue, monthlyRevenues }: RevenueTarget
               </p>
 
               {/* Budget target for this month */}
-              <p className="text-center text-[9px] font-mono text-muted-foreground/50 leading-none">
+              <p className="text-center text-[9px] font-mono text-muted-foreground/50 leading-none truncate">
                 {fmtK(moTgt)}
               </p>
 
@@ -200,7 +202,7 @@ export function RevenueTarget({ currentRevenue, monthlyRevenues }: RevenueTarget
               <div className="flex flex-col items-center gap-0.5 min-h-[20px]">
                 {(isPast || isCurr) && actual > 0 && (
                   <>
-                    <p className="text-[10px] font-mono font-semibold text-foreground/80 leading-none">
+                    <p className="text-[10px] font-mono font-semibold text-foreground/80 leading-none truncate">
                       {fmtK(actual)}
                     </p>
                     {isPast && (
