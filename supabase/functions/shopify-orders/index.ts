@@ -448,7 +448,7 @@ serve(async (req) => {
             if (nxtMatch) nextPageUrl = nxtMatch[1];
           }
 
-          const responseText = await response.text();
+          const responseText = await resp.text();
           data = JSON.parse(responseText);
           break;
         } catch (error) {
