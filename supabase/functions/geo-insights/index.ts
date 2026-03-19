@@ -10,11 +10,9 @@ serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   try {
-    const { countryData, totalNetSales } = await req.json();
+    const { countryData, totalNetSales, productByCountry } = await req.json();
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY is not configured");
-
-    const { countryData, totalNetSales, productByCountry } = await req.json();
 
     const systemPrompt = `Sei un analista strategico esperto di marketing e vendite nel settore nautico per EasySea, brand che vende accessori nautici (copri timoni, copri tientibene, copri winch, lazy bag, lazy jack, borse, cuscini ecc.).
 
