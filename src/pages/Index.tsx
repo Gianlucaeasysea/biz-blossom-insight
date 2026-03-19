@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { subDays, format } from 'date-fns';
+import { subDays, format, startOfYear } from 'date-fns';
 import { PieChart, Pie, Cell, Tooltip as ReTooltip, ResponsiveContainer } from 'recharts';
 import { DashboardHeader } from '@/components/dashboard/DashboardHeader';
 import { FilterBar } from '@/components/dashboard/FilterBar';
