@@ -185,8 +185,8 @@ const CITY_COORDS: Record<string, [number, number]> = {
   'Aprilia':[12.6551,41.5972],
   'Vigevano':[8.8596,45.3175],
   'Treviso':[12.2427,45.6669],
-  'Udine':[13.2306,46.0748],
-  'Grosseto':[11.1079,42.7635],
+  // Udine already defined above
+  // Grosseto already defined above
   'Mantova':[10.7926,45.1564],
   'Cremona':[10.0230,45.1336],
   'Teramo':[13.7036,42.6589],
