@@ -68,19 +68,6 @@ export function RevenueTarget({ currentRevenue, monthlyRevenues }: RevenueTarget
     return Math.min(100, moTgt > 0 ? (actual / moTgt) * 100 : 0);
   };
 
-  // Performance dot color
-  const dotColor = (mo: number, actual: number) => {
-    const moTgt = monthlyTgts[mo];
-    const pct = moTgt > 0 ? actual / moTgt : 0;
-    if (pct >= 1.0) return 'hsl(168,70%,42%)';
-    if (pct >= 0.7) return 'hsl(42,96%,58%)';
-    return 'hsl(0,65%,52%)';
-  };
-
-  // YTD cumulative target (sum of monthly targets up to current month)
-  const ytdTarget = monthlyTgts.slice(0, currentMo + 1).reduce((s, v) => s + v, 0);
-  const ytdPct = ytdTarget > 0 ? (currentRevenue / ytdTarget) * 100 : 0;
-
   return (
     <div className="w-full rounded-xl border border-border/60 bg-card/80 backdrop-blur-sm px-5 py-4 mb-1">
 
