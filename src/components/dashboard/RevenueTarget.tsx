@@ -1,5 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Target, Pencil, Check, X } from 'lucide-react';
+import { format } from 'date-fns';
+import { it } from 'date-fns/locale';
 import { Progress } from '@/components/ui/progress';
 
 interface RevenueTargetProps {
