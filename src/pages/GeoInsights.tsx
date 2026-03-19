@@ -1,13 +1,17 @@
 import { useState, useMemo, useCallback } from 'react';
-import { format } from 'date-fns';
+import { format, subDays, startOfYear } from 'date-fns';
 import { it } from 'date-fns/locale';
+import { enUS } from 'date-fns/locale';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell, LineChart, Line, Legend } from 'recharts';
 import ReactMarkdown from 'react-markdown';
 import { DashboardHeader } from '@/components/dashboard/DashboardHeader';
 import { NavLink } from '@/components/NavLink';
 import { useShopifyOrders } from '@/hooks/useShopifyOrders';
 import { Order } from '@/types/analytics';
-import { Globe, Sparkles, Loader2, TrendingUp, Calendar, Ship, Anchor } from 'lucide-react';
+import { Globe, Sparkles, Loader2, TrendingUp, Calendar as CalendarIcon, Ship, Anchor, ChevronDown, Package } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Calendar } from '@/components/ui/calendar';
 
 // ── Country normalizer ──
 const COUNTRY_MAP: Record<string, string> = {
@@ -62,10 +66,32 @@ const fmt = (v: number) => new Intl.NumberFormat('it-IT', { style: 'currency', c
 
 interface CountryMonthly { month: string; netSales: number; orders: number; monthNum: number; }
 interface CountryAgg { country: string; netSales: number; orders: number; pct: number; monthly: CountryMonthly[]; }
+interface ProductByCountry { product: string; sku: string; countries: Record<string, { qty: number; netSales: number }>; totalQty: number; totalNetSales: number; }
 
 export default function GeoInsights() {
-  const [shopifyMinDate] = useState(() => new Date('2025-01-01T00:00:00Z'));
-  const { data: shopifyOrders = [], isLoading, refetch, isFetching } = useShopifyOrders({ limit: 250, status: 'any', createdAtMin: shopifyMinDate, enabled: true });
+  // ── Date range state ──
+  const [dateRange, setDateRange] = useState<{ start: Date; end: Date }>({
+    start: startOfYear(new Date()),
+    end: new Date(),
+  });
+  const [calendarOpen, setCalendarOpen] = useState(false);
+
+  const presets = [
+    { label: 'YTD', fn: () => ({ start: startOfYear(new Date()), end: new Date() }) },
+    { label: '30g', fn: () => ({ start: subDays(new Date(), 30), end: new Date() }) },
+    { label: '90g', fn: () => ({ start: subDays(new Date(), 90), end: new Date() }) },
+    { label: '6m', fn: () => ({ start: subDays(new Date(), 180), end: new Date() }) },
+    { label: '1a', fn: () => ({ start: subDays(new Date(), 365), end: new Date() }) },
+    { label: 'Tutto', fn: () => ({ start: new Date('2024-01-01'), end: new Date() }) },
+  ];
+
+  const { data: shopifyOrders = [], isLoading, refetch, isFetching } = useShopifyOrders({
+    limit: 250,
+    status: 'any',
+    createdAtMin: dateRange.start,
+    createdAtMax: dateRange.end,
+    enabled: true,
+  });
 
   const [aiInsight, setAiInsight] = useState('');
   const [aiLoading, setAiLoading] = useState(false);
@@ -109,7 +135,6 @@ export default function GeoInsights() {
       }))
       .sort((a, b) => b.netSales - a.netSales);
 
-    // Overall monthly
     const mAll = Array.from({ length: 12 }, (_, i) => ({
       month: MONTHS_IT[i],
       monthNum: i + 1,
@@ -119,6 +144,80 @@ export default function GeoInsights() {
 
     return { countryData: data, totalNetSales: total, monthlyAll: mAll };
   }, [shopifyOrders]);
+
+  // ── Product breakdown by country ──
+  const { productData, topCountriesForProducts } = useMemo(() => {
+    const byProduct: Record<string, { sku: string; countries: Record<string, { qty: number; netSales: number }> }> = {};
+    const countriesSet = new Set<string>();
+
+    shopifyOrders.forEach(order => {
+      if (order.customerType !== 'B2C') return;
+      const country = normalizeCountry(order.destinationCountry || order.country || '');
+      if (country === 'Unknown') return;
+      countriesSet.add(country);
+
+      order.products?.forEach(p => {
+        const key = p.sku || p.name;
+        if (!byProduct[key]) byProduct[key] = { sku: p.sku, countries: {} };
+        if (!byProduct[key].countries[country]) byProduct[key].countries[country] = { qty: 0, netSales: 0 };
+        byProduct[key].countries[country].qty += p.quantity;
+        byProduct[key].countries[country].netSales += p.totalPrice;
+      });
+    });
+
+    const products: ProductByCountry[] = Object.entries(byProduct)
+      .map(([product, v]) => ({
+        product,
+        sku: v.sku,
+        countries: v.countries,
+        totalQty: Object.values(v.countries).reduce((s, c) => s + c.qty, 0),
+        totalNetSales: Object.values(v.countries).reduce((s, c) => s + c.netSales, 0),
+      }))
+      .filter(p => p.totalQty > 0)
+      .sort((a, b) => b.totalNetSales - a.totalNetSales);
+
+    // Top countries by total product sales
+    const countryTotals: Record<string, number> = {};
+    products.forEach(p => {
+      Object.entries(p.countries).forEach(([c, v]) => {
+        countryTotals[c] = (countryTotals[c] || 0) + v.netSales;
+      });
+    });
+    const topC = Object.entries(countryTotals)
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 8)
+      .map(([c]) => c);
+
+    return { productData: products, topCountriesForProducts: topC };
+  }, [shopifyOrders]);
+
+  // ── Product concentration by country (which products are disproportionately popular) ──
+  const productConcentration = useMemo(() => {
+    if (productData.length === 0 || topCountriesForProducts.length === 0) return [];
+
+    return topCountriesForProducts.map(country => {
+      const countryProducts = productData
+        .filter(p => p.countries[country]?.qty > 0)
+        .map(p => {
+          const countryShare = p.totalQty > 0 ? (p.countries[country].qty / p.totalQty) * 100 : 0;
+          const countryRevShare = p.totalNetSales > 0 ? (p.countries[country].netSales / p.totalNetSales) * 100 : 0;
+          // Country's share of total B2C - if product share > country avg, it's over-indexed
+          const countryAvgShare = countryData.find(c => c.country === country)?.pct ?? 0;
+          const indexScore = countryAvgShare > 0 ? countryShare / countryAvgShare : 0;
+          return {
+            product: p.product,
+            sku: p.sku,
+            qty: p.countries[country].qty,
+            netSales: p.countries[country].netSales,
+            countryShare,
+            indexScore, // >1 means over-represented
+          };
+        })
+        .sort((a, b) => b.netSales - a.netSales);
+
+      return { country, products: countryProducts };
+    });
+  }, [productData, topCountriesForProducts, countryData]);
 
   const activeCountry = selectedCountry ? countryData.find(c => c.country === selectedCountry) : null;
   const season = activeCountry ? (SEASON_DATA[activeCountry.country] || DEFAULT_SEASON) : DEFAULT_SEASON;
@@ -143,6 +242,15 @@ export default function GeoInsights() {
         body: JSON.stringify({
           countryData: countryData.slice(0, 15),
           totalNetSales,
+          productByCountry: productConcentration.slice(0, 8).map(c => ({
+            country: c.country,
+            topProducts: c.products.slice(0, 10).map(p => ({
+              product: p.product,
+              qty: p.qty,
+              netSales: p.netSales,
+              indexScore: p.indexScore,
+            })),
+          })),
         }),
       });
 
@@ -186,7 +294,7 @@ export default function GeoInsights() {
     } finally {
       setAiLoading(false);
     }
-  }, [countryData, totalNetSales]);
+  }, [countryData, totalNetSales, productConcentration]);
 
   // ── Seasonality heatmap data ──
   const heatmapData = useMemo(() => {
@@ -208,6 +316,11 @@ export default function GeoInsights() {
     'hsl(var(--b2b))', 'hsl(var(--success))',
   ];
 
+  // Active country product detail
+  const activeCountryProducts = selectedCountry
+    ? productConcentration.find(c => c.country === selectedCountry)
+    : null;
+
   return (
     <div className="min-h-screen bg-background p-4 sm:p-6">
       <div className="max-w-[1520px] mx-auto space-y-5">
@@ -225,14 +338,63 @@ export default function GeoInsights() {
           </NavLink>
         </div>
 
-        {/* Page title */}
-        <div className="flex items-center gap-3">
-          <div className="p-2.5 rounded-xl bg-primary/10 border border-primary/20">
-            <Globe className="w-5 h-5 text-primary" />
+        {/* Page title + Date range */}
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className="flex items-center gap-3">
+            <div className="p-2.5 rounded-xl bg-primary/10 border border-primary/20">
+              <Globe className="w-5 h-5 text-primary" />
+            </div>
+            <div>
+              <h2 className="text-lg font-bold text-foreground">Insight Geografia & Stagionalità</h2>
+              <p className="text-xs text-muted-foreground">Analisi Net Sales B2C Shopify per paese · Correlazione con stagione nautica</p>
+            </div>
           </div>
-          <div>
-            <h2 className="text-lg font-bold text-foreground">Insight Geografia & Stagionalità</h2>
-            <p className="text-xs text-muted-foreground">Analisi Net Sales B2C Shopify per paese · Correlazione con stagione nautica</p>
+
+          {/* ── Date Range Selector ── */}
+          <div className="flex flex-wrap items-center gap-2">
+            {/* Quick presets */}
+            <div className="flex rounded-md bg-muted p-0.5">
+              {presets.map(p => (
+                <button
+                  key={p.label}
+                  onClick={() => setDateRange(p.fn())}
+                  className="px-2.5 py-1.5 text-xs text-muted-foreground hover:text-foreground rounded transition-colors"
+                >
+                  {p.label}
+                </button>
+              ))}
+            </div>
+
+            {/* Calendar picker */}
+            <Popover open={calendarOpen} onOpenChange={setCalendarOpen}>
+              <PopoverTrigger asChild>
+                <Button variant="ghost" size="sm" className="text-xs text-muted-foreground hover:text-foreground gap-1.5">
+                  <CalendarIcon className="w-3.5 h-3.5" />
+                  {format(dateRange.start, 'dd MMM', { locale: enUS })} – {format(dateRange.end, 'dd MMM yy', { locale: enUS })}
+                  <ChevronDown className="w-3 h-3" />
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0 bg-popover border-border" align="end">
+                <div className="flex">
+                  <div className="border-r border-border">
+                    <Calendar
+                      mode="single"
+                      selected={dateRange.start}
+                      onSelect={date => date && setDateRange(prev => ({ ...prev, start: date }))}
+                      locale={enUS}
+                      className="p-3 pointer-events-auto"
+                    />
+                  </div>
+                  <Calendar
+                    mode="single"
+                    selected={dateRange.end}
+                    onSelect={date => date && setDateRange(prev => ({ ...prev, end: date }))}
+                    locale={enUS}
+                    className="p-3 pointer-events-auto"
+                  />
+                </div>
+              </PopoverContent>
+            </Popover>
           </div>
         </div>
 
@@ -258,8 +420,8 @@ export default function GeoInsights() {
                 <p className="text-[10px] text-muted-foreground">{countryData[0] ? `${countryData[0].pct.toFixed(1)}%` : ''}</p>
               </div>
               <div className="glass-card p-4">
-                <p className="text-[10px] uppercase tracking-wider text-muted-foreground mb-1">Ordini totali</p>
-                <p className="text-xl font-bold text-foreground">{countryData.reduce((s, c) => s + c.orders, 0)}</p>
+                <p className="text-[10px] uppercase tracking-wider text-muted-foreground mb-1">Prodotti venduti</p>
+                <p className="text-xl font-bold text-foreground">{productData.length}</p>
               </div>
             </div>
 
@@ -294,7 +456,7 @@ export default function GeoInsights() {
             {/* ── Seasonal Heatmap ── */}
             <div className="glass-card p-4">
               <h3 className="text-sm font-semibold mb-3 flex items-center gap-2">
-                <Calendar className="w-4 h-4 text-accent" />
+                <CalendarIcon className="w-4 h-4 text-accent" />
                 Heatmap Stagionalità per Paese (% vendite mensili)
               </h3>
               <div className="overflow-x-auto">
@@ -332,7 +494,6 @@ export default function GeoInsights() {
                                     {pct > 0 ? `${pct.toFixed(0)}%` : '–'}
                                   </span>
                                 </div>
-                                {/* Season indicators */}
                                 <div className="flex gap-0.5 justify-center mt-0.5">
                                   {isNav && <span className="w-1.5 h-1.5 rounded-full bg-blue-400" title="Navigazione" />}
                                   {isBuy && <span className="w-1.5 h-1.5 rounded-full bg-amber-400" title="Rimessaggio/Acquisto" />}
@@ -385,6 +546,97 @@ export default function GeoInsights() {
               </div>
             )}
 
+            {/* ── Country detail: product breakdown ── */}
+            {activeCountryProducts && (
+              <div className="glass-card p-4">
+                <h3 className="text-sm font-semibold mb-3 flex items-center gap-2">
+                  <Package className="w-4 h-4 text-primary" />
+                  {selectedCountry} — Prodotti più venduti
+                </h3>
+                <div className="overflow-x-auto">
+                  <table className="w-full text-xs">
+                    <thead>
+                      <tr className="border-b border-border/30">
+                        <th className="py-2 px-2 text-left text-muted-foreground font-medium">Prodotto</th>
+                        <th className="py-2 px-2 text-right text-muted-foreground font-medium">Qtà</th>
+                        <th className="py-2 px-2 text-right text-muted-foreground font-medium">Net Sales</th>
+                        <th className="py-2 px-2 text-right text-muted-foreground font-medium">% Paese</th>
+                        <th className="py-2 px-2 text-right text-muted-foreground font-medium">Indice</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {activeCountryProducts.products.slice(0, 20).map((p, i) => (
+                        <tr key={i} className="border-b border-border/10 hover:bg-muted/20">
+                          <td className="py-2 px-2 text-foreground font-medium max-w-[300px] truncate" title={p.product}>{p.product}</td>
+                          <td className="py-2 px-2 text-right text-muted-foreground">{p.qty}</td>
+                          <td className="py-2 px-2 text-right font-mono text-foreground">{fmt(p.netSales)}</td>
+                          <td className="py-2 px-2 text-right text-muted-foreground">{p.countryShare.toFixed(1)}%</td>
+                          <td className="py-2 px-2 text-right">
+                            <span className={`font-semibold ${p.indexScore > 1.3 ? 'text-green-400' : p.indexScore < 0.7 ? 'text-red-400' : 'text-muted-foreground'}`}>
+                              {p.indexScore.toFixed(2)}x
+                            </span>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                  <p className="text-[10px] text-muted-foreground mt-2">
+                    <strong>Indice</strong>: rapporto tra la quota di vendita del prodotto in questo paese e la quota media del paese sul totale B2C.
+                    <span className="text-green-400 ml-1">&gt;1.3x = sovra-rappresentato</span>,
+                    <span className="text-red-400 ml-1">&lt;0.7x = sotto-rappresentato</span>
+                  </p>
+                </div>
+              </div>
+            )}
+
+            {/* ── Product × Country Matrix (top products across top countries) ── */}
+            <div className="glass-card p-4">
+              <h3 className="text-sm font-semibold mb-3 flex items-center gap-2">
+                <Package className="w-4 h-4 text-accent" />
+                Matrice Prodotti × Paesi (Top 15 prodotti, Net Sales)
+              </h3>
+              <div className="overflow-x-auto">
+                <table className="w-full text-xs">
+                  <thead>
+                    <tr className="border-b border-border/30">
+                      <th className="py-2 px-2 text-left text-muted-foreground font-medium min-w-[180px]">Prodotto</th>
+                      <th className="py-2 px-2 text-right text-muted-foreground font-medium">Totale</th>
+                      {topCountriesForProducts.map(c => (
+                        <th key={c} className="py-2 px-2 text-center text-muted-foreground font-medium min-w-[70px]">{c}</th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {productData.slice(0, 15).map((p, pi) => {
+                      const maxCountrySales = Math.max(...topCountriesForProducts.map(c => p.countries[c]?.netSales ?? 0), 1);
+                      return (
+                        <tr key={pi} className="border-b border-border/10 hover:bg-muted/20">
+                          <td className="py-2 px-2 text-foreground font-medium max-w-[250px] truncate" title={p.product}>{p.product}</td>
+                          <td className="py-2 px-2 text-right font-mono text-foreground">{fmt(p.totalNetSales)}</td>
+                          {topCountriesForProducts.map(c => {
+                            const val = p.countries[c]?.netSales ?? 0;
+                            const intensity = maxCountrySales > 0 ? Math.min(val / maxCountrySales, 1) : 0;
+                            return (
+                              <td key={c} className="py-1 px-1 text-center">
+                                <div
+                                  className="rounded mx-auto w-full h-7 flex items-center justify-center text-[10px] font-mono"
+                                  style={{ backgroundColor: val > 0 ? `hsl(var(--primary) / ${0.08 + intensity * 0.55})` : 'transparent' }}
+                                >
+                                  <span className={val > 0 ? (intensity > 0.5 ? 'text-primary-foreground font-semibold' : 'text-foreground') : 'text-muted-foreground/30'}>
+                                    {val > 0 ? `€${(val / 1000).toFixed(val >= 1000 ? 1 : 2)}k` : '–'}
+                                  </span>
+                                </div>
+                              </td>
+                            );
+                          })}
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
             {/* ── Multi-country monthly trend ── */}
             <div className="glass-card p-4">
               <h3 className="text-sm font-semibold mb-3 flex items-center gap-2">
@@ -412,7 +664,7 @@ export default function GeoInsights() {
               <div className="flex items-center justify-between mb-4">
                 <h3 className="text-sm font-semibold flex items-center gap-2">
                   <Sparkles className="w-4 h-4 text-accent" />
-                  Analisi AI — Stagionalità & Raccomandazioni
+                  Analisi AI — Stagionalità, Prodotti & Raccomandazioni
                 </h3>
                 <button
                   onClick={generateInsights}
@@ -432,7 +684,7 @@ export default function GeoInsights() {
                 <div className="text-center py-10 text-muted-foreground text-xs">
                   <Sparkles className="w-8 h-8 mx-auto mb-3 opacity-30" />
                   <p>Clicca "Genera Analisi" per ottenere insight AI sulla stagionalità di vendita,</p>
-                  <p>correlazioni con la stagione nautica e raccomandazioni strategiche.</p>
+                  <p>analisi prodotti per paese e raccomandazioni strategiche.</p>
                 </div>
               )}
             </div>
