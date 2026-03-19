@@ -162,7 +162,7 @@ const CITY_COORDS: Record<string, [number, number]> = {
   'Arezzo':[11.8802,43.4636],
   'Brindisi':[17.9374,40.6426],
   'Varese':[8.8259,45.8206],
-  'Ancona':[13.5189,43.6158],
+  // Ancona already defined above
   'Como':[9.0851,45.8103],
   'Barletta':[16.2776,41.3146],
   'Cosenza':[16.2594,39.2910],
