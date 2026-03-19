@@ -15,6 +15,7 @@ import { B2CSalesHeatmap } from '@/components/dashboard/B2CSalesHeatmap';
 import { ConnectionStatus } from '@/components/dashboard/ConnectionStatus';
 import { AiAssistant } from '@/components/dashboard/AiAssistant';
 import { B2CSalesBreakdown } from '@/components/dashboard/B2CSalesBreakdown';
+import { RevenueTarget } from '@/components/dashboard/RevenueTarget';
 import { CustomerType } from '@/types/analytics';
 import { NavLink } from '@/components/NavLink';
 import { useShopifyOrders } from '@/hooks/useShopifyOrders';
