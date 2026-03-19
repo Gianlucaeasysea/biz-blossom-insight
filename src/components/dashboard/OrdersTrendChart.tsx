@@ -5,7 +5,7 @@ import {
 import { Download } from 'lucide-react';
 import { Order } from '@/types/analytics';
 import { format, eachDayOfInterval, eachWeekOfInterval, eachMonthOfInterval, startOfWeek, endOfWeek, startOfMonth, endOfMonth, isWithinInterval } from 'date-fns';
-import { it } from 'date-fns/locale';
+import { enUS } from 'date-fns/locale';
 import { downloadCsv } from '@/lib/csv-export';
 
 type Granularity = 'day' | 'week' | 'month';
@@ -22,17 +22,17 @@ export function OrdersTrendChart({ orders, dateRange }: OrdersTrendChartProps) {
     let intervals: { start: Date; end: Date; label: string }[] = [];
     if (granularity === 'day') {
       intervals = eachDayOfInterval({ start: dateRange.start, end: dateRange.end }).map(d => ({
-        start: d, end: d, label: format(d, 'dd MMM', { locale: it }),
+        start: d, end: d, label: format(d, 'dd MMM', { locale: enUS }),
       }));
     } else if (granularity === 'week') {
       intervals = eachWeekOfInterval({ start: dateRange.start, end: dateRange.end }, { weekStartsOn: 1 }).map(d => ({
         start: startOfWeek(d, { weekStartsOn: 1 }), end: endOfWeek(d, { weekStartsOn: 1 }),
-        label: format(startOfWeek(d, { weekStartsOn: 1 }), 'dd MMM', { locale: it }),
+        label: format(startOfWeek(d, { weekStartsOn: 1 }), 'dd MMM', { locale: enUS }),
       }));
     } else {
       intervals = eachMonthOfInterval({ start: dateRange.start, end: dateRange.end }).map(d => ({
         start: startOfMonth(d), end: endOfMonth(d),
-        label: format(d, 'MMM yy', { locale: it }),
+        label: format(d, 'MMM yy', { locale: enUS }),
       }));
     }
 
@@ -51,14 +51,14 @@ export function OrdersTrendChart({ orders, dateRange }: OrdersTrendChartProps) {
   }, [orders, dateRange, granularity]);
 
   const handleExport = () => {
-    downloadCsv('andamento-ordini', ['Data', 'B2C', 'B2B', 'B2B Custom'],
+    downloadCsv('orders-trend', ['Date', 'B2C', 'B2B', 'B2B Custom'],
       chartData.map(r => [r.date, r.b2c, r.b2b, r.b2bCustom]));
   };
 
   const granularities = [
-    { value: 'day' as Granularity, label: 'Giorno' },
-    { value: 'week' as Granularity, label: 'Settimana' },
-    { value: 'month' as Granularity, label: 'Mese' },
+    { value: 'day' as Granularity, label: 'Day' },
+    { value: 'week' as Granularity, label: 'Week' },
+    { value: 'month' as Granularity, label: 'Month' },
   ];
 
   const formatCurrency = (value: number) => `€${(value / 1000).toFixed(0)}k`;
@@ -105,7 +105,7 @@ export function OrdersTrendChart({ orders, dateRange }: OrdersTrendChartProps) {
     <div className="chart-container">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-5">
         <div>
-          <h3 className="text-sm font-semibold text-foreground">Andamento Ordini</h3>
+          <h3 className="text-sm font-semibold text-foreground">Orders Trend</h3>
           <p className="text-xs text-muted-foreground">B2C + B2B (+ B2B Custom)</p>
         </div>
         <div className="flex items-center gap-2">
@@ -122,7 +122,7 @@ export function OrdersTrendChart({ orders, dateRange }: OrdersTrendChartProps) {
               </button>
             ))}
           </div>
-          <button onClick={handleExport} className="p-2 rounded-md hover:bg-muted/50 text-muted-foreground hover:text-foreground transition-colors" title="Esporta CSV">
+          <button onClick={handleExport} className="p-2 rounded-md hover:bg-muted/50 text-muted-foreground hover:text-foreground transition-colors" title="Export CSV">
             <Download className="w-4 h-4" />
           </button>
         </div>

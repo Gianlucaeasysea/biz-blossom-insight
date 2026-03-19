@@ -27,16 +27,16 @@ export function B2CSalesBreakdown({ summary, orderCount, isLoading = false }: B2
     <div className="chart-container">
       <div className="flex items-center justify-between mb-4">
         <div>
-          <h3 className="text-sm font-semibold">Spaccato Vendite B2C</h3>
+          <h3 className="text-sm font-semibold">B2C Sales Breakdown</h3>
           <div className="flex items-center gap-2 mt-1">
-            <span className="text-xs text-muted-foreground">{orderCount} ordini</span>
+            <span className="text-xs text-muted-foreground">{orderCount} orders</span>
             <span className={`inline-flex items-center gap-1 text-[10px] font-medium px-2 py-0.5 rounded-full ${
               isOfficial
                 ? 'bg-success/15 text-success'
                 : 'bg-warning/15 text-warning'
             }`}>
               {isOfficial ? <ShieldCheck className="w-3 h-3" /> : <AlertTriangle className="w-3 h-3" />}
-              {isOfficial ? 'Report Ufficiale' : 'Fallback Ordini'}
+              {isOfficial ? 'Official Report' : 'Fallback Orders'}
             </span>
           </div>
           {summary?.warning ? (

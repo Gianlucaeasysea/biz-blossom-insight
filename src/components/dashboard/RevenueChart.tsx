@@ -36,8 +36,8 @@ export function RevenueChart({ data, customerTypeFilter }: RevenueChartProps) {
   return (
     <div className="chart-container">
       <div className="mb-5">
-        <h3 className="text-sm font-semibold">Andamento Fatturato</h3>
-        <p className="text-xs text-muted-foreground">B2C vs B2B nel periodo</p>
+        <h3 className="text-sm font-semibold">Revenue Trend</h3>
+        <p className="text-xs text-muted-foreground">B2C vs B2B in the period</p>
       </div>
 
       <div className="h-[280px]">

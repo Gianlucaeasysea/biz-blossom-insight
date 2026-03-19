@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Order } from '@/types/analytics';
 import { format } from 'date-fns';
-import { it } from 'date-fns/locale';
+import { enUS } from 'date-fns/locale';
 
 interface DataTableProps {
   orders: Order[];
@@ -105,13 +105,13 @@ export function DataTable({ orders, title }: DataTableProps) {
         <div>
           <h3 className="text-lg font-semibold">{title}</h3>
           <p className="text-sm text-muted-foreground">
-            {filteredAndSortedOrders.length} ordini trovati
+            {filteredAndSortedOrders.length} orders found
           </p>
         </div>
         <div className="relative w-full sm:w-64">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
           <Input
-            placeholder="Cerca ordini..."
+            placeholder="Search orders..."
             value={search}
             onChange={(e) => {
               setSearch(e.target.value);
@@ -126,12 +126,12 @@ export function DataTable({ orders, title }: DataTableProps) {
         <table className="data-table">
           <thead>
             <tr>
-              <th><SortButton field="orderNumber">Ordine</SortButton></th>
-              <th><SortButton field="date">Data</SortButton></th>
-              <th><SortButton field="customerName">Cliente</SortButton></th>
-              <th><SortButton field="customerType">Tipo</SortButton></th>
-              <th>Canale</th>
-              <th className="text-right"><SortButton field="totalAmount">Importo</SortButton></th>
+              <th><SortButton field="orderNumber">Order</SortButton></th>
+              <th><SortButton field="date">Date</SortButton></th>
+              <th><SortButton field="customerName">Customer</SortButton></th>
+              <th><SortButton field="customerType">Type</SortButton></th>
+              <th>Channel</th>
+              <th className="text-right"><SortButton field="totalAmount">Amount</SortButton></th>
             </tr>
           </thead>
           <tbody>
@@ -139,7 +139,7 @@ export function DataTable({ orders, title }: DataTableProps) {
               <tr key={order.id} className="group">
                 <td className="font-mono text-sm">{order.orderNumber}</td>
                 <td className="text-muted-foreground">
-                  {format(order.date, 'dd MMM yyyy', { locale: it })}
+                  {format(order.date, 'dd MMM yyyy', { locale: enUS })}
                 </td>
                 <td>{order.customerName}</td>
                 <td>
@@ -165,7 +165,7 @@ export function DataTable({ orders, title }: DataTableProps) {
       {totalPages > 1 && (
         <div className="flex items-center justify-between mt-4 pt-4 border-t border-border/50">
           <span className="text-sm text-muted-foreground">
-            Pagina {currentPage} di {totalPages}
+            Page {currentPage} of {totalPages}
           </span>
           <div className="flex items-center gap-2">
             <Button

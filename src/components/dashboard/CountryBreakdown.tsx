@@ -39,7 +39,7 @@ export function CountryBreakdown({ orders, allSkus }: CountryBreakdownProps) {
   );
 
   const handleExport = () => {
-    downloadCsv('vendite-paese', ['Paese', 'B2C', 'B2B', 'Totale'],
+    downloadCsv('sales-by-country', ['Country', 'B2C', 'B2B', 'Total'],
       sorted.map(r => [r.country, r.b2cSales, r.b2bSales, r.totalSales]));
   };
 
@@ -48,7 +48,7 @@ export function CountryBreakdown({ orders, allSkus }: CountryBreakdownProps) {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
         <div className="flex items-center gap-2">
           <Globe className="w-4 h-4 text-muted-foreground" />
-          <h3 className="text-sm font-semibold">Vendite per Paese</h3>
+          <h3 className="text-sm font-semibold">Sales by Country</h3>
         </div>
         <div className="flex items-center gap-2">
           <select
@@ -56,12 +56,12 @@ export function CountryBreakdown({ orders, allSkus }: CountryBreakdownProps) {
             onChange={e => setSkuFilter(e.target.value)}
             className="h-8 text-xs rounded-md border border-border/50 bg-muted/50 px-3 py-1 text-foreground"
           >
-            <option value="">Tutti gli SKU</option>
+            <option value="">All SKUs</option>
             {allSkus.map(sku => (
               <option key={sku} value={sku}>{sku}</option>
             ))}
           </select>
-          <button onClick={handleExport} className="p-2 rounded-md hover:bg-muted/50 text-muted-foreground hover:text-foreground transition-colors" title="Esporta CSV">
+          <button onClick={handleExport} className="p-2 rounded-md hover:bg-muted/50 text-muted-foreground hover:text-foreground transition-colors" title="Export CSV">
             <Download className="w-4 h-4" />
           </button>
         </div>
@@ -69,10 +69,10 @@ export function CountryBreakdown({ orders, allSkus }: CountryBreakdownProps) {
       <div className="overflow-x-auto scrollbar-custom">
         <table className="data-table">
           <thead><tr>
-            <th><SortBtn field="country">Paese</SortBtn></th>
+            <th><SortBtn field="country">Country</SortBtn></th>
             <th className="text-right"><SortBtn field="b2cSales">B2C</SortBtn></th>
             <th className="text-right"><SortBtn field="b2bSales">B2B</SortBtn></th>
-            <th className="text-right"><SortBtn field="totalSales">Totale</SortBtn></th>
+            <th className="text-right"><SortBtn field="totalSales">Total</SortBtn></th>
           </tr></thead>
           <tbody>
             {sorted.map(r => (
@@ -83,11 +83,11 @@ export function CountryBreakdown({ orders, allSkus }: CountryBreakdownProps) {
                 <td className="text-right font-mono text-xs font-semibold">{fmt(r.totalSales)}</td>
               </tr>
             ))}
-            {!sorted.length && <tr><td colSpan={4} className="text-center text-muted-foreground py-6 text-xs">Nessun dato</td></tr>}
+            {!sorted.length && <tr><td colSpan={4} className="text-center text-muted-foreground py-6 text-xs">No data</td></tr>}
           </tbody>
           {sorted.length > 0 && (
             <tfoot><tr className="border-t-2 border-border font-semibold text-xs">
-              <td>Totale</td>
+              <td>Total</td>
               <td className="text-right font-mono">{fmt(sorted.reduce((s, r) => s + r.b2cSales, 0))}</td>
               <td className="text-right font-mono">{fmt(sorted.reduce((s, r) => s + r.b2bSales, 0))}</td>
               <td className="text-right font-mono">{fmt(sorted.reduce((s, r) => s + r.totalSales, 0))}</td>

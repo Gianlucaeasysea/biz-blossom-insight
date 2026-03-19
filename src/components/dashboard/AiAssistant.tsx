@@ -154,13 +154,13 @@ export function AiAssistant({ dashboardContext }: AiAssistantProps) {
         {messages.length === 0 && (
           <div className="text-center text-muted-foreground text-xs py-8 space-y-2">
             <Bot className="w-10 h-10 mx-auto text-primary/40" />
-            <p className="font-medium">Ciao! Sono il tuo assistente AI.</p>
-            <p>Chiedimi qualsiasi cosa sui dati della dashboard:</p>
+            <p className="font-medium">Hi! I'm your AI assistant.</p>
+            <p>Ask me anything about the dashboard data:</p>
             <div className="space-y-1 mt-3">
               {[
-                'Qual è il prodotto più venduto?',
-                'Come stanno andando le vendite B2B?',
-                'Quali strategie suggerisci per crescere?',
+                'What is the best-selling product?',
+                'How are B2B sales going?',
+                'What growth strategies do you suggest?',
               ].map((q) => (
                 <button
                   key={q}

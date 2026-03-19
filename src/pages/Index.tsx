@@ -76,8 +76,8 @@ export default function Index() {
     const lines: string[] = [];
     lines.push(`Periodo: ${format(dateRange.start, 'dd/MM/yyyy')} - ${format(dateRange.end, 'dd/MM/yyyy')}`);
     lines.push(`Filtro tipo cliente: ${customerTypeFilter}`);
-    lines.push(`Totale ordini caricati: ${allOrders.length} (Shopify: ${shopifyOrders.length}, Google Sheets B2B: ${gsOrders.length})`);
-    lines.push(`Ordini nel periodo filtrato: ${filteredOrders.length}`);
+    lines.push(`Total orders loaded: ${allOrders.length} (Shopify: ${shopifyOrders.length}, Google Sheets B2B: ${gsOrders.length})`);
+    lines.push(`Orders in filtered period: ${filteredOrders.length}`);
     lines.push('');
     lines.push('--- KPI ---');
     kpis.forEach(k => {
@@ -86,24 +86,24 @@ export default function Index() {
     });
     lines.push('');
     lines.push('--- Top SKU B2C (per net sales) ---');
-    b2cSkuData.slice(0, 15).forEach(s => lines.push(`${s.sku} (${s.name}): qty ${s.qtySold}, net sales €${s.netSalesTotal.toLocaleString('it-IT', { minimumFractionDigits: 2 })}, evasi €${s.netSalesFulfilled.toLocaleString('it-IT', { minimumFractionDigits: 2 })}`));
+    b2cSkuData.slice(0, 15).forEach(s => lines.push(`${s.sku} (${s.name}): qty ${s.qtySold}, net sales €${s.netSalesTotal.toLocaleString('it-IT', { minimumFractionDigits: 2 })}, fulfilled €${s.netSalesFulfilled.toLocaleString('it-IT', { minimumFractionDigits: 2 })}`));
     lines.push('');
-    lines.push('--- Top SKU B2B (per price raccolto) ---');
-    b2bSkuData.slice(0, 15).forEach(s => lines.push(`${s.sku} (${s.name}): qty ${s.qtySold}, raccolto €${s.priceRaccolto.toLocaleString('it-IT', { minimumFractionDigits: 2 })}, consegnato €${s.priceConsegnato.toLocaleString('it-IT', { minimumFractionDigits: 2 })}`));
+    lines.push('--- Top SKU B2B (by collected price) ---');
+    b2bSkuData.slice(0, 15).forEach(s => lines.push(`${s.sku} (${s.name}): qty ${s.qtySold}, collected €${s.priceRaccolto.toLocaleString('it-IT', { minimumFractionDigits: 2 })}, fulfilled €${s.priceConsegnato.toLocaleString('it-IT', { minimumFractionDigits: 2 })}`));
     lines.push('');
-    lines.push('--- Top SKU Combinato ---');
-    combinedSkuData.slice(0, 15).forEach(s => lines.push(`${s.sku} (${s.name}): qty ${s.qtySold}, totale €${s.totalValue.toLocaleString('it-IT', { minimumFractionDigits: 2 })}`));
+    lines.push('--- Top Combined SKU ---');
+    combinedSkuData.slice(0, 15).forEach(s => lines.push(`${s.sku} (${s.name}): qty ${s.qtySold}, total €${s.totalValue.toLocaleString('it-IT', { minimumFractionDigits: 2 })}`));
     lines.push('');
     const countryMap: Record<string, { orders: number; revenue: number }> = {};
     filteredOrders.forEach(o => {
-      const c = o.destinationCountry || o.country || 'Sconosciuto';
+      const c = o.destinationCountry || o.country || 'Unknown';
       if (!countryMap[c]) countryMap[c] = { orders: 0, revenue: 0 };
       countryMap[c].orders++;
       countryMap[c].revenue += o.customerType === 'B2C' ? (o.netAmount ?? o.totalAmount) : o.totalAmount;
     });
-    lines.push('--- Vendite per Paese ---');
+    lines.push('--- Sales by Country ---');
     Object.entries(countryMap).sort((a, b) => b[1].revenue - a[1].revenue).slice(0, 10).forEach(([c, d]) =>
-      lines.push(`${c}: ${d.orders} ordini, €${d.revenue.toLocaleString('it-IT', { minimumFractionDigits: 2 })}`)
+      lines.push(`${c}: ${d.orders} orders, €${d.revenue.toLocaleString('it-IT', { minimumFractionDigits: 2 })}`)
     );
     return lines.join('\n');
   }, [dateRange, customerTypeFilter, allOrders, shopifyOrders, gsOrders, filteredOrders, kpis, b2cSkuData, b2bSkuData, combinedSkuData]);
@@ -163,10 +163,10 @@ export default function Index() {
               {kpiMap['Total Order B2B'] && <KPICard data={kpiMap['Total Order B2B']} />}
             </div>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-              {kpiMap['Fatturato B2C'] && <KPICard data={kpiMap['Fatturato B2C']} />}
-              {kpiMap['Fatturato B2B'] && <KPICard data={kpiMap['Fatturato B2B']} />}
-              {kpiMap['Totale Ordini B2C'] && <KPICard data={kpiMap['Totale Ordini B2C']} />}
-              {kpiMap['Totale Ordini B2B'] && <KPICard data={kpiMap['Totale Ordini B2B']} />}
+              {kpiMap['Revenue B2C'] && <KPICard data={kpiMap['Revenue B2C']} />}
+              {kpiMap['Revenue B2B'] && <KPICard data={kpiMap['Revenue B2B']} />}
+              {kpiMap['Total Orders B2C'] && <KPICard data={kpiMap['Total Orders B2C']} />}
+              {kpiMap['Total Orders B2B'] && <KPICard data={kpiMap['Total Orders B2B']} />}
             </div>
           </div>
 
@@ -187,7 +187,7 @@ export default function Index() {
 
         {/* === SKU DETAIL SECTION === */}
         <div className="mb-6">
-          <p className="section-label mb-3">Dettaglio Vendite SKU</p>
+          <p className="section-label mb-3">SKU Sales Detail</p>
           <div className="space-y-4">
             <B2CSkuTable data={b2cSkuData} />
             <B2BSkuTable data={b2bSkuData} />
@@ -203,11 +203,11 @@ export default function Index() {
         {/* === COLLECTION + COUNTRY SIDE BY SIDE === */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6">
           <div>
-            <p className="section-label mb-3">Vendite per Collection</p>
+            <p className="section-label mb-3">Sales by Collection</p>
             <CollectionBreakdown orders={filteredOrders} />
           </div>
           <div>
-            <p className="section-label mb-3">Vendite per Paese</p>
+            <p className="section-label mb-3">Sales by Country</p>
             <CountryBreakdown orders={filteredOrders} allSkus={allSkus} />
           </div>
         </div>

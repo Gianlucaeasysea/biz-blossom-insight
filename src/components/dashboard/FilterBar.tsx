@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar as CalendarComponent } from '@/components/ui/calendar';
 import { format, subDays } from 'date-fns';
-import { it } from 'date-fns/locale';
+import { enUS } from 'date-fns/locale';
 import { CustomerType } from '@/types/analytics';
 
 interface FilterBarProps {
@@ -43,7 +43,7 @@ export function FilterBar({
                 : 'text-muted-foreground hover:text-foreground'
             }`}
           >
-            {type === 'all' ? 'Tutti' : type}
+            {type === 'all' ? 'All' : type}
           </button>
         ))}
       </div>
@@ -66,7 +66,7 @@ export function FilterBar({
         <PopoverTrigger asChild>
           <Button variant="ghost" size="sm" className="text-xs text-muted-foreground hover:text-foreground gap-1.5">
             <Calendar className="w-3.5 h-3.5" />
-            {format(dateRange.start, 'dd MMM', { locale: it })} – {format(dateRange.end, 'dd MMM yy', { locale: it })}
+            {format(dateRange.start, 'dd MMM', { locale: enUS })} – {format(dateRange.end, 'dd MMM yy', { locale: enUS })}
             <ChevronDown className="w-3 h-3" />
           </Button>
         </PopoverTrigger>
@@ -77,14 +77,14 @@ export function FilterBar({
                 mode="single"
                 selected={dateRange.start}
                 onSelect={date => date && onDateRangeChange({ ...dateRange, start: date })}
-                locale={it}
+                locale={enUS}
               />
             </div>
             <CalendarComponent
               mode="single"
               selected={dateRange.end}
               onSelect={date => date && onDateRangeChange({ ...dateRange, end: date })}
-              locale={it}
+              locale={enUS}
             />
           </div>
         </PopoverContent>

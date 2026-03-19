@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { eachMonthOfInterval, startOfMonth, endOfMonth, format, isWithinInterval } from 'date-fns';
-import { it } from 'date-fns/locale';
+import { enUS } from 'date-fns/locale';
 import { Map } from 'lucide-react';
 import { Order } from '@/types/analytics';
 
@@ -18,12 +18,12 @@ export function B2CSalesHeatmap({ orders, dateRange }: B2CSalesHeatmapProps) {
     const months = eachMonthOfInterval({ start: dateRange.start, end: dateRange.end }).map(d => ({
       start: startOfMonth(d),
       end: endOfMonth(d),
-      label: format(d, 'MMM yy', { locale: it }),
+      label: format(d, 'MMM yy', { locale: enUS }),
     }));
 
     const countryTotals: Record<string, number> = {};
     b2cOrders.forEach(o => {
-      const country = o.destinationCountry || o.country || 'Sconosciuto';
+      const country = o.destinationCountry || o.country || 'Unknown';
       countryTotals[country] = (countryTotals[country] || 0) + (o.netAmount ?? o.totalAmount);
     });
 
@@ -36,7 +36,7 @@ export function B2CSalesHeatmap({ orders, dateRange }: B2CSalesHeatmapProps) {
     countries.forEach(c => { matrix[c] = new Array(months.length).fill(0); });
 
     b2cOrders.forEach(o => {
-      const country = o.destinationCountry || o.country || 'Sconosciuto';
+      const country = o.destinationCountry || o.country || 'Unknown';
       if (!matrix[country]) return;
       const amount = o.netAmount ?? o.totalAmount;
       const orderDate = o.date instanceof Date ? o.date : new Date(o.date);
@@ -74,7 +74,7 @@ export function B2CSalesHeatmap({ orders, dateRange }: B2CSalesHeatmapProps) {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
         <div className="flex items-center gap-2">
           <Map className="w-4 h-4 text-muted-foreground" />
-          <h3 className="text-sm font-semibold">Heatmap Vendite B2C per Paese</h3>
+          <h3 className="text-sm font-semibold">B2C Sales Heatmap by Country</h3>
         </div>
         <div className="flex items-center gap-2">
           <span className="text-xs text-muted-foreground">Top</span>
@@ -83,16 +83,16 @@ export function B2CSalesHeatmap({ orders, dateRange }: B2CSalesHeatmapProps) {
             onChange={e => setTopN(Number(e.target.value))}
             className="h-8 text-xs rounded-md border border-border/50 bg-muted/50 px-2 py-1 text-foreground"
           >
-            <option value={5}>5 paesi</option>
-            <option value={10}>10 paesi</option>
-            <option value={15}>15 paesi</option>
-            <option value={20}>20 paesi</option>
+            <option value={5}>5 countries</option>
+            <option value={10}>10 countries</option>
+            <option value={15}>15 countries</option>
+            <option value={20}>20 countries</option>
           </select>
         </div>
       </div>
 
       {countries.length === 0 ? (
-        <p className="text-xs text-muted-foreground text-center py-6">Nessun dato B2C disponibile</p>
+        <p className="text-xs text-muted-foreground text-center py-6">No B2C data available</p>
       ) : (
         <>
           <div className="overflow-x-auto scrollbar-custom">
@@ -100,7 +100,7 @@ export function B2CSalesHeatmap({ orders, dateRange }: B2CSalesHeatmapProps) {
               <thead>
                 <tr>
                   <th className="text-left text-muted-foreground font-medium py-1 pr-3 whitespace-nowrap min-w-[120px]">
-                    Paese
+                    Country
                   </th>
                   {months.map(m => (
                     <th
@@ -111,7 +111,7 @@ export function B2CSalesHeatmap({ orders, dateRange }: B2CSalesHeatmapProps) {
                     </th>
                   ))}
                   <th className="text-right text-muted-foreground font-medium py-1 pl-3 whitespace-nowrap">
-                    Totale
+                    Total
                   </th>
                 </tr>
               </thead>
