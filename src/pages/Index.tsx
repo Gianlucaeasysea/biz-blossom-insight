@@ -133,6 +133,9 @@ export default function Index() {
         {/* ── Header ──────────────────────────────────────────── */}
         <DashboardHeader onRefresh={handleRefresh} isLoading={isFetching} />
 
+        {/* ── Revenue Target ─────────────────────────────────── */}
+        <RevenueTarget currentRevenue={totalVal} />
+
         {/* ── Nav + Filters bar ───────────────────────────────── */}
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div className="flex gap-1.5">
