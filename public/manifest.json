@@ -1,0 +1,19 @@
+{
+  "name": "EasySea Analytics",
+  "short_name": "EasySea",
+  "description": "Dashboard B2C + B2B Analytics",
+  "theme_color": "#0f1623",
+  "background_color": "#0f1623",
+  "display": "standalone",
+  "orientation": "any",
+  "scope": "/",
+  "start_url": "/",
+  "icons": [
+    {
+      "src": "/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

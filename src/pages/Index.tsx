@@ -239,8 +239,8 @@ export default function Index() {
   );
 
   return (
-    <div className="min-h-screen bg-background p-4 sm:p-6">
-      <div className="max-w-[1520px] mx-auto space-y-5">
+    <div className="min-h-screen bg-background p-3 sm:p-6 safe-area-wrap">
+      <div className="max-w-[1520px] mx-auto space-y-4 sm:space-y-5">
 
         {/* ── Header ──────────────────────────────────────────── */}
         <DashboardHeader onRefresh={handleRefresh} isLoading={isFetching} />
