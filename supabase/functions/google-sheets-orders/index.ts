@@ -129,8 +129,14 @@ serve(async (req) => {
       'Olli™ - Anti Shock solid ring aluminium - L - 38x70': 'SRA-103',
       'Olli™ - Anti Shock solid ring aluminium - XL - 55x101': 'SRA-104',
       'Olli™ - Snatch and Anti-shock block - M 50x12': 'OB-103',
+      'Olli™ - Snatch and Anti-shock block M - 50x12': 'OB-103',
+      'Olli™ - Snatch and Anti-shock block M 50x12': 'OB-103',
       'Olli™ - Snatch and Anti-shock block S 40X10': 'OB-102',
       'Olli™ - Snatch and Anti-shock block S - 40X10': 'OB-102',
+      'Olli™ - Snatch and Anti-shock block S 40x10': 'OB-102',
+      'Olli™ - Snatch and Anti-shock block L - 60x14': 'OB-104',
+      'Olli™ - Snatch and Anti-shock block - L 60x14': 'OB-104',
+      'Olli™ - Snatch and Anti-shock block L 60x14': 'OB-104',
       'Covered Loop in Dyneema® - S - 14x10': 'LC-101',
       'Covered Loop in Dyneema® for Olli - S - 14x10': 'LC-101',
       'Covered Loop in Dyneema® - M - 20x14': 'LC-102',
@@ -148,9 +154,20 @@ serve(async (req) => {
       'Soft Shackle in Dyneema® - M - 20x14': 'SS-103',
       'Soft Shackle in Dyneema® - L - 28x20': 'SS-104',
       'Spira – The Twistable Guardrail Cover': 'SP-101',
+      'Spira - The Twistable Guardrail Cover': 'SP-101',
       'Way2 - The inflatable reversible gangway': 'W2G-101',
       'Rope deflector': 'ROD-101',
+      // Jake products (same SKUs as B2C Shopify)
+      'Boat Hook head': 'JBH-101',
+      'Telescopic pole': 'JTP-101',
+      'Line-passing head': 'JLH-101',
+      'Quick-release with Fidlock mounts': 'JQK-101',
+      'Short pole': 'JSP-101',
+      'QuickGrip Linemaster Head': 'JQH-101',
+      'Brush head': 'JBR-101',
     };
+
+    const normalize = (s: string) => s.toLowerCase().replace(/[™®©]/g, '').replace(/\s*-\s*/g, ' ').replace(/\s+/g, ' ').trim();
 
     const lookupSku = (productName: string): string => {
       if (!productName) return 'UNKNOWN';
@@ -160,6 +177,11 @@ serve(async (req) => {
       const lower = productName.toLowerCase().trim();
       for (const [key, sku] of Object.entries(skuMap)) {
         if (key.toLowerCase().trim() === lower) return sku;
+      }
+      // Normalized match (ignore dashes, spaces, trademark symbols)
+      const norm = normalize(productName);
+      for (const [key, sku] of Object.entries(skuMap)) {
+        if (normalize(key) === norm) return sku;
       }
       // Partial match (product name contains or is contained)
       for (const [key, sku] of Object.entries(skuMap)) {
