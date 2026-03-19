@@ -33,19 +33,6 @@ export function RevenueTarget({ currentRevenue, monthlyRevenues }: RevenueTarget
   const monthPct     = now.getDate() / daysInMonth;
   const pctTotal     = target > 0 ? Math.min((currentRevenue / target) * 100, 100) : 0;
 
-  // YTD budget target (sum of months 0..currentMo)
-  const ytdTarget = BUDGET_MONTHLY_TARGETS.slice(0, currentMo + 1).reduce((s, v) => s + v, 0) * (target / BUDGET_ANNUAL_TARGET);
-  const ytdPct    = ytdTarget > 0 ? (currentRevenue / ytdTarget) * 100 : 0;
-
-  // Dot color for past months
-  const dotColor = (mo: number, actual: number) => {
-    const moTgt = BUDGET_MONTHLY_TARGETS[mo] * (target / BUDGET_ANNUAL_TARGET);
-    const pct = moTgt > 0 ? actual / moTgt : 0;
-    if (pct >= 1.0) return 'hsl(168,70%,42%)';
-    if (pct >= 0.7) return 'hsl(42,96%,58%)';
-    return 'hsl(0,65%,52%)';
-  };
-
   // Use Budget 2026 monthly distribution (scaled to current target if user changed it)
   const budgetScale  = target / BUDGET_ANNUAL_TARGET;
   const monthlyTgts  = BUDGET_MONTHLY_TARGETS.map(v => Math.round(v * budgetScale));
