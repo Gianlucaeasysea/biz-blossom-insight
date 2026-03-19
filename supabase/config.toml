@@ -11,3 +11,6 @@ verify_jwt = false
 
 [functions.ai-assistant]
 verify_jwt = false
+
+[functions.geo-insights]
+verify_jwt = false
