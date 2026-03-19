@@ -167,7 +167,7 @@ const CITY_COORDS: Record<string, [number, number]> = {
   'Barletta':[16.2776,41.3146],
   'Cosenza':[16.2594,39.2910],
   'Torre del Greco':[14.3595,40.7858],
-  'Bergamo':[9.6773,45.6983],
+  // Bergamo already defined above
   'Busto Arsizio':[8.8510,45.6092],
   'Gela':[14.2578,37.0746],
   'Legnano':[8.9143,45.5958],
