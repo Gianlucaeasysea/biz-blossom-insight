@@ -5,6 +5,7 @@ import {
 } from 'recharts';
 import { NavLink } from '@/components/NavLink';
 import { useShopifyOrders } from '@/hooks/useShopifyOrders';
+import { useShopifySalesSummary } from '@/hooks/useShopifySalesSummary';
 import { getSkuCollection } from '@/lib/mock-data';
 import { Loader2, Target, TrendingUp, Calendar as CalIcon, Zap } from 'lucide-react';
 
@@ -86,6 +87,7 @@ const fmtK = (v: number) =>
 
 export default function Budget2026() {
   const [yearStart] = useState(() => new Date(`${BUDGET_YEAR}-01-01T00:00:00Z`));
+  const [today]     = useState(() => new Date());
 
   const { data: shopifyOrders = [], isLoading } = useShopifyOrders({
     limit: 250,
@@ -94,8 +96,15 @@ export default function Budget2026() {
     enabled: true,
   });
 
-  // Per-month, per-product actuals from Shopify B2C (current year)
-  const actuals = useMemo<Record<string, number[]>>(() => {
+  // ── Shopify Analytics YTD summary — ground truth for B2C net sales ──────
+  const { data: ytdSalesSummary } = useShopifySalesSummary({
+    start: yearStart,
+    end: today,
+    enabled: true,
+  });
+
+  // ── Raw per-product, per-month actuals (proportional net allocation) ─────
+  const rawActuals = useMemo<Record<string, number[]>>(() => {
     const res: Record<string, number[]> = {};
     RAW.products.forEach(p => { res[p.name] = new Array(12).fill(0); });
 
@@ -116,9 +125,24 @@ export default function Budget2026() {
         });
       });
 
-    Object.keys(res).forEach(k => { res[k] = res[k].map(v => Math.round(v * 100) / 100); });
     return res;
   }, [shopifyOrders]);
+
+  // ── Scale factor: align raw order totals to Shopify Analytics ground truth
+  const b2cNetScaleFactor = useMemo(() => {
+    if (!ytdSalesSummary?.netSales) return 1;
+    const rawTotal = Object.values(rawActuals).reduce((s, arr) => s + arr.reduce((a, v) => a + v, 0), 0);
+    return rawTotal > 0 ? ytdSalesSummary.netSales / rawTotal : 1;
+  }, [rawActuals, ytdSalesSummary]);
+
+  // ── Scaled actuals: each product × scaling factor ────────────────────────
+  const actuals = useMemo<Record<string, number[]>>(() =>
+    Object.fromEntries(
+      RAW.products.map(p => [
+        p.name,
+        (rawActuals[p.name] ?? new Array(12).fill(0)).map(v => Math.round(v * b2cNetScaleFactor * 100) / 100),
+      ])
+    ), [rawActuals, b2cNetScaleFactor]);
 
   const targets = useMemo(
     () => Object.fromEntries(RAW.products.map(p => [p.name, monthlyTargets(p)])),
@@ -128,7 +152,9 @@ export default function Budget2026() {
   // ── Derived KPIs ────────────────────────────────────────────────────────────
   const totalTarget = RAW.products.reduce((s, p) => s + p.target, 0);
   const total2025   = RAW.products.reduce((s, p) => s + p.sales.reduce((a, v) => a + v, 0), 0);
-  const ytdActual   = Object.values(actuals).reduce((s, arr) => s + arr.reduce((a, v) => a + v, 0), 0);
+  // YTD actual: prefer Shopify Analytics (exact same number as Sales Dashboard)
+  const ytdActual   = ytdSalesSummary?.netSales
+    ?? Object.values(actuals).reduce((s, arr) => s + arr.reduce((a, v) => a + v, 0), 0);
   const pctDone     = totalTarget > 0 ? (ytdActual / totalTarget) * 100 : 0;
 
   // ── Monthly chart data ───────────────────────────────────────────────────────
@@ -314,11 +340,19 @@ export default function Budget2026() {
                       const t = targets[p.name]?.[i] ?? 0;
                       const isPast = i <= currentMonth;
                       return (
-                        <td key={i} className="text-right font-mono text-[10px] min-w-[52px]">
-                          {isPast
-                            ? <span className={a > 0 ? '' : 'text-muted-foreground/40'}>{a > 0 ? fmtK(a) : '—'}</span>
-                            : <span className="text-muted-foreground/50">{t > 0 ? fmtK(t) : '—'}</span>
-                          }
+                        <td key={i} className="text-right font-mono min-w-[58px] py-1">
+                          {isPast ? (
+                            <div className="flex flex-col items-end gap-0.5">
+                              <span className="text-[11px] font-semibold" style={{ color: a > 0 ? PRODUCT_COLORS[p.name] : undefined }}>
+                                {a > 0 ? fmtK(a) : '—'}
+                              </span>
+                              {t > 0 && (
+                                <span className="text-[9px] text-muted-foreground/50">{fmtK(t)}</span>
+                              )}
+                            </div>
+                          ) : (
+                            <span className="text-[10px] text-muted-foreground/50">{t > 0 ? fmtK(t) : '—'}</span>
+                          )}
                         </td>
                       );
                     })}
@@ -348,8 +382,15 @@ export default function Budget2026() {
                   const t = RAW.products.reduce((s, p) => s + (targets[p.name]?.[i] ?? 0), 0);
                   const isPast = i <= currentMonth;
                   return (
-                    <td key={i} className="text-right font-mono text-[10px]">
-                      {isPast ? fmtK(a) : <span className="text-muted-foreground/50">{fmtK(t)}</span>}
+                    <td key={i} className="text-right font-mono min-w-[58px] py-1">
+                      {isPast ? (
+                        <div className="flex flex-col items-end gap-0.5">
+                          <span className="text-[11px]">{fmtK(a)}</span>
+                          <span className="text-[9px] text-muted-foreground/50">{fmtK(t)}</span>
+                        </div>
+                      ) : (
+                        <span className="text-[10px] text-muted-foreground/50">{fmtK(t)}</span>
+                      )}
                     </td>
                   );
                 })}
