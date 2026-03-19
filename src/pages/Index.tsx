@@ -186,7 +186,7 @@ export default function Index() {
         <DashboardHeader onRefresh={handleRefresh} isLoading={isFetching} />
 
         {/* ── Revenue Target ─────────────────────────────────── */}
-        <RevenueTarget currentRevenue={totalVal} />
+        <RevenueTarget currentRevenue={ytdRevenue} />
 
         {/* ── Nav + Filters bar ───────────────────────────────── */}
         <div className="flex flex-wrap items-center justify-between gap-3">
