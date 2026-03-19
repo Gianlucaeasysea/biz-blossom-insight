@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Target, Pencil, Check, X } from 'lucide-react';
 import { format, getDaysInMonth } from 'date-fns';
 import { it } from 'date-fns/locale';
