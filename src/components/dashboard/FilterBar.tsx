@@ -32,20 +32,34 @@ export function FilterBar({
   return (
     <div className="flex flex-wrap items-center gap-3">
       {/* Type toggle */}
-      <div className="flex rounded-md bg-muted p-0.5">
-        {(['all', 'B2C', 'B2B'] as const).map(type => (
-          <button
-            key={type}
-            onClick={() => onCustomerTypeChange(type)}
-            className={`px-3 py-1.5 text-xs font-medium rounded transition-colors ${
-              customerTypeFilter === type
-                ? 'bg-primary text-primary-foreground'
-                : 'text-muted-foreground hover:text-foreground'
-            }`}
-          >
-            {type === 'all' ? 'All' : type}
-          </button>
-        ))}
+      <div className="flex rounded-lg bg-muted/60 p-0.5 gap-0.5">
+        {(['all', 'B2C', 'B2B'] as const).map(type => {
+          const isActive = customerTypeFilter === type;
+          const b2cActive = type === 'B2C' && isActive;
+          const b2bActive = type === 'B2B' && isActive;
+          return (
+            <button
+              key={type}
+              onClick={() => onCustomerTypeChange(type)}
+              className={`px-3 py-1.5 text-xs font-semibold rounded-md transition-all duration-150 ${
+                isActive && type === 'all'
+                  ? 'bg-primary text-primary-foreground shadow-sm'
+                  : !isActive
+                  ? 'text-muted-foreground hover:text-foreground'
+                  : ''
+              }`}
+              style={
+                b2cActive
+                  ? { background: 'hsl(168,30%,12%)', color: 'hsl(168,38%,54%)', border: '1px solid hsl(168,30%,22%)' }
+                  : b2bActive
+                  ? { background: 'hsl(38,40%,11%)', color: 'hsl(38,50%,58%)', border: '1px solid hsl(38,38%,22%)' }
+                  : {}
+              }
+            >
+              {type === 'all' ? 'All' : type}
+            </button>
+          );
+        })}
       </div>
 
       {/* Quick presets */}

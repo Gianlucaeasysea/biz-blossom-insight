@@ -6,23 +6,23 @@
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 218 35% 12%;
+    --background: 218 35% 7%;
+    --foreground: 210 20% 95%;
 
-    --card: 0 0% 99%;
-    --card-foreground: 218 35% 12%;
+    --card: 218 30% 10%;
+    --card-foreground: 210 20% 95%;
 
-    --popover: 0 0% 100%;
-    --popover-foreground: 218 35% 12%;
+    --popover: 218 30% 12%;
+    --popover-foreground: 210 20% 95%;
 
     --primary: 215 85% 50%;
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 210 20% 96%;
-    --secondary-foreground: 218 25% 25%;
+    --secondary: 218 25% 15%;
+    --secondary-foreground: 210 15% 85%;
 
-    --muted: 210 20% 96%;
-    --muted-foreground: 215 15% 45%;
+    --muted: 218 25% 13%;
+    --muted-foreground: 215 15% 50%;
 
     --accent: 25 95% 55%;
     --accent-foreground: 0 0% 100%;
@@ -36,15 +36,25 @@
     --destructive: 0 70% 55%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 214 32% 91%;
-    --input: 214 32% 91%;
+    --border: 218 25% 16%;
+    --input: 218 25% 16%;
     --ring: 215 85% 50%;
 
     --radius: 0.5rem;
 
+    /* Brand colors — B2C=teal (mare), B2B=amber (caldo) — toni morbidi */
+    --b2c: 168 42% 38%;
+    --b2c-light: 168 38% 52%;
+    --b2c-bg: 168 30% 9%;
+    --b2c-border: 168 35% 20%;
+    --b2b: 38 55% 46%;
+    --b2b-light: 38 52% 60%;
+    --b2b-bg: 38 40% 9%;
+    --b2b-border: 38 45% 20%;
+
     /* Chart colors */
-    --chart-b2c: 215 85% 55%;
-    --chart-b2b: 25 95% 55%;
+    --chart-b2c: 168 42% 40%;
+    --chart-b2b: 38 55% 46%;
     --chart-combined: 160 60% 45%;
     --chart-1: 215 85% 55%;
     --chart-2: 25 95% 55%;
@@ -56,44 +66,16 @@
     --chart-8: 150 50% 50%;
 
     /* Shadows */
-    --shadow-card: 0 1px 3px 0 hsl(218 25% 20% / 0.1);
+    --shadow-card: 0 1px 3px 0 hsl(218 35% 3% / 0.6);
 
-    --sidebar-background: 0 0% 100%;
-    --sidebar-foreground: 218 35% 12%;
+    --sidebar-background: 218 35% 7%;
+    --sidebar-foreground: 210 20% 95%;
     --sidebar-primary: 215 85% 50%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 210 20% 96%;
-    --sidebar-accent-foreground: 218 35% 12%;
-    --sidebar-border: 214 32% 91%;
+    --sidebar-accent: 218 25% 13%;
+    --sidebar-accent-foreground: 210 20% 95%;
+    --sidebar-border: 218 25% 16%;
     --sidebar-ring: 215 85% 50%;
-  }
-
-  .dark {
-    --background: 0 0% 100%;
-    --foreground: 218 35% 12%;
-
-    --card: 0 0% 99%;
-    --card-foreground: 218 35% 12%;
-
-    --popover: 0 0% 100%;
-    --popover-foreground: 218 35% 12%;
-
-    --secondary: 210 20% 96%;
-    --secondary-foreground: 218 25% 25%;
-
-    --muted: 210 20% 96%;
-    --muted-foreground: 215 15% 45%;
-
-    --border: 214 32% 91%;
-    --input: 214 32% 91%;
-
-    --shadow-card: 0 1px 3px 0 hsl(218 25% 20% / 0.1);
-
-    --sidebar-background: 0 0% 100%;
-    --sidebar-foreground: 218 35% 12%;
-    --sidebar-accent: 210 20% 96%;
-    --sidebar-accent-foreground: 218 35% 12%;
-    --sidebar-border: 214 32% 91%;
   }
 }
 
@@ -114,20 +96,76 @@
 
 @layer components {
   .glass-card {
-    @apply bg-card border border-border rounded-lg;
-    box-shadow: var(--shadow-card);
+    @apply bg-card rounded-lg;
+    border: 1px solid rgba(255, 255, 255, 0.09);
+    box-shadow:
+      0 0 0 1px rgba(255, 255, 255, 0.04),
+      0 4px 24px rgba(0, 0, 0, 0.45),
+      inset 0 1px 0 rgba(255, 255, 255, 0.07),
+      inset 0 -1px 0 rgba(0, 0, 0, 0.2);
   }
 
   .kpi-card {
-    @apply glass-card p-4 transition-all duration-200 hover:border-primary/30 hover:shadow-lg hover:shadow-primary/5;
+    @apply glass-card p-4 transition-all duration-200;
+  }
+  .kpi-card:hover {
+    border-color: rgba(255, 255, 255, 0.16);
+    box-shadow:
+      0 0 0 1px rgba(255, 255, 255, 0.07),
+      0 6px 32px rgba(0, 0, 0, 0.5),
+      0 0 16px rgba(var(--primary) / 0.08),
+      inset 0 1px 0 rgba(255, 255, 255, 0.10),
+      inset 0 -1px 0 rgba(0, 0, 0, 0.2);
   }
 
   .chart-container {
-    @apply glass-card p-4 sm:p-5;
+    @apply bg-card rounded-lg p-4 sm:p-5;
+    border: 1px solid rgba(255, 255, 255, 0.09);
+    box-shadow:
+      0 0 0 1px rgba(255, 255, 255, 0.04),
+      0 6px 32px rgba(0, 0, 0, 0.5),
+      0 1px 0 rgba(255, 255, 255, 0.06) inset,
+      inset 0 1px 0 rgba(255, 255, 255, 0.07),
+      inset 0 -1px 0 rgba(0, 0, 0, 0.25);
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  }
+  .chart-container:hover {
+    border-color: rgba(255, 255, 255, 0.14);
+    box-shadow:
+      0 0 0 1px rgba(255, 255, 255, 0.06),
+      0 8px 40px rgba(0, 0, 0, 0.55),
+      inset 0 1px 0 rgba(255, 255, 255, 0.10),
+      inset 0 -1px 0 rgba(0, 0, 0, 0.25);
   }
 
   .section-label {
     @apply text-[10px] font-semibold tracking-[0.15em] uppercase text-muted-foreground mb-3;
+  }
+
+  /* B2C / B2B color utilities — toni morbidi, non neon */
+  .badge-b2c {
+    background: hsl(var(--b2c-bg));
+    color: hsl(var(--b2c-light));
+    border: 1px solid hsl(var(--b2c-border));
+  }
+  .badge-b2b {
+    background: hsl(var(--b2b-bg));
+    color: hsl(var(--b2b-light));
+    border: 1px solid hsl(var(--b2b-border));
+  }
+  .badge-combined {
+    background: hsl(160 25% 10%);
+    color: hsl(160 35% 52%);
+    border: 1px solid hsl(160 30% 18%);
+  }
+  .accent-b2c { color: hsl(var(--b2c-light)); }
+  .accent-b2b { color: hsl(var(--b2b-light)); }
+  .border-b2c { border-color: hsl(var(--b2c)); }
+  .border-b2b { border-color: hsl(var(--b2b)); }
+
+  .table-scroll {
+    @apply overflow-y-auto scrollbar-custom;
+    max-height: 280px;
   }
 
   .data-table {
@@ -135,15 +173,24 @@
   }
 
   .data-table th {
-    @apply text-left p-3 text-muted-foreground text-xs font-medium uppercase tracking-wider border-b border-border;
+    @apply text-left px-3 py-1.5 text-muted-foreground text-[10px] font-semibold uppercase tracking-wider border-b border-border sticky top-0 z-10;
+    background: hsl(var(--card));
   }
 
   .data-table td {
-    @apply p-3 border-b border-border/50;
+    @apply px-3 py-1.5 border-b border-border/20 text-xs;
+  }
+
+  .data-table tfoot td {
+    @apply px-3 py-2 text-xs font-semibold;
+    background: hsl(var(--card));
+    position: sticky;
+    bottom: 0;
+    border-top: 1px solid hsl(var(--border));
   }
 
   .data-table tr:hover td {
-    @apply bg-muted/30;
+    @apply bg-muted/15;
   }
 
   .scrollbar-custom::-webkit-scrollbar {
@@ -156,5 +203,33 @@
 
   .scrollbar-custom::-webkit-scrollbar-thumb {
     @apply bg-muted-foreground/20 rounded-full;
+  }
+
+  /* react-grid-layout overrides */
+  .dashboard-grid .react-grid-item {
+    transition: all 200ms ease;
+  }
+
+  .dashboard-grid .react-grid-item.react-grid-placeholder {
+    @apply bg-primary/15 rounded-lg border-2 border-dashed border-primary/30;
+    opacity: 1 !important;
+  }
+
+  .dashboard-grid .react-grid-item > .react-resizable-handle {
+    @apply opacity-0 transition-opacity;
+  }
+
+  .dashboard-grid .react-grid-item:hover > .react-resizable-handle {
+    @apply opacity-100;
+  }
+
+  .dashboard-grid .react-grid-item > .react-resizable-handle::after {
+    border-color: hsl(var(--muted-foreground) / 0.4) !important;
+    width: 8px !important;
+    height: 8px !important;
+  }
+
+  .dashboard-grid .react-grid-item > div {
+    height: 100%;
   }
 }

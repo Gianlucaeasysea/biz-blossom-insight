@@ -64,8 +64,8 @@ export function AiAssistant({ dashboardContext }: AiAssistantProps) {
       });
 
       if (!resp.ok || !resp.body) {
-        const err = await resp.json().catch(() => ({ error: 'Errore' }));
-        upsertAssistant(`⚠️ ${err.error || 'Errore di comunicazione'}`);
+        const err = await resp.json().catch(() => ({ error: 'Error' }));
+        upsertAssistant(`⚠️ ${err.error || 'Communication error'}`);
         setIsLoading(false);
         return;
       }
@@ -100,7 +100,7 @@ export function AiAssistant({ dashboardContext }: AiAssistantProps) {
       }
     } catch (e) {
       console.error('AI chat error:', e);
-      upsertAssistant('⚠️ Errore di connessione. Riprova.');
+      upsertAssistant('⚠️ Connection error. Please try again.');
     }
 
     setIsLoading(false);

@@ -90,6 +90,9 @@ export function calculateKPIs(orders: Order[]): KPIData[] {
   const uniqueB2BOrders = new Set(b2bOrdersNoCustom.map(o => o.orderNumber));
   const totaleOrdiniB2B = uniqueB2BOrders.size;
 
+  const aovB2C = totaleOrdiniB2C > 0 ? totalOrderB2C / totaleOrdiniB2C : 0;
+  const aovB2B = totaleOrdiniB2B > 0 ? totalOrderB2B / totaleOrdiniB2B : 0;
+
   return [
     { label: 'Total Order', value: totalOrder, trend: 'neutral', format: 'currency', currency: 'EUR' },
     { label: 'Total Order B2C', value: totalOrderB2C, trend: 'neutral', format: 'currency', currency: 'EUR' },
@@ -98,7 +101,24 @@ export function calculateKPIs(orders: Order[]): KPIData[] {
     { label: 'Revenue B2B', value: fatturatoB2B, trend: 'neutral', format: 'currency', currency: 'EUR' },
     { label: 'Total Orders B2C', value: totaleOrdiniB2C, trend: 'neutral', format: 'number' },
     { label: 'Total Orders B2B', value: totaleOrdiniB2B, trend: 'neutral', format: 'number' },
+    { label: 'AOV B2C', value: aovB2C, trend: 'neutral', format: 'currency', currency: 'EUR' },
+    { label: 'AOV B2B', value: aovB2B, trend: 'neutral', format: 'currency', currency: 'EUR' },
   ];
+}
+
+// Top 3 products by quantity (combined B2C+B2B)
+export function getTop3ProductsByQty(orders: Order[]): Array<{ sku: string; name: string; qty: number }> {
+  const skuMap: Record<string, { name: string; qty: number }> = {};
+  orders.forEach(order => {
+    order.products.forEach(p => {
+      if (!skuMap[p.sku]) skuMap[p.sku] = { name: p.name, qty: 0 };
+      skuMap[p.sku].qty += p.quantity;
+    });
+  });
+  return Object.entries(skuMap)
+    .map(([sku, d]) => ({ sku, name: d.name, qty: d.qty }))
+    .sort((a, b) => b.qty - a.qty)
+    .slice(0, 3);
 }
 
 // B2C SKU breakdown: qty sold, net sales total, net sales fulfilled

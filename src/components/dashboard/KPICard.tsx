@@ -1,8 +1,16 @@
-import { TrendingUp, TrendingDown, Minus } from 'lucide-react';
 import { KPIData } from '@/types/analytics';
 
 interface KPICardProps {
   data: KPIData;
+}
+
+type CardTheme = { accentHsl: string; badge: string; badgeLabel: string } | { accentHsl?: undefined; badge?: undefined; badgeLabel?: undefined };
+
+function getCardTheme(label: string): CardTheme {
+  const l = label.toLowerCase();
+  if (l.includes('b2c')) return { accentHsl: 'hsl(168,42%,38%)', badge: 'badge-b2c', badgeLabel: 'B2C' };
+  if (l.includes('b2b')) return { accentHsl: 'hsl(38,55%,46%)', badge: 'badge-b2b', badgeLabel: 'B2B' };
+  return {};
 }
 
 export function KPICard({ data }: KPICardProps) {
@@ -19,22 +27,22 @@ export function KPICard({ data }: KPICardProps) {
     return new Intl.NumberFormat('it-IT').format(value);
   };
 
-  const TrendIcon = data.trend === 'up' ? TrendingUp : data.trend === 'down' ? TrendingDown : Minus;
-  const trendColor = data.trend === 'up'
-    ? 'text-success'
-    : data.trend === 'down'
-    ? 'text-destructive'
-    : 'text-muted-foreground';
+  const theme = getCardTheme(data.label);
+  const displayLabel = data.label.replace(/ B2C$/, '').replace(/ B2B$/, '');
 
   return (
-    <div className="kpi-card group">
-      <div className="flex items-center justify-between mb-2">
-        <p className="text-[11px] text-muted-foreground font-medium uppercase tracking-wider truncate">{data.label}</p>
-        {data.changePercent !== undefined && (
-          <div className={`flex items-center gap-1 text-[10px] ${trendColor}`}>
-            <TrendIcon className="w-3 h-3" />
-            <span>{Math.abs(data.changePercent)}%</span>
-          </div>
+    <div
+      className="kpi-card"
+      style={theme.accentHsl ? { borderLeft: `2px solid ${theme.accentHsl}` } : { borderLeft: '2px solid hsl(220,20%,22%)' }}
+    >
+      <div className="flex items-center justify-between gap-1 mb-2">
+        <p className="text-[10px] font-semibold uppercase tracking-[0.1em] text-muted-foreground leading-tight truncate">
+          {displayLabel}
+        </p>
+        {theme.badge && (
+          <span className={`shrink-0 inline-flex items-center px-1.5 py-px rounded text-[9px] font-bold tracking-wider uppercase ${theme.badge}`}>
+            {theme.badgeLabel}
+          </span>
         )}
       </div>
       <p className="text-2xl font-bold tracking-tight font-mono text-foreground">

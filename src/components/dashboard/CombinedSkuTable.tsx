@@ -33,8 +33,15 @@ export function CombinedSkuTable({ data }: { data: SkuRow[] }) {
 
   return (
     <div className="chart-container">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
-        <h3 className="text-sm font-semibold">Combined B2C + B2B SKU Detail</h3>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-3">
+        <div className="flex items-center gap-2">
+          <span className="inline-flex items-center gap-0.5 px-2 py-0.5 rounded-full text-[10px] font-bold tracking-wider uppercase">
+            <span className="badge-b2c px-1.5 py-px rounded">B2C</span>
+            <span className="text-muted-foreground/40">+</span>
+            <span className="badge-b2b px-1.5 py-px rounded">B2B</span>
+          </span>
+          <h3 className="text-sm font-semibold text-foreground">Combined SKU Detail</h3>
+        </div>
         <div className="flex items-center gap-2">
           <div className="relative w-full sm:w-56">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
@@ -45,7 +52,7 @@ export function CombinedSkuTable({ data }: { data: SkuRow[] }) {
           </button>
         </div>
       </div>
-      <div className="overflow-x-auto scrollbar-custom">
+      <div className="table-scroll overflow-x-auto">
         <table className="data-table">
           <thead><tr>
             <th><SortBtn field="sku">SKU</SortBtn></th>

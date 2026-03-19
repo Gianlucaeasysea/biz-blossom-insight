@@ -209,7 +209,7 @@ export default function MetaAds() {
     });
     for (const order of filteredOrders) {
       const utm = (order as any).utm as Record<string, string> | null;
-      const utmContent = utm?.utm_content || '(nessuno)';
+      const utmContent = utm?.utm_content || '(none)';
       const netAmt = (order as any).netAmount ?? order.totalAmount;
       const existing = map.get(utmContent);
       if (existing) {
@@ -394,14 +394,14 @@ export default function MetaAds() {
       {isLoading && (
         <div className="flex items-center justify-center h-64">
           <Loader2 className="w-8 h-8 animate-spin text-primary" />
-          <span className="ml-3 text-muted-foreground">Caricamento dati Meta Ads...</span>
+          <span className="ml-3 text-muted-foreground">Loading Meta Ads data...</span>
         </div>
       )}
 
       {isError && (
         <div className="flex items-center justify-center h-64 text-destructive">
           <AlertCircle className="w-6 h-6 mr-2" />
-          <span>{error instanceof Error ? error.message : 'Errore nel caricamento'}</span>
+          <span>{error instanceof Error ? error.message : 'Error loading data'}</span>
         </div>
       )}
 
@@ -409,7 +409,7 @@ export default function MetaAds() {
         <>
           {/* KPIs */}
           <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-4 mb-8">
-            <KPICard data={{ label: 'Spesa Totale', value: kpis.totalSpend, trend: 'neutral', format: 'currency' }} />
+            <KPICard data={{ label: 'Total Spend', value: kpis.totalSpend, trend: 'neutral', format: 'currency' }} />
             <KPICard data={{ label: 'Impressioni', value: kpis.totalImpressions, trend: 'neutral', format: 'number' }} />
             <KPICard data={{ label: 'Click', value: kpis.totalClicks, trend: 'neutral', format: 'number' }} />
             <KPICard data={{ label: 'CTR', value: kpis.ctr, trend: 'neutral', format: 'percent' }} />
@@ -468,7 +468,7 @@ export default function MetaAds() {
             {showCreatives && (
               <CardContent>
                 {isLoadingCreatives ? (
-                  <div className="flex items-center justify-center py-8"><Loader2 className="w-5 h-5 animate-spin text-primary" /><span className="ml-2 text-sm text-muted-foreground">Caricamento...</span></div>
+                  <div className="flex items-center justify-center py-8"><Loader2 className="w-5 h-5 animate-spin text-primary" /><span className="ml-2 text-sm text-muted-foreground">Loading...</span></div>
                 ) : adsData.length > 0 ? (
                   <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
                     {adsData.slice(0, 20).map((ad) => (
@@ -497,7 +497,7 @@ export default function MetaAds() {
                     ))}
                   </div>
                 ) : (
-                  <p className="text-sm text-muted-foreground text-center py-4">Nessuna creatività trovata</p>
+                  <p className="text-sm text-muted-foreground text-center py-4">No creatives found</p>
                 )}
               </CardContent>
             )}
@@ -542,7 +542,7 @@ export default function MetaAds() {
                         <td className="text-right py-3 px-2 font-semibold">{c.roas.toFixed(2)}x</td>
                       </tr>
                     ))}
-                    {campaignData.length === 0 && (<tr><td colSpan={8} className="text-center py-6 text-muted-foreground">Nessuna campagna</td></tr>)}
+                    {campaignData.length === 0 && (<tr><td colSpan={8} className="text-center py-6 text-muted-foreground">No campaigns</td></tr>)}
                   </tbody>
                 </table>
               </div>
@@ -590,7 +590,7 @@ export default function MetaAds() {
                         <td className="text-right py-3 px-2 font-semibold">{a.roas.toFixed(2)}x</td>
                       </tr>
                     ))}
-                    {adsetData.length === 0 && (<tr><td colSpan={9} className="text-center py-6 text-muted-foreground">Nessun gruppo di inserzioni</td></tr>)}
+                    {adsetData.length === 0 && (<tr><td colSpan={9} className="text-center py-6 text-muted-foreground">No ad sets</td></tr>)}
                   </tbody>
                 </table>
               </div>
@@ -645,7 +645,7 @@ export default function MetaAds() {
               <Button variant="ghost" size="icon" onClick={handleExportUtmContent}><Download className="w-4 h-4" /></Button>
             </CardHeader>
             <CardContent>
-              <p className="text-xs text-muted-foreground mb-4">Vendite nette B2C aggregate per valore utm_content degli ordini Shopify</p>
+              <p className="text-xs text-muted-foreground mb-4">B2C net sales aggregated by utm_content value of Shopify orders</p>
               <div className="overflow-x-auto">
                 <table className="w-full text-sm">
                   <thead>
@@ -673,7 +673,7 @@ export default function MetaAds() {
                         <td className="text-right py-3 px-2 font-bold">{fmtCurrency(utmContentSales.reduce((s, r) => s + r.netSales, 0) / Math.max(utmContentSales.reduce((s, r) => s + r.orderCount, 0), 1))}</td>
                       </tr>
                     )}
-                    {utmContentSales.length === 0 && (<tr><td colSpan={4} className="text-center py-6 text-muted-foreground">Nessun ordine con utm_content nel periodo</td></tr>)}
+                    {utmContentSales.length === 0 && (<tr><td colSpan={4} className="text-center py-6 text-muted-foreground">No orders with utm_content in period</td></tr>)}
                   </tbody>
                 </table>
               </div>
@@ -724,7 +724,7 @@ export default function MetaAds() {
                         </tr>
                       );
                     })()}
-                    {adsetMerData.length === 0 && (<tr><td colSpan={6} className="text-center py-6 text-muted-foreground">Nessun dato</td></tr>)}
+                    {adsetMerData.length === 0 && (<tr><td colSpan={6} className="text-center py-6 text-muted-foreground">No data</td></tr>)}
                   </tbody>
                 </table>
               </div>
@@ -743,7 +743,7 @@ export default function MetaAds() {
             {showUtmMatch && (
               <CardContent>
                 {isLoadingCreatives ? (
-                  <div className="flex items-center justify-center py-8"><Loader2 className="w-5 h-5 animate-spin text-primary" /><span className="ml-2 text-sm text-muted-foreground">Caricamento...</span></div>
+                  <div className="flex items-center justify-center py-8"><Loader2 className="w-5 h-5 animate-spin text-primary" /><span className="ml-2 text-sm text-muted-foreground">Loading...</span></div>
                 ) : utmCrossRef.length > 0 ? (
                   <>
                     <div className="flex justify-end mb-3">
@@ -778,11 +778,11 @@ export default function MetaAds() {
                           ))}
                         </tbody>
                       </table>
-                      {utmCrossRef.length > 50 && <p className="text-xs text-muted-foreground text-center mt-3">Mostrando 50 di {utmCrossRef.length} ordini con UTM. Esporta CSV per vedere tutti.</p>}
+                      {utmCrossRef.length > 50 && <p className="text-xs text-muted-foreground text-center mt-3">Showing 50 of {utmCrossRef.length} orders with UTM. Export CSV to see all.</p>}
                     </div>
                   </>
                 ) : (
-                  <p className="text-sm text-muted-foreground text-center py-4">Nessun ordine Shopify con parametri UTM trovato nel periodo selezionato</p>
+                  <p className="text-sm text-muted-foreground text-center py-4">No Shopify orders with UTM parameters found in the selected period</p>
                 )}
               </CardContent>
             )}
