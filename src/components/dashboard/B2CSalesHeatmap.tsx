@@ -432,7 +432,7 @@ const CITY_COORDS: Record<string, [number, number]> = {
   'Luxembourg':[6.1296,49.8153],'Lussemburgo':[6.1296,49.8153],
   'Dublin':[-6.2603,53.3498],'Dublino':[-6.2603,53.3498],
   'Valletta':[14.5146,35.8989],'La Valletta':[14.5146,35.8989],
-  'Nicosia':[33.3823,35.1856],'Nicosia':[33.3823,35.1856],
+  'Nicosia':[33.3823,35.1856],
   'Tallinn':[24.7536,59.4370],
   'Riga':[24.1052,56.9496],
   'Vilnius':[25.2799,54.6872],
