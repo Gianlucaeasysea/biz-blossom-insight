@@ -3,7 +3,7 @@ import {
   ComposableMap, Geographies, Geography, Marker, ZoomableGroup,
 } from 'react-simple-maps';
 import { format } from 'date-fns';
-import { it } from 'date-fns/locale';
+import { enUS } from 'date-fns/locale';
 import { Order } from '@/types/analytics';
 import { ZoomIn, ZoomOut, RotateCcw, MapPin, Filter } from 'lucide-react';
 
@@ -610,7 +610,7 @@ export function B2CSalesHeatmap({ orders, dateRange }: B2CSalesHeatmapProps) {
     setActiveCity(`${city.iso}:${city.city}`);
   };
 
-  const periodLabel = `${format(dateRange.start, 'dd MMM', { locale: it })} – ${format(dateRange.end, 'dd MMM yyyy', { locale: it })}`;
+  const periodLabel = `${format(dateRange.start, 'dd MMM', { locale: enUS })} – ${format(dateRange.end, 'dd MMM yyyy', { locale: enUS })}`;
   const totalB2CSales = Object.values(salesByIso).reduce((s, c) => s + c.sales, 0);
 
   return (
@@ -619,10 +619,10 @@ export function B2CSalesHeatmap({ orders, dateRange }: B2CSalesHeatmapProps) {
       <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
         <div>
           <div className="flex items-center gap-2">
-            <h3 className="text-sm font-semibold text-foreground">Mappa Vendite B2C</h3>
+            <h3 className="text-sm font-semibold text-foreground">B2C Sales Map</h3>
             <span className="badge-b2c text-[10px] font-bold px-2 py-0.5 rounded-full">B2C</span>
           </div>
-          <p className="text-xs text-muted-foreground mt-0.5">{periodLabel} · {fmtCurrency(totalB2CSales)} totale</p>
+          <p className="text-xs text-muted-foreground mt-0.5">{periodLabel} · {fmtCurrency(totalB2CSales)} total</p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
           <div className="flex items-center gap-1.5 bg-muted/60 rounded-lg px-2 py-1">
@@ -632,7 +632,7 @@ export function B2CSalesHeatmap({ orders, dateRange }: B2CSalesHeatmapProps) {
               onChange={e => setSelectedSku(e.target.value)}
               className="bg-transparent text-xs text-foreground outline-none cursor-pointer max-w-[200px]"
             >
-              <option value="all">Tutti i prodotti</option>
+              <option value="all">All products</option>
               {skuOptions.map(([sku, name]) => (
                 <option key={sku} value={sku}>{sku} — {name}</option>
               ))}
@@ -704,11 +704,11 @@ export function B2CSalesHeatmap({ orders, dateRange }: B2CSalesHeatmapProps) {
                               {data ? (
                                 <>
                                   <p className="text-primary font-mono font-bold text-sm">{fmtCurrency(data.sales)}</p>
-                                  <p className="text-muted-foreground text-[10px] mt-0.5">{data.orders} {data.orders === 1 ? 'ordine' : 'ordini'}</p>
-                                  <p className="text-muted-foreground text-[10px]">{((data.sales / totalB2CSales) * 100).toFixed(1)}% del totale</p>
+                                  <p className="text-muted-foreground text-[10px] mt-0.5">{data.orders} {data.orders === 1 ? 'order' : 'orders'}</p>
+                                  <p className="text-muted-foreground text-[10px]">{((data.sales / totalB2CSales) * 100).toFixed(1)}% of total</p>
                                 </>
                               ) : (
-                                <p className="text-muted-foreground text-[10px]">Nessuna vendita</p>
+                                <p className="text-muted-foreground text-[10px]">No sales</p>
                               )}
                             </div>
                           );
@@ -756,8 +756,8 @@ export function B2CSalesHeatmap({ orders, dateRange }: B2CSalesHeatmapProps) {
                             </div>
                             {c.province && <p className="text-muted-foreground text-[10px] mb-1">{c.province} · {c.country}</p>}
                             <p className="text-amber-400 font-mono font-bold text-sm">{fmtCurrency(c.sales)}</p>
-                            <p className="text-muted-foreground text-[10px] mt-0.5">{c.orders} {c.orders === 1 ? 'ordine' : 'ordini'}</p>
-                            <p className="text-muted-foreground text-[10px]">{((c.sales / totalB2CSales) * 100).toFixed(1)}% del totale</p>
+                            <p className="text-muted-foreground text-[10px] mt-0.5">{c.orders} {c.orders === 1 ? 'order' : 'orders'}</p>
+                            <p className="text-muted-foreground text-[10px]">{((c.sales / totalB2CSales) * 100).toFixed(1)}% of total</p>
                           </div>
                         );
                       }}
@@ -795,11 +795,11 @@ export function B2CSalesHeatmap({ orders, dateRange }: B2CSalesHeatmapProps) {
                 <div key={v} className="w-5 h-2" style={{ backgroundColor: salesColor(v) }} />
               ))}
             </div>
-            <span className="text-[9px] text-muted-foreground/60">basso → alto</span>
+            <span className="text-[9px] text-muted-foreground/60">low → high</span>
           </div>
 
           <p className="absolute bottom-2 right-3 text-[9px] text-muted-foreground/40 select-none">
-            scroll/pinch · trascina
+            scroll/pinch · drag
           </p>
         </div>
 
@@ -810,7 +810,7 @@ export function B2CSalesHeatmap({ orders, dateRange }: B2CSalesHeatmapProps) {
             <div className="px-3 py-2.5 border-b border-border/30">
               <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-1">
                 <MapPin className="w-3 h-3 text-amber-400" />
-                Top Città
+                Top Cities
               </p>
             </div>
             <div className="overflow-y-auto scrollbar-custom" style={{ maxHeight: 404 }}>
@@ -853,15 +853,15 @@ export function B2CSalesHeatmap({ orders, dateRange }: B2CSalesHeatmapProps) {
         <div className="flex items-center gap-3">
           <div className="flex items-center gap-1.5">
             <div className="w-3 h-3 rounded-full bg-amber-400 opacity-80" />
-            <span className="text-[10px] text-muted-foreground">Marcatori città (clicca per zoom)</span>
+            <span className="text-[10px] text-muted-foreground">City markers (click to zoom)</span>
           </div>
           <div className="flex items-center gap-1.5">
             <div className="w-3 h-3 rounded-sm" style={{ background: salesColor(0.8) }} />
-            <span className="text-[10px] text-muted-foreground">Intensità paese</span>
+            <span className="text-[10px] text-muted-foreground">Country intensity</span>
           </div>
         </div>
         <p className="text-[10px] text-muted-foreground/50">
-          {cityData.length} città · {Object.keys(salesByIso).length} paesi
+          {cityData.length} cities · {Object.keys(salesByIso).length} countries
         </p>
       </div>
     </div>

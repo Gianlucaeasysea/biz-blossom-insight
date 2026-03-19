@@ -81,7 +81,7 @@ const COUNTRY_MAP: Record<string, string> = {
 };
 
 function normalizeCountry(raw: string): string {
-  if (!raw || !raw.trim()) return 'Sconosciuto';
+  if (!raw || !raw.trim()) return 'Unknown';
   const t = raw.trim();
   return COUNTRY_MAP[t] || COUNTRY_MAP[t.toUpperCase()] || t;
 }
@@ -151,19 +151,19 @@ export function CountryBreakdown({ orders, allSkus }: { orders: Order[]; allSkus
     </button>
   );
 
-  const handleExport = () => downloadCsv(`paese-${tab}`, ['Paese','Fatturato','Ordini'], rows.map(r => [r.country, r.sales.toFixed(2), r.orders]));
+  const handleExport = () => downloadCsv(`sales-by-country-${tab}`, ['Country','Revenue','Orders'], rows.map(r => [r.country, r.sales.toFixed(2), r.orders]));
 
   return (
     <div className="chart-container">
       <div className="flex items-center justify-between gap-2 mb-3">
         <div className="flex items-center gap-2">
           <Globe className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
-          <h3 className="text-sm font-semibold">Vendite per Paese</h3>
+          <h3 className="text-sm font-semibold">Sales by Country</h3>
         </div>
         <div className="flex items-center gap-1.5">
           <select value={skuFilter} onChange={e => setSkuFilter(e.target.value)}
             className="h-7 text-xs rounded border border-border/50 bg-muted/50 px-2 text-foreground">
-            <option value="">Tutti SKU</option>
+            <option value="">All SKUs</option>
             {allSkus.map(s => <option key={s} value={s}>{s}</option>)}
           </select>
           <button onClick={handleExport} className="p-1.5 rounded hover:bg-muted/50 text-muted-foreground hover:text-foreground transition-colors">
@@ -177,7 +177,7 @@ export function CountryBreakdown({ orders, allSkus }: { orders: Order[]; allSkus
         {[
           { id: 'b2c' as Tab, label: 'B2C', cls: 'badge-b2c' },
           { id: 'b2b' as Tab, label: 'B2B', cls: 'badge-b2b' },
-          { id: 'all' as Tab, label: 'Tutti', cls: '' },
+          { id: 'all' as Tab, label: 'All', cls: '' },
         ].map(({ id, label, cls }) => (
           <button
             key={id}
@@ -196,9 +196,9 @@ export function CountryBreakdown({ orders, allSkus }: { orders: Order[]; allSkus
       <div className="table-scroll overflow-x-auto">
         <table className="data-table">
           <thead><tr>
-            <th><SortBtn field="country">Paese</SortBtn></th>
-            <th className="text-right"><SortBtn field="sales">Fatturato</SortBtn></th>
-            <th className="text-right">Ordini</th>
+            <th><SortBtn field="country">Country</SortBtn></th>
+            <th className="text-right"><SortBtn field="sales">Revenue</SortBtn></th>
+            <th className="text-right">Orders</th>
             <th className="text-right">%</th>
           </tr></thead>
           <tbody>
@@ -210,11 +210,11 @@ export function CountryBreakdown({ orders, allSkus }: { orders: Order[]; allSkus
                 <td className="text-right text-muted-foreground">{total > 0 ? ((r.sales / total) * 100).toFixed(1) : '0'}%</td>
               </tr>
             ))}
-            {!rows.length && <tr><td colSpan={4} className="text-center text-muted-foreground py-8 text-xs">Nessun dato</td></tr>}
+            {!rows.length && <tr><td colSpan={4} className="text-center text-muted-foreground py-8 text-xs">No data</td></tr>}
           </tbody>
           {rows.length > 0 && (
             <tfoot><tr>
-              <td className="font-semibold">Totale</td>
+              <td className="font-semibold">Total</td>
               <td className="text-right font-mono font-semibold">{fmt(total)}</td>
               <td className="text-right">{rows.reduce((s, r) => s + r.orders, 0)}</td>
               <td className="text-right">100%</td>

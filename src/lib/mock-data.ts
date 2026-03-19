@@ -97,10 +97,10 @@ export function calculateKPIs(orders: Order[]): KPIData[] {
     { label: 'Total Order', value: totalOrder, trend: 'neutral', format: 'currency', currency: 'EUR' },
     { label: 'Total Order B2C', value: totalOrderB2C, trend: 'neutral', format: 'currency', currency: 'EUR' },
     { label: 'Total Order B2B', value: totalOrderB2B, trend: 'neutral', format: 'currency', currency: 'EUR' },
-    { label: 'Fatturato B2C', value: fatturatoB2C, trend: 'neutral', format: 'currency', currency: 'EUR' },
-    { label: 'Fatturato B2B', value: fatturatoB2B, trend: 'neutral', format: 'currency', currency: 'EUR' },
-    { label: 'Totale Ordini B2C', value: totaleOrdiniB2C, trend: 'neutral', format: 'number' },
-    { label: 'Totale Ordini B2B', value: totaleOrdiniB2B, trend: 'neutral', format: 'number' },
+    { label: 'Revenue B2C', value: fatturatoB2C, trend: 'neutral', format: 'currency', currency: 'EUR' },
+    { label: 'Revenue B2B', value: fatturatoB2B, trend: 'neutral', format: 'currency', currency: 'EUR' },
+    { label: 'Total Orders B2C', value: totaleOrdiniB2C, trend: 'neutral', format: 'number' },
+    { label: 'Total Orders B2B', value: totaleOrdiniB2B, trend: 'neutral', format: 'number' },
     { label: 'AOV B2C', value: aovB2C, trend: 'neutral', format: 'currency', currency: 'EUR' },
     { label: 'AOV B2B', value: aovB2B, trend: 'neutral', format: 'currency', currency: 'EUR' },
   ];
@@ -284,7 +284,7 @@ export function getCountryBreakdown(orders: Order[], skuFilter?: string): Array<
     // B2C: destinationCountry (shipping_address), B2B: country field
     const country = (order.customerType === 'B2C'
       ? (order.destinationCountry || order.country)
-      : order.country) || 'Sconosciuto';
+      : order.country) || 'Unknown';
     let amount = 0;
     if (skuFilter) {
       amount = order.products.filter(p => p.sku === skuFilter).reduce((s, p) => s + p.totalPrice, 0);

@@ -27,7 +27,7 @@ export function B2BSkuTable({ data }: { data: SkuRow[] }) {
   );
 
   const handleExport = () => {
-    downloadCsv('b2b-sku', ['SKU', 'Prodotto', 'Pezzi Venduti', 'Ordine Raccolto', 'Ordine Consegnato'],
+    downloadCsv('b2b-sku', ['SKU', 'Product', 'Units Sold', 'Collected Order', 'Fulfilled Order'],
       filtered.map(r => [r.sku, r.name, r.qtySold, r.priceRaccolto, r.priceConsegnato]));
   };
 
@@ -36,14 +36,14 @@ export function B2BSkuTable({ data }: { data: SkuRow[] }) {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-3">
         <div className="flex items-center gap-2">
           <span className="badge-b2b inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold tracking-wider uppercase">B2B</span>
-          <h3 className="text-sm font-semibold accent-b2b">Dettaglio B2B per SKU</h3>
+          <h3 className="text-sm font-semibold accent-b2b">B2B SKU Detail</h3>
         </div>
         <div className="flex items-center gap-2">
           <div className="relative w-full sm:w-56">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
-            <Input placeholder="Cerca SKU..." value={search} onChange={e => setSearch(e.target.value)} className="pl-9 h-8 text-xs bg-muted/50 border-border/50" />
+            <Input placeholder="Search SKU..." value={search} onChange={e => setSearch(e.target.value)} className="pl-9 h-8 text-xs bg-muted/50 border-border/50" />
           </div>
-          <button onClick={handleExport} className="p-2 rounded-md hover:bg-muted/50 text-muted-foreground hover:text-foreground transition-colors" title="Esporta CSV">
+          <button onClick={handleExport} className="p-2 rounded-md hover:bg-muted/50 text-muted-foreground hover:text-foreground transition-colors" title="Export CSV">
             <Download className="w-4 h-4" />
           </button>
         </div>
@@ -52,10 +52,10 @@ export function B2BSkuTable({ data }: { data: SkuRow[] }) {
         <table className="data-table">
           <thead><tr>
             <th><SortBtn field="sku">SKU</SortBtn></th>
-            <th><SortBtn field="name">Prodotto</SortBtn></th>
-            <th className="text-center"><SortBtn field="qtySold">Pezzi Venduti</SortBtn></th>
-            <th className="text-right"><SortBtn field="priceRaccolto">Ordine Raccolto</SortBtn></th>
-            <th className="text-right"><SortBtn field="priceConsegnato">Ordine Consegnato</SortBtn></th>
+            <th><SortBtn field="name">Product</SortBtn></th>
+            <th className="text-center"><SortBtn field="qtySold">Units Sold</SortBtn></th>
+            <th className="text-right"><SortBtn field="priceRaccolto">Collected Order</SortBtn></th>
+            <th className="text-right"><SortBtn field="priceConsegnato">Fulfilled Order</SortBtn></th>
           </tr></thead>
           <tbody>
             {filtered.map(r => (
@@ -67,11 +67,11 @@ export function B2BSkuTable({ data }: { data: SkuRow[] }) {
                 <td className="text-right font-mono text-xs">{fmt(r.priceConsegnato)}</td>
               </tr>
             ))}
-            {!filtered.length && <tr><td colSpan={5} className="text-center text-muted-foreground py-6 text-xs">Nessun dato</td></tr>}
+            {!filtered.length && <tr><td colSpan={5} className="text-center text-muted-foreground py-6 text-xs">No data</td></tr>}
           </tbody>
           {filtered.length > 0 && (
             <tfoot><tr className="border-t-2 border-border font-semibold text-xs">
-              <td colSpan={2}>Totale</td>
+              <td colSpan={2}>Total</td>
               <td className="text-center">{filtered.reduce((s, r) => s + r.qtySold, 0)}</td>
               <td className="text-right font-mono">{fmt(filtered.reduce((s, r) => s + r.priceRaccolto, 0))}</td>
               <td className="text-right font-mono">{fmt(filtered.reduce((s, r) => s + r.priceConsegnato, 0))}</td>

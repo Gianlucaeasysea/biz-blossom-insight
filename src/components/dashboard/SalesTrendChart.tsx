@@ -5,7 +5,7 @@ import {
 import { Download } from 'lucide-react';
 import { Order } from '@/types/analytics';
 import { format, eachDayOfInterval, eachWeekOfInterval, eachMonthOfInterval, startOfWeek, endOfWeek, startOfMonth, endOfMonth, isWithinInterval } from 'date-fns';
-import { it } from 'date-fns/locale';
+import { enUS } from 'date-fns/locale';
 import { downloadCsv } from '@/lib/csv-export';
 
 type Granularity = 'day' | 'week' | 'month';
@@ -31,17 +31,17 @@ export function SalesTrendChart({ orders, dateRange }: SalesTrendChartProps) {
     let intervals: { start: Date; end: Date; label: string }[] = [];
     if (granularity === 'day') {
       intervals = eachDayOfInterval({ start: dateRange.start, end: dateRange.end }).map(d => ({
-        start: d, end: d, label: format(d, 'dd MMM', { locale: it }),
+        start: d, end: d, label: format(d, 'dd MMM', { locale: enUS }),
       }));
     } else if (granularity === 'week') {
       intervals = eachWeekOfInterval({ start: dateRange.start, end: dateRange.end }, { weekStartsOn: 1 }).map(d => ({
         start: startOfWeek(d, { weekStartsOn: 1 }), end: endOfWeek(d, { weekStartsOn: 1 }),
-        label: format(startOfWeek(d, { weekStartsOn: 1 }), 'dd MMM', { locale: it }),
+        label: format(startOfWeek(d, { weekStartsOn: 1 }), 'dd MMM', { locale: enUS }),
       }));
     } else {
       intervals = eachMonthOfInterval({ start: dateRange.start, end: dateRange.end }).map(d => ({
         start: startOfMonth(d), end: endOfMonth(d),
-        label: format(d, 'MMM yy', { locale: it }),
+        label: format(d, 'MMM yy', { locale: enUS }),
       }));
     }
 
@@ -73,7 +73,7 @@ export function SalesTrendChart({ orders, dateRange }: SalesTrendChartProps) {
   }, [orders, dateRange, granularity, viewMode]);
 
   const handleExport = () => {
-    downloadCsv(`vendite-${viewMode}`, ['Data', ...keys],
+    downloadCsv(`sales-${viewMode}`, ['Date', ...keys],
       chartData.map(r => [r.date as string, ...keys.map(k => r[k] as number)]));
   };
 
@@ -98,21 +98,21 @@ export function SalesTrendChart({ orders, dateRange }: SalesTrendChartProps) {
   };
 
   const tabs = [
-    { value: 'channel' as ViewMode, label: 'Canale' },
-    { value: 'product' as ViewMode, label: 'Prodotto' },
+    { value: 'channel' as ViewMode, label: 'Channel' },
+    { value: 'product' as ViewMode, label: 'Product' },
   ];
   const granularities = [
-    { value: 'day' as Granularity, label: 'Giorno' },
-    { value: 'week' as Granularity, label: 'Settimana' },
-    { value: 'month' as Granularity, label: 'Mese' },
+    { value: 'day' as Granularity, label: 'Day' },
+    { value: 'week' as Granularity, label: 'Week' },
+    { value: 'month' as Granularity, label: 'Month' },
   ];
 
   return (
     <div className="chart-container">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-5">
         <div>
-          <h3 className="text-sm font-semibold text-foreground">Andamento Vendite</h3>
-          <p className="text-xs text-muted-foreground">Per {viewMode === 'channel' ? 'canale' : 'prodotto'}</p>
+          <h3 className="text-sm font-semibold text-foreground">Sales Trend</h3>
+          <p className="text-xs text-muted-foreground">By {viewMode === 'channel' ? 'channel' : 'product'}</p>
         </div>
         <div className="flex items-center gap-2">
           <div className="flex rounded-md bg-muted p-0.5">
@@ -131,7 +131,7 @@ export function SalesTrendChart({ orders, dateRange }: SalesTrendChartProps) {
               </button>
             ))}
           </div>
-          <button onClick={handleExport} className="p-2 rounded-md hover:bg-muted/50 text-muted-foreground hover:text-foreground transition-colors" title="Esporta CSV">
+          <button onClick={handleExport} className="p-2 rounded-md hover:bg-muted/50 text-muted-foreground hover:text-foreground transition-colors" title="Export CSV">
             <Download className="w-4 h-4" />
           </button>
         </div>

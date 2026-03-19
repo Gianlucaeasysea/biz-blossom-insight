@@ -27,7 +27,7 @@ export function CombinedSkuTable({ data }: { data: SkuRow[] }) {
   );
 
   const handleExport = () => {
-    downloadCsv('combined-sku', ['SKU', 'Prodotto', 'Pezzi', 'B2C', 'B2B', 'Totale'],
+    downloadCsv('combined-sku', ['SKU', 'Product', 'Units', 'B2C', 'B2B', 'Total'],
       filtered.map(r => [r.sku, r.name, r.qtySold, r.b2cValue, r.b2bValue, r.totalValue]));
   };
 
@@ -40,14 +40,14 @@ export function CombinedSkuTable({ data }: { data: SkuRow[] }) {
             <span className="text-muted-foreground/40">+</span>
             <span className="badge-b2b px-1.5 py-px rounded">B2B</span>
           </span>
-          <h3 className="text-sm font-semibold text-foreground">Dettaglio Combinato per SKU</h3>
+          <h3 className="text-sm font-semibold text-foreground">Combined SKU Detail</h3>
         </div>
         <div className="flex items-center gap-2">
           <div className="relative w-full sm:w-56">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
-            <Input placeholder="Cerca SKU..." value={search} onChange={e => setSearch(e.target.value)} className="pl-9 h-8 text-xs bg-muted/50 border-border/50" />
+            <Input placeholder="Search SKU..." value={search} onChange={e => setSearch(e.target.value)} className="pl-9 h-8 text-xs bg-muted/50 border-border/50" />
           </div>
-          <button onClick={handleExport} className="p-2 rounded-md hover:bg-muted/50 text-muted-foreground hover:text-foreground transition-colors" title="Esporta CSV">
+          <button onClick={handleExport} className="p-2 rounded-md hover:bg-muted/50 text-muted-foreground hover:text-foreground transition-colors" title="Export CSV">
             <Download className="w-4 h-4" />
           </button>
         </div>
@@ -56,11 +56,11 @@ export function CombinedSkuTable({ data }: { data: SkuRow[] }) {
         <table className="data-table">
           <thead><tr>
             <th><SortBtn field="sku">SKU</SortBtn></th>
-            <th><SortBtn field="name">Prodotto</SortBtn></th>
-            <th className="text-center"><SortBtn field="qtySold">Pezzi</SortBtn></th>
+            <th><SortBtn field="name">Product</SortBtn></th>
+            <th className="text-center"><SortBtn field="qtySold">Units</SortBtn></th>
             <th className="text-right"><SortBtn field="b2cValue">B2C</SortBtn></th>
             <th className="text-right"><SortBtn field="b2bValue">B2B</SortBtn></th>
-            <th className="text-right"><SortBtn field="totalValue">Totale</SortBtn></th>
+            <th className="text-right"><SortBtn field="totalValue">Total</SortBtn></th>
           </tr></thead>
           <tbody>
             {filtered.map(r => (
@@ -73,11 +73,11 @@ export function CombinedSkuTable({ data }: { data: SkuRow[] }) {
                 <td className="text-right font-mono text-xs font-semibold">{fmt(r.totalValue)}</td>
               </tr>
             ))}
-            {!filtered.length && <tr><td colSpan={6} className="text-center text-muted-foreground py-6 text-xs">Nessun dato</td></tr>}
+            {!filtered.length && <tr><td colSpan={6} className="text-center text-muted-foreground py-6 text-xs">No data</td></tr>}
           </tbody>
           {filtered.length > 0 && (
             <tfoot><tr className="border-t-2 border-border font-semibold text-xs">
-              <td colSpan={2}>Totale</td>
+              <td colSpan={2}>Total</td>
               <td className="text-center">{filtered.reduce((s, r) => s + r.qtySold, 0)}</td>
               <td className="text-right font-mono">{fmt(filtered.reduce((s, r) => s + r.b2cValue, 0))}</td>
               <td className="text-right font-mono">{fmt(filtered.reduce((s, r) => s + r.b2bValue, 0))}</td>

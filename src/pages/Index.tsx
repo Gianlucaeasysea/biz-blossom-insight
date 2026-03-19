@@ -79,7 +79,7 @@ export default function Index() {
     const lines: string[] = [];
     lines.push(`Periodo: ${format(dateRange.start, 'dd/MM/yyyy')} - ${format(dateRange.end, 'dd/MM/yyyy')}`);
     lines.push(`Filtro tipo cliente: ${customerTypeFilter}`);
-    lines.push(`Totale ordini caricati: ${allOrders.length}`);
+    lines.push(`Total orders loaded: ${allOrders.length}`);
     lines.push(`Ordini nel periodo filtrato: ${filteredOrders.length}`);
     lines.push('--- KPI ---');
     kpis.forEach(k => {
@@ -88,13 +88,13 @@ export default function Index() {
     });
     const countryMap: Record<string, { orders: number; revenue: number }> = {};
     filteredOrders.forEach(o => {
-      const c = o.destinationCountry || o.country || 'Sconosciuto';
+      const c = o.destinationCountry || o.country || 'Unknown';
       if (!countryMap[c]) countryMap[c] = { orders: 0, revenue: 0 };
       countryMap[c].orders++;
       countryMap[c].revenue += o.customerType === 'B2C' ? (o.netAmount ?? o.totalAmount) : o.totalAmount;
     });
     Object.entries(countryMap).sort((a, b) => b[1].revenue - a[1].revenue).slice(0, 10).forEach(([c, d]) =>
-      lines.push(`${c}: ${d.orders} ordini, €${d.revenue.toLocaleString('it-IT', { minimumFractionDigits: 2 })}`)
+      lines.push(`${c}: ${d.orders} orders, €${d.revenue.toLocaleString('it-IT', { minimumFractionDigits: 2 })}`)
     );
     return lines.join('\n');
   }, [dateRange, customerTypeFilter, allOrders, filteredOrders, kpis]);
@@ -145,19 +145,19 @@ export default function Index() {
         {isErrorShopify && (
           <div className="p-3 rounded-lg bg-destructive/10 border border-destructive/20 flex items-center gap-2 text-xs text-destructive">
             <AlertCircle className="w-4 h-4 shrink-0" />
-            Shopify: {errorShopify instanceof Error ? errorShopify.message : 'Errore'}
+            Shopify: {errorShopify instanceof Error ? errorShopify.message : 'Error'}
           </div>
         )}
         {isErrorGS && (
           <div className="p-3 rounded-lg bg-destructive/10 border border-destructive/20 flex items-center gap-2 text-xs text-destructive">
             <AlertCircle className="w-4 h-4 shrink-0" />
-            Google Sheets: {errorGS instanceof Error ? errorGS.message : 'Errore'}
+            Google Sheets: {errorGS instanceof Error ? errorGS.message : 'Error'}
           </div>
         )}
         {isLoading && (
           <div className="flex items-center justify-center gap-2 py-16">
             <Loader2 className="w-5 h-5 animate-spin text-primary" />
-            <p className="text-sm text-muted-foreground">Caricamento dati...</p>
+            <p className="text-sm text-muted-foreground">Loading data...</p>
           </div>
         )}
 
@@ -165,7 +165,7 @@ export default function Index() {
             OVERVIEW — KPI + Pie + Top 3 + B2C Breakdown
         ═══════════════════════════════════════════════════════ */}
         <div>
-          <SectionHeader label="Overview — KPI Principali" />
+          <SectionHeader label="Overview — Main KPIs" />
           <div className="grid grid-cols-1 xl:grid-cols-[1fr_260px] gap-4">
 
             {/* KPI grid left */}
@@ -176,12 +176,12 @@ export default function Index() {
                 {kpiMap['Total Order B2C'] && <KPICard data={kpiMap['Total Order B2C']} />}
                 {kpiMap['Total Order B2B'] && <KPICard data={kpiMap['Total Order B2B']} />}
               </div>
-              {/* Row 2: fatturato + n° ordini — alternating B2C/B2B */}
+              {/* Row 2: revenue + n° orders — alternating B2C/B2B */}
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                {kpiMap['Fatturato B2C'] && <KPICard data={kpiMap['Fatturato B2C']} />}
-                {kpiMap['Fatturato B2B'] && <KPICard data={kpiMap['Fatturato B2B']} />}
-                {kpiMap['Totale Ordini B2C'] && <KPICard data={kpiMap['Totale Ordini B2C']} />}
-                {kpiMap['Totale Ordini B2B'] && <KPICard data={kpiMap['Totale Ordini B2B']} />}
+                {kpiMap['Revenue B2C'] && <KPICard data={kpiMap['Revenue B2C']} />}
+                {kpiMap['Revenue B2B'] && <KPICard data={kpiMap['Revenue B2B']} />}
+                {kpiMap['Total Orders B2C'] && <KPICard data={kpiMap['Total Orders B2C']} />}
+                {kpiMap['Total Orders B2B'] && <KPICard data={kpiMap['Total Orders B2B']} />}
               </div>
               {/* Row 3: AOV + Top3 + Pie */}
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
@@ -193,10 +193,10 @@ export default function Index() {
                   <div className="absolute top-0 left-0 right-0 h-px opacity-50" style={{ background: 'linear-gradient(90deg, hsl(215,85%,50%), transparent)' }} />
                   <div className="flex items-center gap-1.5 mb-2">
                     <Package className="w-3 h-3" style={{ color: 'hsl(215,85%,60%)' }} />
-                    <p className="text-[10px] text-muted-foreground font-semibold uppercase tracking-[0.12em]">Top 3 Prodotti</p>
+                    <p className="text-[10px] text-muted-foreground font-semibold uppercase tracking-[0.12em]">Top 3 Products</p>
                   </div>
                   <div className="space-y-1.5">
-                    {top3Products.length === 0 && <p className="text-xs text-muted-foreground">Nessun dato</p>}
+                    {top3Products.length === 0 && <p className="text-xs text-muted-foreground">No data</p>}
                     {top3Products.map((p, i) => (
                       <div key={p.sku} className="flex items-center gap-1.5">
                         <span className="text-[9px] font-bold text-muted-foreground/60 w-3 shrink-0 font-mono">{i + 1}</span>
@@ -213,7 +213,7 @@ export default function Index() {
                 <div className="kpi-card relative overflow-hidden" style={{ borderLeft: '3px solid hsl(220,20%,30%)' }}>
                   <p className="text-[10px] text-muted-foreground font-semibold uppercase tracking-[0.12em] mb-2">Mix B2C / B2B</p>
                   {totalVal === 0 ? (
-                    <p className="text-xs text-muted-foreground">Nessun dato</p>
+                    <p className="text-xs text-muted-foreground">No data</p>
                   ) : (
                     <div className="flex items-center gap-3">
                       <div className="w-14 h-14 shrink-0">
@@ -259,7 +259,7 @@ export default function Index() {
             ANDAMENTO ORDINI
         ═══════════════════════════════════════════════════════ */}
         <div>
-          <SectionHeader label="Andamento Ordini" />
+          <SectionHeader label="Orders Trend" />
           <OrdersTrendChart orders={filteredOrders} allOrders={allOrders} dateRange={dateRange} />
         </div>
 
@@ -267,7 +267,7 @@ export default function Index() {
             DETTAGLIO SKU — B2C poi B2B poi Combined
         ═══════════════════════════════════════════════════════ */}
         <div>
-          <SectionHeader label="Dettaglio Vendite per SKU" />
+          <SectionHeader label="SKU Sales Detail" />
           {/* B2C + B2B side by side, Combined below */}
           <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 mb-4">
             <B2CSkuTable data={b2cSkuData} />
@@ -280,7 +280,7 @@ export default function Index() {
             MAPPA B2C
         ═══════════════════════════════════════════════════════ */}
         <div>
-          <SectionHeader label="Distribuzione Geografica" badge="B2C" badgeClass="badge-b2c" />
+          <SectionHeader label="Geographic Distribution" badge="B2C" badgeClass="badge-b2c" />
           <B2CSalesHeatmap orders={filteredOrders} dateRange={dateRange} />
         </div>
 
@@ -289,11 +289,11 @@ export default function Index() {
         ═══════════════════════════════════════════════════════ */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
           <div>
-            <SectionHeader label="Vendite per Collection" />
+            <SectionHeader label="Sales by Collection" />
             <CollectionBreakdown orders={filteredOrders} />
           </div>
           <div>
-            <SectionHeader label="Vendite per Paese" />
+            <SectionHeader label="Sales by Country" />
             <CountryBreakdown orders={filteredOrders} allSkus={allSkus} />
           </div>
         </div>
@@ -302,7 +302,7 @@ export default function Index() {
             TREND VENDITE
         ═══════════════════════════════════════════════════════ */}
         <div>
-          <SectionHeader label="Trend Vendite nel Tempo" />
+          <SectionHeader label="Sales Trend Over Time" />
           <SalesTrendChart orders={filteredOrders} dateRange={dateRange} />
         </div>
 
