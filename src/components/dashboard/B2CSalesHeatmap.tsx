@@ -235,10 +235,8 @@ const CITY_COORDS: Record<string, [number, number]> = {
   'Pietrasanta':[10.2302,43.9602],
   'Viareggio':[10.2524,43.8673],
   'Pontedera':[10.6355,43.6611],
-  'Pisa':[10.4036,43.7228],
-  'Grosseto':[11.1079,42.7635],
+  // Pisa, Grosseto, Terni already defined above
   'Follonica':[10.7620,42.9226],
-  'Terni':[12.6469,42.5634],
   'Foligno':[12.7026,42.9559],
   'Spoleto':[12.7383,42.7348],
   'Civitavecchia':[11.7988,42.0932],
