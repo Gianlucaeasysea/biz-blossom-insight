@@ -1,5 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Target, Pencil, Check, X } from 'lucide-react';
+import { format } from 'date-fns';
+import { it } from 'date-fns/locale';
 import { Progress } from '@/components/ui/progress';
 
 interface RevenueTargetProps {
@@ -56,6 +58,9 @@ export function RevenueTarget({ currentRevenue }: RevenueTargetProps) {
           <div>
             <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-muted-foreground leading-none">
               Obiettivo Fatturato Annuo
+              <span className="ml-1.5 normal-case tracking-normal opacity-70">
+                (1 Gen – {format(new Date(), 'd MMM yyyy', { locale: it })})
+              </span>
             </p>
             <div className="flex items-center gap-1.5 mt-1">
               {editing ? (

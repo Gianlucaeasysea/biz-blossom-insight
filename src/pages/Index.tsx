@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { subDays, format } from 'date-fns';
+import { subDays, format, startOfYear } from 'date-fns';
 import { PieChart, Pie, Cell, Tooltip as ReTooltip, ResponsiveContainer } from 'recharts';
 import { DashboardHeader } from '@/components/dashboard/DashboardHeader';
 import { FilterBar } from '@/components/dashboard/FilterBar';
@@ -61,6 +61,38 @@ export default function Index() {
     end: dateRange.end,
     enabled: customerTypeFilter !== 'B2B',
   });
+
+  // ── YTD data for Revenue Target (independent of dashboard filters) ──
+  const ytdStart = useMemo(() => startOfYear(new Date()), []);
+  const ytdEnd = useMemo(() => new Date(), []);
+
+  const { data: ytdShopifySummary } = useShopifySalesSummary({
+    start: ytdStart,
+    end: ytdEnd,
+    enabled: true,
+  });
+
+  const ytdRevenue = useMemo(() => {
+    // B2B YTD from orders
+    const b2bYtd = allOrders
+      .filter(o => {
+        if (o.customerType !== 'B2B') return false;
+        const d = o.date instanceof Date ? o.date : new Date(o.date);
+        return d >= ytdStart && d <= ytdEnd;
+      })
+      .reduce((sum, o) => sum + o.totalAmount, 0);
+
+    // B2C YTD: prefer Shopify Analytics summary if available
+    const b2cYtd = ytdShopifySummary?.netSales ?? allOrders
+      .filter(o => {
+        if (o.customerType !== 'B2C') return false;
+        const d = o.date instanceof Date ? o.date : new Date(o.date);
+        return d >= ytdStart && d <= ytdEnd;
+      })
+      .reduce((sum, o) => sum + (o.netAmount ?? o.totalAmount), 0);
+
+    return b2cYtd + b2bYtd;
+  }, [allOrders, ytdShopifySummary, ytdStart, ytdEnd]);
 
   const kpis = useMemo(() => {
     const computed = calculateKPIs(filteredOrders);
@@ -154,7 +186,7 @@ export default function Index() {
         <DashboardHeader onRefresh={handleRefresh} isLoading={isFetching} />
 
         {/* ── Revenue Target ─────────────────────────────────── */}
-        <RevenueTarget currentRevenue={totalVal} />
+        <RevenueTarget currentRevenue={ytdRevenue} />
 
         {/* ── Nav + Filters bar ───────────────────────────────── */}
         <div className="flex flex-wrap items-center justify-between gap-3">
