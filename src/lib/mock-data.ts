@@ -79,9 +79,11 @@ export function calculateKPIs(orders: Order[]): KPIData[] {
 
   // Fatturato B2C = net sales solo ordini evasi (completed)
   const fatturatoB2C = b2cOrders.filter(o => o.status === 'completed').reduce((s, o) => s + getB2CNetSales(o), 0);
-  // Fatturato B2B = sum price for DELIVERED (completed) + delivery date exists, excl custom
+  // Fatturato B2B = sum price where deliveryDate exists, excl custom
+  // Note: when dateRange is provided, this should be overridden in Index.tsx
+  // to filter by deliveryDate within range instead of order date
   const fatturatoB2B = b2bOrdersNoCustom
-    .filter(o => o.status === 'completed' && o.deliveryDate)
+    .filter(o => o.deliveryDate)
     .reduce((s, o) => s + o.products.reduce((ps, p) => ps + p.totalPrice, 0), 0);
 
   // Totale ordini B2C = count
