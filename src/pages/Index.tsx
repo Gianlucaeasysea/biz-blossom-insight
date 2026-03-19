@@ -61,7 +61,27 @@ export default function Index() {
     enabled: customerTypeFilter !== 'B2B',
   });
 
-  const kpis = useMemo(() => calculateKPIs(filteredOrders), [filteredOrders]);
+  const kpis = useMemo(() => {
+    const computed = calculateKPIs(filteredOrders);
+    // When Shopify Analytics summary is available, use its net_sales as the canonical B2C figure
+    // (same source as B2C Sales Breakdown — correct to the cent)
+    if (shopifySalesSummary?.netSales !== undefined && customerTypeFilter !== 'B2B') {
+      const analyticsNetSales = shopifySalesSummary.netSales;
+      return computed.map(k => {
+        if (k.label === 'Total Order B2C') return { ...k, value: analyticsNetSales };
+        if (k.label === 'Total Order') {
+          const b2bVal = computed.find(c => c.label === 'Total Order B2B')?.value ?? 0;
+          return { ...k, value: analyticsNetSales + b2bVal };
+        }
+        if (k.label === 'AOV B2C') {
+          const b2cCount = computed.find(c => c.label === 'Total Orders B2C')?.value ?? 0;
+          return { ...k, value: b2cCount > 0 ? analyticsNetSales / b2cCount : 0 };
+        }
+        return k;
+      });
+    }
+    return computed;
+  }, [filteredOrders, shopifySalesSummary, customerTypeFilter]);
   const b2cSkuData = useMemo(() => getB2CSkuBreakdown(filteredOrders), [filteredOrders]);
   const b2bSkuData = useMemo(() => getB2BSkuBreakdown(filteredOrders), [filteredOrders]);
   const combinedSkuData = useMemo(() => getCombinedSkuBreakdown(filteredOrders), [filteredOrders]);

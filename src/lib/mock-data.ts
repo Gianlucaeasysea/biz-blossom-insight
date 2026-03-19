@@ -129,14 +129,21 @@ export function getB2CSkuBreakdown(orders: Order[]): Array<{
   const b2cOrders = orders.filter(o => o.customerType === 'B2C');
 
   b2cOrders.forEach(order => {
+    // Use order.netAmount (current_subtotal_price from Shopify) as the canonical net figure,
+    // distributed proportionally across line items based on their totalPrice share.
+    // This ensures sum(skuNetSales) === sum(order.netAmount) which aligns with Shopify reporting.
+    const orderNet = order.netAmount ?? order.totalAmount;
+    const itemsGross = order.products.reduce((s, p) => s + p.totalPrice, 0);
+
     order.products.forEach(product => {
       if (!skuMap[product.sku]) {
         skuMap[product.sku] = { name: product.name, qtySold: 0, netSalesTotal: 0, netSalesFulfilled: 0 };
       }
       skuMap[product.sku].qtySold += product.quantity;
-      skuMap[product.sku].netSalesTotal += product.totalPrice;
+      const itemNet = itemsGross > 0 ? orderNet * (product.totalPrice / itemsGross) : 0;
+      skuMap[product.sku].netSalesTotal += itemNet;
       if (order.status === 'completed') {
-        skuMap[product.sku].netSalesFulfilled += product.totalPrice;
+        skuMap[product.sku].netSalesFulfilled += itemNet;
       }
     });
   });
