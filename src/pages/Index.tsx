@@ -62,6 +62,38 @@ export default function Index() {
     enabled: customerTypeFilter !== 'B2B',
   });
 
+  // ── YTD data for Revenue Target (independent of dashboard filters) ──
+  const ytdStart = useMemo(() => startOfYear(new Date()), []);
+  const ytdEnd = useMemo(() => new Date(), []);
+
+  const { data: ytdShopifySummary } = useShopifySalesSummary({
+    start: ytdStart,
+    end: ytdEnd,
+    enabled: true,
+  });
+
+  const ytdRevenue = useMemo(() => {
+    // B2B YTD from orders
+    const b2bYtd = allOrders
+      .filter(o => {
+        if (o.customerType !== 'B2B') return false;
+        const d = o.date instanceof Date ? o.date : new Date(o.date);
+        return d >= ytdStart && d <= ytdEnd;
+      })
+      .reduce((sum, o) => sum + o.totalAmount, 0);
+
+    // B2C YTD: prefer Shopify Analytics summary if available
+    const b2cYtd = ytdShopifySummary?.netSales ?? allOrders
+      .filter(o => {
+        if (o.customerType !== 'B2C') return false;
+        const d = o.date instanceof Date ? o.date : new Date(o.date);
+        return d >= ytdStart && d <= ytdEnd;
+      })
+      .reduce((sum, o) => sum + (o.netAmount ?? o.totalAmount), 0);
+
+    return b2cYtd + b2bYtd;
+  }, [allOrders, ytdShopifySummary, ytdStart, ytdEnd]);
+
   const kpis = useMemo(() => {
     const computed = calculateKPIs(filteredOrders);
     // When Shopify Analytics summary is available, use its net_sales as the canonical B2C figure
