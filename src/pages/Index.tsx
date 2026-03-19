@@ -119,27 +119,45 @@ export default function Index() {
     return b2cMonths.map((v, i) => Math.round(v * factor + b2bMonths[i]));
   }, [allOrders, ytdShopifySummary, ytdStart]);
 
+  // Revenue B2B: filter ALL B2B orders by deliveryDate within range (not order date)
+  const revenueB2B = useMemo(() => {
+    const endOfDay = new Date(dateRange.end);
+    endOfDay.setHours(23, 59, 59, 999);
+    return allOrders
+      .filter(o => {
+        if (o.customerType !== 'B2B') return false;
+        if (o.orderType && o.orderType.toLowerCase() === 'custom') return false;
+        if (!o.deliveryDate) return false;
+        const dd = o.deliveryDate instanceof Date ? o.deliveryDate : new Date(o.deliveryDate);
+        return dd >= dateRange.start && dd <= endOfDay;
+      })
+      .reduce((s, o) => s + o.products.reduce((ps, p) => ps + p.totalPrice, 0), 0);
+  }, [allOrders, dateRange]);
+
   const kpis = useMemo(() => {
     const computed = calculateKPIs(filteredOrders);
+    // Override Revenue B2B with delivery-date-filtered value
+    const withRevenueB2B = computed.map(k =>
+      k.label === 'Revenue B2B' ? { ...k, value: revenueB2B } : k
+    );
     // When Shopify Analytics summary is available, use its net_sales as the canonical B2C figure
-    // (same source as B2C Sales Breakdown — correct to the cent)
     if (shopifySalesSummary?.netSales !== undefined && customerTypeFilter !== 'B2B') {
       const analyticsNetSales = shopifySalesSummary.netSales;
-      return computed.map(k => {
+      return withRevenueB2B.map(k => {
         if (k.label === 'Total Order B2C') return { ...k, value: analyticsNetSales };
         if (k.label === 'Total Order') {
-          const b2bVal = computed.find(c => c.label === 'Total Order B2B')?.value ?? 0;
+          const b2bVal = withRevenueB2B.find(c => c.label === 'Total Order B2B')?.value ?? 0;
           return { ...k, value: analyticsNetSales + b2bVal };
         }
         if (k.label === 'AOV B2C') {
-          const b2cCount = computed.find(c => c.label === 'Total Orders B2C')?.value ?? 0;
+          const b2cCount = withRevenueB2B.find(c => c.label === 'Total Orders B2C')?.value ?? 0;
           return { ...k, value: b2cCount > 0 ? analyticsNetSales / b2cCount : 0 };
         }
         return k;
       });
     }
-    return computed;
-  }, [filteredOrders, shopifySalesSummary, customerTypeFilter]);
+    return withRevenueB2B;
+  }, [filteredOrders, revenueB2B, shopifySalesSummary, customerTypeFilter]);
   // Scaling factor: align all order-derived B2C net sales to Shopify Analytics netSales (ground truth).
   // sum(order.netAmount) can differ from Analytics due to cancelled orders, timing, or custom SKUs.
   const b2cNetScaleFactor = useMemo(() => {
@@ -239,8 +257,8 @@ export default function Index() {
   );
 
   return (
-    <div className="min-h-screen bg-background p-3 sm:p-6 safe-area-wrap">
-      <div className="max-w-[1520px] mx-auto space-y-4 sm:space-y-5">
+    <div className="min-h-screen bg-background p-4 sm:p-6">
+      <div className="max-w-[1520px] mx-auto space-y-5">
 
         {/* ── Header ──────────────────────────────────────────── */}
         <DashboardHeader onRefresh={handleRefresh} isLoading={isFetching} />

@@ -45,7 +45,7 @@ export function KPICard({ data }: KPICardProps) {
           </span>
         )}
       </div>
-      <p className="text-base sm:text-2xl font-bold tracking-tight font-mono text-foreground break-all">
+      <p className="text-2xl font-bold tracking-tight font-mono text-foreground">
         {formatValue(data.value)}
       </p>
     </div>
