@@ -154,8 +154,17 @@ serve(async (req) => {
       'Soft Shackle in Dyneema® - M - 20x14': 'SS-103',
       'Soft Shackle in Dyneema® - L - 28x20': 'SS-104',
       'Spira – The Twistable Guardrail Cover': 'SP-101',
+      'Spira - The Twistable Guardrail Cover': 'SP-101',
       'Way2 - The inflatable reversible gangway': 'W2G-101',
       'Rope deflector': 'ROD-101',
+      // Jake products (same SKUs as B2C Shopify)
+      'Boat Hook head': 'JBH-101',
+      'Telescopic pole': 'JTP-101',
+      'Line-passing head': 'JLH-101',
+      'Quick-release with Fidlock mounts': 'JQK-101',
+      'Short pole': 'JSP-101',
+      'QuickGrip Linemaster Head': 'JQH-101',
+      'Brush head': 'JBR-101',
     };
 
     const normalize = (s: string) => s.toLowerCase().replace(/[™®©]/g, '').replace(/\s*-\s*/g, ' ').replace(/\s+/g, ' ').trim();
