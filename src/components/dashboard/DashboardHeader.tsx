@@ -19,6 +19,12 @@ interface DashboardHeaderProps {
 
 export function DashboardHeader({ onRefresh, isLoading }: DashboardHeaderProps) {
   const { lang, setLang, t } = useLanguage();
+  const navigate = useNavigate();
+
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    navigate('/login');
+  };
 
   return (
     <header className="flex items-center justify-between mb-8">
