@@ -106,7 +106,7 @@
   }
 
   .kpi-card {
-    @apply glass-card p-4 transition-all duration-200;
+    @apply glass-card p-3 sm:p-4 transition-all duration-200;
   }
   .kpi-card:hover {
     border-color: rgba(255, 255, 255, 0.16);
