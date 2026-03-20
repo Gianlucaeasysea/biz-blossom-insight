@@ -169,7 +169,7 @@
   }
 
   .data-table {
-    @apply w-full text-sm;
+    @apply w-full text-xs sm:text-sm;
   }
 
   .data-table th {
