@@ -1,8 +1,10 @@
-import { RefreshCw } from 'lucide-react';
+import { RefreshCw, LogOut } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import companyLogo from '@/assets/company-logo.png';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { Language } from '@/lib/i18n';
+import { supabase } from '@/integrations/supabase/client';
 
 const LANGS: { code: Language; flag: string }[] = [
   { code: 'it', flag: '🇮🇹' },
