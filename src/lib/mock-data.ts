@@ -225,41 +225,73 @@ export function getSkuCollection(sku: string): string {
   return 'Other';
 }
 
-// B2C Collection breakdown: qty + net sales
-export function getB2CCollectionBreakdown(orders: Order[]): Array<{
-  collection: string; qtySold: number; netSales: number;
-}> {
-  const map: Record<string, { qty: number; sales: number }> = {};
+export interface SkuDetail {
+  sku: string;
+  name: string;
+  qty: number;
+  sales: number;
+}
+
+export interface CollectionRow {
+  collection: string;
+  qtySold: number;
+  netSales: number;
+  skus: SkuDetail[];
+}
+
+export interface B2BCollectionRow {
+  collection: string;
+  qtySold: number;
+  priceSomma: number;
+  skus: SkuDetail[];
+}
+
+// B2C Collection breakdown: qty + net sales + per-SKU detail
+export function getB2CCollectionBreakdown(orders: Order[]): CollectionRow[] {
+  const map: Record<string, { qty: number; sales: number; skuMap: Record<string, SkuDetail> }> = {};
   orders.filter(o => o.customerType === 'B2C').forEach(order => {
     const orderNet = order.netAmount ?? order.totalAmount;
     const itemsGross = order.products.reduce((s, p) => s + p.totalPrice, 0);
     order.products.forEach(p => {
       const c = getSkuCollection(p.sku);
-      if (!map[c]) map[c] = { qty: 0, sales: 0 };
+      if (!map[c]) map[c] = { qty: 0, sales: 0, skuMap: {} };
       map[c].qty += p.quantity;
-      map[c].sales += itemsGross > 0 ? orderNet * (p.totalPrice / itemsGross) : 0;
+      const itemNet = itemsGross > 0 ? orderNet * (p.totalPrice / itemsGross) : 0;
+      map[c].sales += itemNet;
+      const key = p.sku || p.name;
+      if (!map[c].skuMap[key]) map[c].skuMap[key] = { sku: p.sku, name: p.name, qty: 0, sales: 0 };
+      map[c].skuMap[key].qty += p.quantity;
+      map[c].skuMap[key].sales += itemNet;
     });
   });
   return Object.entries(map)
-    .map(([collection, d]) => ({ collection, qtySold: d.qty, netSales: Math.round(d.sales * 100) / 100 }))
+    .map(([collection, d]) => ({
+      collection, qtySold: d.qty, netSales: Math.round(d.sales * 100) / 100,
+      skus: Object.values(d.skuMap).map(s => ({ ...s, sales: Math.round(s.sales * 100) / 100 })).sort((a, b) => b.sales - a.sales),
+    }))
     .sort((a, b) => b.netSales - a.netSales);
 }
 
-// B2B Collection breakdown: qty + price sum (filtered by order date, excl custom)
-export function getB2BCollectionBreakdown(orders: Order[]): Array<{
-  collection: string; qtySold: number; priceSomma: number;
-}> {
-  const map: Record<string, { qty: number; price: number }> = {};
+// B2B Collection breakdown: qty + price sum (filtered by order date, excl custom) + per-SKU detail
+export function getB2BCollectionBreakdown(orders: Order[]): B2BCollectionRow[] {
+  const map: Record<string, { qty: number; price: number; skuMap: Record<string, SkuDetail> }> = {};
   orders.filter(o => o.customerType === 'B2B' && isNotCustom(o)).forEach(order => {
     order.products.forEach(p => {
       const c = getSkuCollection(p.sku);
-      if (!map[c]) map[c] = { qty: 0, price: 0 };
+      if (!map[c]) map[c] = { qty: 0, price: 0, skuMap: {} };
       map[c].qty += p.quantity;
       map[c].price += p.totalPrice;
+      const key = p.sku || p.name;
+      if (!map[c].skuMap[key]) map[c].skuMap[key] = { sku: p.sku, name: p.name, qty: 0, sales: 0 };
+      map[c].skuMap[key].qty += p.quantity;
+      map[c].skuMap[key].sales += p.totalPrice;
     });
   });
   return Object.entries(map)
-    .map(([collection, d]) => ({ collection, qtySold: d.qty, priceSomma: Math.round(d.price * 100) / 100 }))
+    .map(([collection, d]) => ({
+      collection, qtySold: d.qty, priceSomma: Math.round(d.price * 100) / 100,
+      skus: Object.values(d.skuMap).map(s => ({ ...s, sales: Math.round(s.sales * 100) / 100 })).sort((a, b) => b.sales - a.sales),
+    }))
     .sort((a, b) => b.priceSomma - a.priceSomma);
 }
 
