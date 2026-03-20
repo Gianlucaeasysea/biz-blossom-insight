@@ -173,7 +173,7 @@
   }
 
   .data-table th {
-    @apply text-left px-3 py-1.5 text-muted-foreground text-[10px] font-semibold uppercase tracking-wider border-b border-border sticky top-0 z-10;
+    @apply text-left px-2 sm:px-3 py-1.5 text-muted-foreground text-[9px] sm:text-[10px] font-semibold uppercase tracking-wider border-b border-border sticky top-0 z-10;
     background: hsl(var(--card));
   }
 
