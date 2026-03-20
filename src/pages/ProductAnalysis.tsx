@@ -185,10 +185,10 @@ export default function ProductAnalysis() {
   const availableYears = [2025, 2026];
 
   return (
-    <div className="min-h-screen bg-background text-foreground">
+    <div className="min-h-screen bg-background text-foreground p-3 sm:p-4 md:p-6">
       <DashboardHeader onRefresh={handleRefresh} isLoading={isFetching} />
 
-      <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
+      <div className="max-w-[1520px] mx-auto space-y-3 sm:space-y-5">
 
         {/* Nav */}
         <DraggableNav />
