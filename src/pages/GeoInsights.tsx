@@ -336,9 +336,7 @@ export default function GeoInsights() {
           <NavLink to="/meta-ads" className="px-3.5 py-1.5 rounded-lg text-xs font-semibold bg-muted text-muted-foreground hover:text-foreground transition-colors" activeClassName="bg-primary text-primary-foreground">{t('nav.meta')}</NavLink>
           <NavLink to="/budget-2026" className="px-3.5 py-1.5 rounded-lg text-xs font-semibold bg-muted text-muted-foreground hover:text-foreground transition-colors" activeClassName="bg-primary text-primary-foreground">{t('nav.budget')}</NavLink>
           <NavLink to="/geo-insights" className="px-3.5 py-1.5 rounded-lg text-xs font-semibold bg-muted text-muted-foreground hover:text-foreground transition-colors" activeClassName="bg-primary text-primary-foreground">{t('nav.geo')}</NavLink>
-          <NavLink to="/geo-insights" className="px-3.5 py-1.5 rounded-lg text-xs font-semibold bg-muted text-muted-foreground hover:text-foreground transition-colors" activeClassName="bg-primary text-primary-foreground">
-            <span className="flex items-center gap-1.5"><Globe className="w-3.5 h-3.5" />Insight Geografia</span>
-          </NavLink>
+          <NavLink to="/product-analysis" className="px-3.5 py-1.5 rounded-lg text-xs font-semibold bg-muted text-muted-foreground hover:text-foreground transition-colors" activeClassName="bg-primary text-primary-foreground">{t('nav.products')}</NavLink>
         </div>
 
         {/* Page title + Date range */}

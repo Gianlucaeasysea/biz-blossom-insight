@@ -151,6 +151,26 @@ const it: Dict = {
   'geo.trend_title':         '{country} — Trend mensile vs Stagione Nautica',
   'geo.products_title':      '{country} — Prodotti più venduti',
   'geo.ai_placeholder':      'Clicca "Genera Analisi" per ottenere insight AI sulla stagionalità di vendita, analisi prodotti per paese e raccomandazioni strategiche.',
+
+  // ── Product Analysis ─────────────────────────────────────────────────
+  'nav.products':                 'Analisi Prodotti',
+  'products.title':               'Analisi per Prodotto',
+  'products.subtitle':            'Fatturato mensile B2C + B2B per collezione · Peso % sul totale',
+  'products.kpi.total':           'Fatturato Totale',
+  'products.kpi.b2c':             'B2C Net Sales',
+  'products.kpi.b2b':             'B2B Venduto',
+  'products.kpi.top':             'Top Prodotto',
+  'products.chart.revenue':       'Fatturato (€)',
+  'products.chart.weight':        'Peso % sul totale',
+  'products.legend.b2c':          'B2C',
+  'products.legend.b2b':          'B2B',
+  'products.legend.weight':       '% peso',
+  'products.year':                'Anno',
+  'products.no_data':             'Nessun dato per questo prodotto',
+  'products.total_revenue':       'Totale',
+  'products.b2c_revenue':         'B2C',
+  'products.b2b_revenue':         'B2B',
+  'products.avg_weight':          'Peso medio',
 };
 
 const en: Dict = {
@@ -291,6 +311,25 @@ const en: Dict = {
   'geo.trend_title':         '{country} — Monthly trend vs Sailing Season',
   'geo.products_title':      '{country} — Top products',
   'geo.ai_placeholder':      'Click "Generate Analysis" to get AI insights on sales seasonality, product analysis by country and strategic recommendations.',
+
+  'nav.products':                 'Product Analysis',
+  'products.title':               'Product Analysis',
+  'products.subtitle':            'Monthly B2C + B2B revenue by collection · % weight on total',
+  'products.kpi.total':           'Total Revenue',
+  'products.kpi.b2c':             'B2C Net Sales',
+  'products.kpi.b2b':             'B2B Sales',
+  'products.kpi.top':             'Top Product',
+  'products.chart.revenue':       'Revenue (€)',
+  'products.chart.weight':        '% weight on total',
+  'products.legend.b2c':          'B2C',
+  'products.legend.b2b':          'B2B',
+  'products.legend.weight':       '% weight',
+  'products.year':                'Year',
+  'products.no_data':             'No data for this product',
+  'products.total_revenue':       'Total',
+  'products.b2c_revenue':         'B2C',
+  'products.b2b_revenue':         'B2B',
+  'products.avg_weight':          'Avg weight',
 };
 
 const de: Dict = {
@@ -431,6 +470,25 @@ const de: Dict = {
   'geo.trend_title':         '{country} — Monatstrend vs. Segelsaison',
   'geo.products_title':      '{country} — Meistverkaufte Produkte',
   'geo.ai_placeholder':      'Klicken Sie auf "Analyse erstellen", um KI-Einblicke zur Verkaufssaisonalität, Produktanalyse nach Land und strategische Empfehlungen zu erhalten.',
+
+  'nav.products':                 'Produktanalyse',
+  'products.title':               'Produktanalyse',
+  'products.subtitle':            'Monatl. B2C + B2B Umsatz nach Kollektion · % Anteil am Gesamtumsatz',
+  'products.kpi.total':           'Gesamtumsatz',
+  'products.kpi.b2c':             'B2C Nettoumsatz',
+  'products.kpi.b2b':             'B2B Umsatz',
+  'products.kpi.top':             'Top Produkt',
+  'products.chart.revenue':       'Umsatz (€)',
+  'products.chart.weight':        '% Anteil am Gesamt',
+  'products.legend.b2c':          'B2C',
+  'products.legend.b2b':          'B2B',
+  'products.legend.weight':       '% Anteil',
+  'products.year':                'Jahr',
+  'products.no_data':             'Keine Daten für dieses Produkt',
+  'products.total_revenue':       'Gesamt',
+  'products.b2c_revenue':         'B2C',
+  'products.b2b_revenue':         'B2B',
+  'products.avg_weight':          'Ø Anteil',
 };
 
 export const translations: Record<Language, Dict> = { it, en, de };
