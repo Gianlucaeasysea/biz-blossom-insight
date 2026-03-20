@@ -487,7 +487,7 @@ const de: Dict = {
   'geo.products_title':      '{country} — Meistverkaufte Produkte',
   'geo.ai_placeholder':      'Klicken Sie auf "Analyse erstellen", um KI-Einblicke zur Verkaufssaisonalität, Produktanalyse nach Land und strategische Empfehlungen zu erhalten.',
 
-  'nav.products':                 'Produktanalyse',
+  // (nav.products already defined above)
   'products.title':               'Produktanalyse',
   'products.subtitle':            'Monatl. B2C + B2B Umsatz nach Kollektion · % Anteil am Gesamtumsatz',
   'products.kpi.total':           'Gesamtumsatz',
