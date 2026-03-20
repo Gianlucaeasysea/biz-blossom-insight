@@ -196,6 +196,7 @@ export default function ProductAnalysis() {
           <NavLink to="/budget-2026"      className={NAV_CLS} activeClassName={NAV_ACTIVE}>{t('nav.budget')}</NavLink>
           <NavLink to="/geo-insights"     className={NAV_CLS} activeClassName={NAV_ACTIVE}>{t('nav.geo')}</NavLink>
           <NavLink to="/product-analysis" className={NAV_CLS} activeClassName={NAV_ACTIVE}>{t('nav.products')}</NavLink>
+          <NavLink to="/sales-call"       className={NAV_CLS} activeClassName={NAV_ACTIVE}>Analisi Call Sales</NavLink>
         </nav>
 
         {/* Page title + year selector */}

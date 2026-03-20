@@ -232,6 +232,7 @@ export default function Budget2026() {
           <NavLink to="/budget-2026" className={navCls} activeClassName={navActive}>{t('nav.budget')}</NavLink>
           <NavLink to="/geo-insights" className={navCls} activeClassName={navActive}>{t('nav.geo')}</NavLink>
           <NavLink to="/product-analysis" className={navCls} activeClassName={navActive}>{t('nav.products')}</NavLink>
+          <NavLink to="/sales-call" className={navCls} activeClassName={navActive}>Analisi Call Sales</NavLink>
         </div>
 
         {/* ── KPI cards ───────────────────────────────────────────────────── */}

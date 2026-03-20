@@ -390,6 +390,7 @@ export default function B2CAnalysis() {
             <NavLink to="/b2c-customers" className={navLinkClass} activeClassName={activeClass}>Clienti B2C</NavLink>
             <NavLink to="/b2b-analysis" className={navLinkClass} activeClassName={activeClass}>Analisi B2B</NavLink>
             <NavLink to="/b2c-analysis" className={navLinkClass} activeClassName={activeClass}>Analisi B2C</NavLink>
+            <NavLink to="/sales-call" className={navLinkClass} activeClassName={activeClass}>Analisi Call Sales</NavLink>
           </div>
 
           <div className="flex items-center gap-2">

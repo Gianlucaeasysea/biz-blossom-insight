@@ -366,6 +366,7 @@ export default function MetaAds() {
         <NavLink to="/budget-2026" className="px-4 py-2 rounded-lg text-sm font-medium bg-secondary text-secondary-foreground hover:bg-secondary/80 transition-colors" activeClassName="bg-primary text-primary-foreground">{t('nav.budget')}</NavLink>
         <NavLink to="/geo-insights" className="px-4 py-2 rounded-lg text-sm font-medium bg-secondary text-secondary-foreground hover:bg-secondary/80 transition-colors" activeClassName="bg-primary text-primary-foreground">{t('nav.geo')}</NavLink>
         <NavLink to="/product-analysis" className="px-4 py-2 rounded-lg text-sm font-medium bg-secondary text-secondary-foreground hover:bg-secondary/80 transition-colors" activeClassName="bg-primary text-primary-foreground">{t('nav.products')}</NavLink>
+        <NavLink to="/sales-call" className="px-4 py-2 rounded-lg text-sm font-medium bg-secondary text-secondary-foreground hover:bg-secondary/80 transition-colors" activeClassName="bg-primary text-primary-foreground">Analisi Call Sales</NavLink>
       </div>
 
       {/* Filters */}
