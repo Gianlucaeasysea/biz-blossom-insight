@@ -1,7 +1,7 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useRef, useCallback } from 'react';
 import { NavLink } from '@/components/NavLink';
 import { useLanguage } from '@/contexts/LanguageContext';
-import { GripVertical } from 'lucide-react';
+import { GripVertical, ChevronLeft, ChevronRight } from 'lucide-react';
 
 const STORAGE_KEY = 'nav-order';
 
@@ -30,7 +30,6 @@ function loadOrder(): NavItem[] {
     const paths: string[] = JSON.parse(saved);
     const map = new Map(DEFAULT_ITEMS.map(i => [i.to, i]));
     const ordered = paths.map(p => map.get(p)).filter(Boolean) as NavItem[];
-    // Add any new items not in saved order
     DEFAULT_ITEMS.forEach(item => {
       if (!ordered.find(o => o.to === item.to)) ordered.push(item);
     });
@@ -50,6 +49,7 @@ export function DraggableNav() {
   const [dragIdx, setDragIdx] = useState<number | null>(null);
   const [overIdx, setOverIdx] = useState<number | null>(null);
   const dragRef = useRef<number | null>(null);
+  const scrollRef = useRef<HTMLDivElement>(null);
 
   const handleDragStart = useCallback((e: React.DragEvent, idx: number) => {
     dragRef.current = idx;
@@ -88,30 +88,58 @@ export function DraggableNav() {
     setOverIdx(null);
   }, []);
 
+  const scroll = (dir: 'left' | 'right') => {
+    scrollRef.current?.scrollBy({ left: dir === 'left' ? -200 : 200, behavior: 'smooth' });
+  };
+
   return (
-    <div className="flex flex-wrap gap-1.5">
-      {items.map((item, idx) => (
-        <div
-          key={item.to}
-          draggable
-          onDragStart={e => handleDragStart(e, idx)}
-          onDragOver={e => handleDragOver(e, idx)}
-          onDrop={e => handleDrop(e, idx)}
-          onDragEnd={handleDragEnd}
-          className={`flex items-center transition-all duration-150 ${
-            dragIdx === idx ? 'opacity-40 scale-95' : ''
-          } ${overIdx === idx && dragIdx !== idx ? 'ring-2 ring-primary/40 rounded-lg' : ''}`}
-        >
-          <NavLink
-            to={item.to}
-            className="group flex items-center gap-1 px-3.5 py-1.5 rounded-lg text-xs font-semibold bg-muted text-muted-foreground hover:text-foreground transition-colors"
-            activeClassName="bg-primary text-primary-foreground"
+    <div className="relative flex items-center gap-1">
+      {/* Scroll left button - mobile only */}
+      <button
+        onClick={() => scroll('left')}
+        className="sm:hidden shrink-0 p-1 text-muted-foreground hover:text-foreground"
+        aria-label="Scroll left"
+      >
+        <ChevronLeft className="w-4 h-4" />
+      </button>
+
+      <div
+        ref={scrollRef}
+        className="flex gap-1.5 overflow-x-auto scrollbar-hide sm:flex-wrap sm:overflow-visible"
+        style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+      >
+        {items.map((item, idx) => (
+          <div
+            key={item.to}
+            draggable
+            onDragStart={e => handleDragStart(e, idx)}
+            onDragOver={e => handleDragOver(e, idx)}
+            onDrop={e => handleDrop(e, idx)}
+            onDragEnd={handleDragEnd}
+            className={`flex items-center transition-all duration-150 shrink-0 ${
+              dragIdx === idx ? 'opacity-40 scale-95' : ''
+            } ${overIdx === idx && dragIdx !== idx ? 'ring-2 ring-primary/40 rounded-lg' : ''}`}
           >
-            <GripVertical className="w-3 h-3 opacity-0 group-hover:opacity-40 transition-opacity cursor-grab shrink-0" />
-            {t(item.labelKey)}
-          </NavLink>
-        </div>
-      ))}
+            <NavLink
+              to={item.to}
+              className="group flex items-center gap-1 px-2.5 sm:px-3.5 py-1.5 rounded-lg text-[11px] sm:text-xs font-semibold bg-muted text-muted-foreground hover:text-foreground transition-colors whitespace-nowrap"
+              activeClassName="bg-primary text-primary-foreground"
+            >
+              <GripVertical className="w-3 h-3 opacity-0 group-hover:opacity-40 transition-opacity cursor-grab shrink-0 hidden sm:block" />
+              {t(item.labelKey)}
+            </NavLink>
+          </div>
+        ))}
+      </div>
+
+      {/* Scroll right button - mobile only */}
+      <button
+        onClick={() => scroll('right')}
+        className="sm:hidden shrink-0 p-1 text-muted-foreground hover:text-foreground"
+        aria-label="Scroll right"
+      >
+        <ChevronRight className="w-4 h-4" />
+      </button>
     </div>
   );
 }
