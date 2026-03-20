@@ -276,7 +276,7 @@ export default function Index() {
         <RevenueTarget currentRevenue={ytdRevenue} monthlyRevenues={monthlyRevenues} />
 
         {/* ── Nav + Filters bar ───────────────────────────────── */}
-        <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="space-y-2 sm:space-y-0 sm:flex sm:flex-wrap sm:items-center sm:justify-between sm:gap-3">
           <DraggableNav />
           <FilterBar customerTypeFilter={customerTypeFilter} onCustomerTypeChange={setCustomerTypeFilter} dateRange={dateRange} onDateRangeChange={setDateRange} />
         </div>
