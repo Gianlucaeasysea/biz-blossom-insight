@@ -119,7 +119,7 @@ export function RevenueTarget({ currentRevenue, monthlyRevenues }: RevenueTarget
         </div>
 
         {/* Consuntivo + % annuale + % YTD */}
-        <div className="flex items-baseline gap-2">
+        <div className="flex flex-wrap items-baseline gap-1.5 sm:gap-2">
           <span className="text-xs text-muted-foreground">{t('target.actual')}</span>
           <span className="text-base font-bold font-mono text-foreground">{fmt(currentRevenue)}</span>
           <span className="text-sm font-bold font-mono" style={{ color: globalColor }}>{pctTotal.toFixed(1)}%</span>
