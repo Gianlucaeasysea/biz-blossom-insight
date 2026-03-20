@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import { DraggableNav } from '@/components/DraggableNav';
 import {
   ComposedChart, Bar, Line, XAxis, YAxis, CartesianGrid, Tooltip,
   Legend, ResponsiveContainer, ReferenceLine, LineChart,
