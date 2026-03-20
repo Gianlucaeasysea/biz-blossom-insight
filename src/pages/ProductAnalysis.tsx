@@ -5,6 +5,7 @@ import {
 } from 'recharts';
 import { DashboardHeader } from '@/components/dashboard/DashboardHeader';
 import { NavLink } from '@/components/NavLink';
+import { DraggableNav } from '@/components/DraggableNav';
 import { useShopifyOrders } from '@/hooks/useShopifyOrders';
 import { useShopifySalesSummary } from '@/hooks/useShopifySalesSummary';
 import { useGoogleSheetsOrders } from '@/hooks/useGoogleSheetsOrders';
@@ -190,14 +191,7 @@ export default function ProductAnalysis() {
       <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
 
         {/* Nav */}
-        <nav className="flex flex-wrap gap-2">
-          <NavLink to="/"                 className={NAV_CLS} activeClassName={NAV_ACTIVE}>{t('nav.sales')}</NavLink>
-          <NavLink to="/meta-ads"         className={NAV_CLS} activeClassName={NAV_ACTIVE}>{t('nav.meta')}</NavLink>
-          <NavLink to="/budget-2026"      className={NAV_CLS} activeClassName={NAV_ACTIVE}>{t('nav.budget')}</NavLink>
-          <NavLink to="/geo-insights"     className={NAV_CLS} activeClassName={NAV_ACTIVE}>{t('nav.geo')}</NavLink>
-          <NavLink to="/product-analysis" className={NAV_CLS} activeClassName={NAV_ACTIVE}>{t('nav.products')}</NavLink>
-          <NavLink to="/sales-call"       className={NAV_CLS} activeClassName={NAV_ACTIVE}>Analisi Call Sales</NavLink>
-        </nav>
+        <DraggableNav />
 
         {/* Page title + year selector */}
         <div className="flex flex-wrap items-end justify-between gap-4">

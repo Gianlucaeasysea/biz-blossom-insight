@@ -2,6 +2,7 @@ import { useState, useMemo, useCallback } from 'react';
 import { subDays, format, differenceInDays } from 'date-fns';
 import { DashboardHeader } from '@/components/dashboard/DashboardHeader';
 import { NavLink } from '@/components/NavLink';
+import { DraggableNav } from '@/components/DraggableNav';
 import { useGoogleSheetsOrders } from '@/hooks/useGoogleSheetsOrders';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { Order } from '@/types/analytics';
@@ -476,17 +477,7 @@ export default function B2BAnalysis() {
 
         {/* Nav */}
         <div className="flex flex-wrap items-center justify-between gap-3">
-          <div className="flex gap-1.5 flex-wrap">
-            <NavLink to="/" className={navLinkClass} activeClassName={activeClass}>{t('nav.sales')}</NavLink>
-            <NavLink to="/meta-ads" className={navLinkClass} activeClassName={activeClass}>{t('nav.meta')}</NavLink>
-            <NavLink to="/budget-2026" className={navLinkClass} activeClassName={activeClass}>{t('nav.budget')}</NavLink>
-            <NavLink to="/geo-insights" className={navLinkClass} activeClassName={activeClass}>{t('nav.geo')}</NavLink>
-            <NavLink to="/product-analysis" className={navLinkClass} activeClassName={activeClass}>{t('nav.products')}</NavLink>
-            <NavLink to="/b2c-customers" className={navLinkClass} activeClassName={activeClass}>Clienti B2C</NavLink>
-            <NavLink to="/b2b-analysis" className={navLinkClass} activeClassName={activeClass}>Analisi B2B</NavLink>
-            <NavLink to="/b2c-analysis" className={navLinkClass} activeClassName={activeClass}>Analisi B2C</NavLink>
-            <NavLink to="/sales-call" className={navLinkClass} activeClassName={activeClass}>Analisi Call Sales</NavLink>
-          </div>
+          <DraggableNav />
 
           {/* Date range */}
           <div className="flex items-center gap-2">

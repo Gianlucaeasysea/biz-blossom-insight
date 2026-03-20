@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import { DraggableNav } from '@/components/DraggableNav';
 import {
   ComposedChart, Bar, Line, XAxis, YAxis, CartesianGrid, Tooltip,
   Legend, ResponsiveContainer, ReferenceLine, LineChart,
@@ -226,14 +227,7 @@ export default function Budget2026() {
         </div>
 
         {/* ── Nav ─────────────────────────────────────────────────────────── */}
-        <div className="flex gap-1.5">
-          <NavLink to="/"           className={navCls} activeClassName={navActive}>{t('nav.sales')}</NavLink>
-          <NavLink to="/meta-ads"   className={navCls} activeClassName={navActive}>{t('nav.meta')}</NavLink>
-          <NavLink to="/budget-2026" className={navCls} activeClassName={navActive}>{t('nav.budget')}</NavLink>
-          <NavLink to="/geo-insights" className={navCls} activeClassName={navActive}>{t('nav.geo')}</NavLink>
-          <NavLink to="/product-analysis" className={navCls} activeClassName={navActive}>{t('nav.products')}</NavLink>
-          <NavLink to="/sales-call" className={navCls} activeClassName={navActive}>Analisi Call Sales</NavLink>
-        </div>
+        <DraggableNav />
 
         {/* ── KPI cards ───────────────────────────────────────────────────── */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">

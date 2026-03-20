@@ -8,6 +8,11 @@ const it: Dict = {
   'nav.meta':   'Meta Ads',
   'nav.budget': 'Budget 2026',
   'nav.geo':    'Geo Insights',
+  'nav.b2c_customers': 'Clienti B2C',
+  'nav.b2b_analysis': 'Analisi B2B',
+  'nav.b2c_analysis': 'Analisi B2C',
+  'nav.sales_call': 'Analisi Call Sales',
+  'nav.stock': 'Stock',
 
   // ── Header ────────────────────────────────────────────────────────────
   'header.subtitle': 'Dashboard B2C + B2B',
@@ -153,7 +158,6 @@ const it: Dict = {
   'geo.ai_placeholder':      'Clicca "Genera Analisi" per ottenere insight AI sulla stagionalità di vendita, analisi prodotti per paese e raccomandazioni strategiche.',
 
   // ── Product Analysis ─────────────────────────────────────────────────
-  'nav.products':                 'Analisi Prodotti',
   'products.title':               'Analisi per Prodotto',
   'products.subtitle':            'Fatturato mensile B2C + B2B per collezione · Peso % sul totale',
   'products.kpi.total':           'Fatturato Totale',
@@ -178,6 +182,12 @@ const en: Dict = {
   'nav.meta':   'Meta Ads',
   'nav.budget': 'Budget 2026',
   'nav.geo':    'Geo Insights',
+  'nav.products': 'Product Analysis',
+  'nav.b2c_customers': 'B2C Customers',
+  'nav.b2b_analysis': 'B2B Analysis',
+  'nav.b2c_analysis': 'B2C Analysis',
+  'nav.sales_call': 'Sales Call Analysis',
+  'nav.stock': 'Stock',
 
   'header.subtitle': 'B2C + B2B Dashboard',
 
@@ -312,7 +322,7 @@ const en: Dict = {
   'geo.products_title':      '{country} — Top products',
   'geo.ai_placeholder':      'Click "Generate Analysis" to get AI insights on sales seasonality, product analysis by country and strategic recommendations.',
 
-  'nav.products':                 'Product Analysis',
+  // (nav.products already defined above)
   'products.title':               'Product Analysis',
   'products.subtitle':            'Monthly B2C + B2B revenue by collection · % weight on total',
   'products.kpi.total':           'Total Revenue',
@@ -337,6 +347,12 @@ const de: Dict = {
   'nav.meta':   'Meta Ads',
   'nav.budget': 'Budget 2026',
   'nav.geo':    'Geo-Einblicke',
+  'nav.products': 'Produktanalyse',
+  'nav.b2c_customers': 'B2C-Kunden',
+  'nav.b2b_analysis': 'B2B-Analyse',
+  'nav.b2c_analysis': 'B2C-Analyse',
+  'nav.sales_call': 'Vertriebsanruf-Analyse',
+  'nav.stock': 'Bestand',
 
   'header.subtitle': 'B2C + B2B Dashboard',
 
@@ -471,7 +487,7 @@ const de: Dict = {
   'geo.products_title':      '{country} — Meistverkaufte Produkte',
   'geo.ai_placeholder':      'Klicken Sie auf "Analyse erstellen", um KI-Einblicke zur Verkaufssaisonalität, Produktanalyse nach Land und strategische Empfehlungen zu erhalten.',
 
-  'nav.products':                 'Produktanalyse',
+  // (nav.products already defined above)
   'products.title':               'Produktanalyse',
   'products.subtitle':            'Monatl. B2C + B2B Umsatz nach Kollektion · % Anteil am Gesamtumsatz',
   'products.kpi.total':           'Gesamtumsatz',
