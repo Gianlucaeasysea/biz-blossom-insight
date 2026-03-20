@@ -5,6 +5,7 @@ import {
 } from 'recharts';
 import { DashboardHeader } from '@/components/dashboard/DashboardHeader';
 import { NavLink } from '@/components/NavLink';
+import { DraggableNav } from '@/components/DraggableNav';
 import { useShopifyOrders } from '@/hooks/useShopifyOrders';
 import { useShopifySalesSummary } from '@/hooks/useShopifySalesSummary';
 import { useGoogleSheetsOrders } from '@/hooks/useGoogleSheetsOrders';

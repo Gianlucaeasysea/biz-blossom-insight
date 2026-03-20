@@ -2,6 +2,7 @@ import { useState, useMemo, useCallback } from 'react';
 import { subDays, format, differenceInDays, eachMonthOfInterval, startOfMonth } from 'date-fns';
 import { DashboardHeader } from '@/components/dashboard/DashboardHeader';
 import { NavLink } from '@/components/NavLink';
+import { DraggableNav } from '@/components/DraggableNav';
 import { useShopifyOrders } from '@/hooks/useShopifyOrders';
 import { useShopifySalesSummary } from '@/hooks/useShopifySalesSummary';
 import { useLanguage } from '@/contexts/LanguageContext';

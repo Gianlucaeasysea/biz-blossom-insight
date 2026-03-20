@@ -2,6 +2,7 @@ import { useState, useMemo, useCallback } from 'react';
 import { subDays, format, differenceInDays } from 'date-fns';
 import { DashboardHeader } from '@/components/dashboard/DashboardHeader';
 import { NavLink } from '@/components/NavLink';
+import { DraggableNav } from '@/components/DraggableNav';
 import { useGoogleSheetsOrders } from '@/hooks/useGoogleSheetsOrders';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { Order } from '@/types/analytics';

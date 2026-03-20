@@ -3,6 +3,7 @@ import { subDays, format, differenceInDays } from 'date-fns';
 import { enUS } from 'date-fns/locale';
 import { DashboardHeader } from '@/components/dashboard/DashboardHeader';
 import { NavLink } from '@/components/NavLink';
+import { DraggableNav } from '@/components/DraggableNav';
 import { useShopifyOrders } from '@/hooks/useShopifyOrders';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { Order } from '@/types/analytics';

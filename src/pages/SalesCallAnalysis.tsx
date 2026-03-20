@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { DraggableNav } from '@/components/DraggableNav';
 import { DashboardHeader } from '@/components/dashboard/DashboardHeader';
 import { NavLink } from '@/components/NavLink';
 import { useShopifyOrders } from '@/hooks/useShopifyOrders';
