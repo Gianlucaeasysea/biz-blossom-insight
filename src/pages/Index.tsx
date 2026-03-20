@@ -306,7 +306,7 @@ export default function Index() {
         ═══════════════════════════════════════════════════════ */}
         <div>
           <SectionHeader label={t('section.overview')} />
-          <div className="grid grid-cols-1 xl:grid-cols-[1fr_260px] gap-4">
+          <div className="grid grid-cols-1 xl:grid-cols-[1fr_260px] gap-3 sm:gap-4">
 
             {/* KPI grid left */}
             <div className="space-y-3">
