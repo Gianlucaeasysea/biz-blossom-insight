@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react';
 import { Target, Pencil, Check, X } from 'lucide-react';
 import { format, getDaysInMonth } from 'date-fns';
-import { it } from 'date-fns/locale';
+import { it as itLocale, enUS, de as deLocale } from 'date-fns/locale';
 import { BUDGET_ANNUAL_TARGET, BUDGET_MONTHLY_TARGETS } from '@/lib/budget-targets';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 interface RevenueTargetProps {
   currentRevenue: number;
@@ -10,7 +11,6 @@ interface RevenueTargetProps {
 }
 
 const STORAGE_KEY = 'dashboard-revenue-target';
-const MONTHS_IT = ['Gen','Feb','Mar','Apr','Mag','Giu','Lug','Ago','Set','Ott','Nov','Dic'];
 
 const fmt  = (v: number) =>
   new Intl.NumberFormat('it-IT', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 }).format(v);
@@ -18,6 +18,8 @@ const fmtK = (v: number) =>
   v >= 1000 ? `€${(v / 1000).toFixed(0)}k` : `€${Math.round(v)}`;
 
 export function RevenueTarget({ currentRevenue, monthlyRevenues }: RevenueTargetProps) {
+  const { t, lang, months } = useLanguage();
+  const dateLocale = lang === 'de' ? deLocale : lang === 'en' ? enUS : itLocale;
   const [target, setTarget] = useState(() => {
     const saved = localStorage.getItem(STORAGE_KEY);
     return saved ? parseFloat(saved) : BUDGET_ANNUAL_TARGET;
@@ -90,9 +92,9 @@ export function RevenueTarget({ currentRevenue, monthlyRevenues }: RevenueTarget
           </div>
           <div>
             <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground leading-none">
-              Obiettivo Fatturato Annuo
+              {t('target.title')}
               <span className="ml-1.5 normal-case tracking-normal font-normal opacity-60">
-                1 Gen – {format(now, 'd MMM yyyy', { locale: it })}
+                {t('target.from')} – {format(now, 'd MMM yyyy', { locale: dateLocale })}
               </span>
             </p>
             <div className="mt-0.5">
@@ -118,29 +120,29 @@ export function RevenueTarget({ currentRevenue, monthlyRevenues }: RevenueTarget
 
         {/* Consuntivo + % annuale + % YTD */}
         <div className="flex items-baseline gap-2">
-          <span className="text-xs text-muted-foreground">Consuntivo</span>
+          <span className="text-xs text-muted-foreground">{t('target.actual')}</span>
           <span className="text-base font-bold font-mono text-foreground">{fmt(currentRevenue)}</span>
           <span className="text-sm font-bold font-mono" style={{ color: globalColor }}>{pctTotal.toFixed(1)}%</span>
-          <span className="text-[10px] text-muted-foreground ml-1">annuo</span>
+          <span className="text-[10px] text-muted-foreground ml-1">{t('target.annual')}</span>
           <span className="mx-1 text-muted-foreground/40">|</span>
           <span className="text-sm font-bold font-mono" style={{ color: ytdPct >= 100 ? 'hsl(168,70%,42%)' : ytdPct >= 80 ? 'hsl(42,96%,48%)' : 'hsl(0,65%,52%)' }}>
             {ytdPct.toFixed(1)}%
           </span>
-          <span className="text-[10px] text-muted-foreground">vs budget YTD ({fmtK(ytdTarget)})</span>
+          <span className="text-[10px] text-muted-foreground">{t('target.ytd')} ({fmtK(ytdTarget)})</span>
         </div>
 
         {/* Mancante */}
         <div className="hidden sm:block text-right shrink-0">
-          <p className="text-[10px] text-muted-foreground uppercase tracking-widest leading-none">Mancante</p>
+          <p className="text-[10px] text-muted-foreground uppercase tracking-widest leading-none">{t('target.remaining')}</p>
           <p className="text-base font-bold font-mono text-foreground mt-0.5">
-            {currentRevenue >= target ? '🎯 Raggiunto!' : fmt(target - currentRevenue)}
+            {currentRevenue >= target ? t('target.achieved') : fmt(target - currentRevenue)}
           </p>
         </div>
       </div>
 
       {/* ── 12-month segmented bar (variable width by budget) ────── */}
       <div className="flex gap-0.5">
-        {MONTHS_IT.map((label, i) => {
+        {months.map((label, i) => {
           const actual   = monthlyRevenues?.[i] ?? 0;
           const moTgt    = monthlyTgts[i];
           const fp       = fillPct(i, actual);
@@ -163,7 +165,7 @@ export function RevenueTarget({ currentRevenue, monthlyRevenues }: RevenueTarget
               <div className="h-5 flex items-end justify-center">
                 {isCurr && (
                   <span className="text-[9px] font-bold tracking-widest text-primary bg-primary/15 rounded px-1.5 py-0.5 leading-none whitespace-nowrap">
-                    ORA
+                    {t('target.now')}
                   </span>
                 )}
               </div>

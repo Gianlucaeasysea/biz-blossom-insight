@@ -6,6 +6,7 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContaine
 import ReactMarkdown from 'react-markdown';
 import { DashboardHeader } from '@/components/dashboard/DashboardHeader';
 import { NavLink } from '@/components/NavLink';
+import { useLanguage } from '@/contexts/LanguageContext';
 import { useShopifyOrders } from '@/hooks/useShopifyOrders';
 import { Order } from '@/types/analytics';
 import { Globe, Sparkles, Loader2, TrendingUp, Calendar as CalendarIcon, Ship, Anchor, ChevronDown, Package } from 'lucide-react';
@@ -69,6 +70,7 @@ interface CountryAgg { country: string; netSales: number; orders: number; pct: n
 interface ProductByCountry { product: string; sku: string; countries: Record<string, { qty: number; netSales: number }>; totalQty: number; totalNetSales: number; }
 
 export default function GeoInsights() {
+  const { t } = useLanguage();
   // ── Date range state ──
   const [dateRange, setDateRange] = useState<{ start: Date; end: Date }>({
     start: startOfYear(new Date()),
@@ -330,10 +332,10 @@ export default function GeoInsights() {
 
         {/* Nav */}
         <div className="flex flex-wrap items-center gap-1.5">
-          <NavLink to="/" className="px-3.5 py-1.5 rounded-lg text-xs font-semibold bg-muted text-muted-foreground hover:text-foreground transition-colors" activeClassName="bg-primary text-primary-foreground">Sales Dashboard</NavLink>
-          <NavLink to="/meta-ads" className="px-3.5 py-1.5 rounded-lg text-xs font-semibold bg-muted text-muted-foreground hover:text-foreground transition-colors" activeClassName="bg-primary text-primary-foreground">Meta Ads</NavLink>
-          <NavLink to="/budget-2026" className="px-3.5 py-1.5 rounded-lg text-xs font-semibold bg-muted text-muted-foreground hover:text-foreground transition-colors" activeClassName="bg-primary text-primary-foreground">Budget 2026</NavLink>
-          <NavLink to="/geo-insights" className="px-3.5 py-1.5 rounded-lg text-xs font-semibold bg-muted text-muted-foreground hover:text-foreground transition-colors" activeClassName="bg-primary text-primary-foreground">Geo Insights</NavLink>
+          <NavLink to="/" className="px-3.5 py-1.5 rounded-lg text-xs font-semibold bg-muted text-muted-foreground hover:text-foreground transition-colors" activeClassName="bg-primary text-primary-foreground">{t('nav.sales')}</NavLink>
+          <NavLink to="/meta-ads" className="px-3.5 py-1.5 rounded-lg text-xs font-semibold bg-muted text-muted-foreground hover:text-foreground transition-colors" activeClassName="bg-primary text-primary-foreground">{t('nav.meta')}</NavLink>
+          <NavLink to="/budget-2026" className="px-3.5 py-1.5 rounded-lg text-xs font-semibold bg-muted text-muted-foreground hover:text-foreground transition-colors" activeClassName="bg-primary text-primary-foreground">{t('nav.budget')}</NavLink>
+          <NavLink to="/geo-insights" className="px-3.5 py-1.5 rounded-lg text-xs font-semibold bg-muted text-muted-foreground hover:text-foreground transition-colors" activeClassName="bg-primary text-primary-foreground">{t('nav.geo')}</NavLink>
           <NavLink to="/geo-insights" className="px-3.5 py-1.5 rounded-lg text-xs font-semibold bg-muted text-muted-foreground hover:text-foreground transition-colors" activeClassName="bg-primary text-primary-foreground">
             <span className="flex items-center gap-1.5"><Globe className="w-3.5 h-3.5" />Insight Geografia</span>
           </NavLink>
@@ -346,8 +348,8 @@ export default function GeoInsights() {
               <Globe className="w-5 h-5 text-primary" />
             </div>
             <div>
-              <h2 className="text-lg font-bold text-foreground">Insight Geografia & Stagionalità</h2>
-              <p className="text-xs text-muted-foreground">Analisi Net Sales B2C Shopify per paese · Correlazione con stagione nautica</p>
+              <h2 className="text-lg font-bold text-foreground">{t('geo.title')}</h2>
+              <p className="text-xs text-muted-foreground">{t('geo.subtitle')}</p>
             </div>
           </div>
 
@@ -412,16 +414,16 @@ export default function GeoInsights() {
                 <p className="text-xl font-bold text-foreground">{fmt(totalNetSales)}</p>
               </div>
               <div className="glass-card p-4">
-                <p className="text-[10px] uppercase tracking-wider text-muted-foreground mb-1">Paesi attivi</p>
+                <p className="text-[10px] uppercase tracking-wider text-muted-foreground mb-1">{t('geo.kpi.countries')}</p>
                 <p className="text-xl font-bold text-foreground">{countryData.length}</p>
               </div>
               <div className="glass-card p-4">
-                <p className="text-[10px] uppercase tracking-wider text-muted-foreground mb-1">Top Paese</p>
+                <p className="text-[10px] uppercase tracking-wider text-muted-foreground mb-1">{t('geo.kpi.top_country')}</p>
                 <p className="text-xl font-bold text-foreground">{countryData[0]?.country ?? '—'}</p>
                 <p className="text-[10px] text-muted-foreground">{countryData[0] ? `${countryData[0].pct.toFixed(1)}%` : ''}</p>
               </div>
               <div className="glass-card p-4">
-                <p className="text-[10px] uppercase tracking-wider text-muted-foreground mb-1">Prodotti venduti</p>
+                <p className="text-[10px] uppercase tracking-wider text-muted-foreground mb-1">{t('geo.kpi.products')}</p>
                 <p className="text-xl font-bold text-foreground">{productData.length}</p>
               </div>
             </div>
@@ -430,7 +432,7 @@ export default function GeoInsights() {
             <div className="glass-card p-4">
               <h3 className="text-sm font-semibold mb-3 flex items-center gap-2">
                 <TrendingUp className="w-4 h-4 text-primary" />
-                Net Sales B2C per Paese
+                {t('geo.section.by_country')}
               </h3>
               <div className="h-[300px]">
                 <ResponsiveContainer width="100%" height="100%">
@@ -458,7 +460,7 @@ export default function GeoInsights() {
             <div className="glass-card p-4">
               <h3 className="text-sm font-semibold mb-3 flex items-center gap-2">
                 <CalendarIcon className="w-4 h-4 text-accent" />
-                Heatmap Stagionalità per Paese (% vendite mensili)
+                {t('geo.section.heatmap')}
               </h3>
               <div className="overflow-x-auto">
                 <table className="w-full text-xs">
@@ -594,7 +596,7 @@ export default function GeoInsights() {
             <div className="glass-card p-4">
               <h3 className="text-sm font-semibold mb-3 flex items-center gap-2">
                 <Package className="w-4 h-4 text-accent" />
-                Matrice Prodotti × Paesi (Top 15 prodotti, Net Sales)
+                {t('geo.section.matrix')}
               </h3>
               <div className="overflow-x-auto">
                 <table className="w-full text-xs">
@@ -642,7 +644,7 @@ export default function GeoInsights() {
             <div className="glass-card p-4">
               <h3 className="text-sm font-semibold mb-3 flex items-center gap-2">
                 <Anchor className="w-4 h-4 text-muted-foreground" />
-                Confronto Stagionale Top Paesi
+                {t('geo.section.seasonal')}
               </h3>
               <div className="h-[300px]">
                 <ResponsiveContainer width="100%" height="100%">
@@ -665,7 +667,7 @@ export default function GeoInsights() {
               <div className="flex items-center justify-between mb-4">
                 <h3 className="text-sm font-semibold flex items-center gap-2">
                   <Sparkles className="w-4 h-4 text-accent" />
-                  Analisi AI — Stagionalità, Prodotti & Raccomandazioni
+                  {t('geo.section.ai')}
                 </h3>
                 <button
                   onClick={generateInsights}
@@ -673,7 +675,7 @@ export default function GeoInsights() {
                   className="px-4 py-1.5 rounded-lg text-xs font-semibold bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-50 transition-colors flex items-center gap-1.5"
                 >
                   {aiLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Sparkles className="w-3.5 h-3.5" />}
-                  {aiLoading ? 'Analisi in corso...' : 'Genera Analisi'}
+                  {aiLoading ? t('geo.btn.generating') : t('geo.btn.generate')}
                 </button>
               </div>
 
@@ -692,7 +694,7 @@ export default function GeoInsights() {
 
             {/* ── Country table ── */}
             <div className="glass-card p-4">
-              <h3 className="text-sm font-semibold mb-3">Dettaglio Paesi — Net Sales B2C</h3>
+              <h3 className="text-sm font-semibold mb-3">{t('geo.section.detail')}</h3>
               <div className="overflow-x-auto">
                 <table className="data-table w-full">
                   <thead>

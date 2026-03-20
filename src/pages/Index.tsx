@@ -29,8 +29,10 @@ import {
   getTop3ProductsByQty,
 } from '@/lib/mock-data';
 import { Loader2, AlertCircle, Package } from 'lucide-react';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 export default function Index() {
+  const { t } = useLanguage();
   const [customerTypeFilter, setCustomerTypeFilter] = useState<CustomerType | 'all'>('all');
   const [dateRange, setDateRange] = useState(() => ({
     start: subDays(new Date(), 30),
@@ -269,10 +271,10 @@ export default function Index() {
         {/* ── Nav + Filters bar ───────────────────────────────── */}
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div className="flex gap-1.5">
-            <NavLink to="/" className="px-3.5 py-1.5 rounded-lg text-xs font-semibold bg-muted text-muted-foreground hover:text-foreground transition-colors" activeClassName="bg-primary text-primary-foreground">Sales Dashboard</NavLink>
-            <NavLink to="/meta-ads" className="px-3.5 py-1.5 rounded-lg text-xs font-semibold bg-muted text-muted-foreground hover:text-foreground transition-colors" activeClassName="bg-primary text-primary-foreground">Meta Ads</NavLink>
-            <NavLink to="/budget-2026" className="px-3.5 py-1.5 rounded-lg text-xs font-semibold bg-muted text-muted-foreground hover:text-foreground transition-colors" activeClassName="bg-primary text-primary-foreground">Budget 2026</NavLink>
-            <NavLink to="/geo-insights" className="px-3.5 py-1.5 rounded-lg text-xs font-semibold bg-muted text-muted-foreground hover:text-foreground transition-colors" activeClassName="bg-primary text-primary-foreground">Geo Insights</NavLink>
+            <NavLink to="/" className="px-3.5 py-1.5 rounded-lg text-xs font-semibold bg-muted text-muted-foreground hover:text-foreground transition-colors" activeClassName="bg-primary text-primary-foreground">{t('nav.sales')}</NavLink>
+            <NavLink to="/meta-ads" className="px-3.5 py-1.5 rounded-lg text-xs font-semibold bg-muted text-muted-foreground hover:text-foreground transition-colors" activeClassName="bg-primary text-primary-foreground">{t('nav.meta')}</NavLink>
+            <NavLink to="/budget-2026" className="px-3.5 py-1.5 rounded-lg text-xs font-semibold bg-muted text-muted-foreground hover:text-foreground transition-colors" activeClassName="bg-primary text-primary-foreground">{t('nav.budget')}</NavLink>
+            <NavLink to="/geo-insights" className="px-3.5 py-1.5 rounded-lg text-xs font-semibold bg-muted text-muted-foreground hover:text-foreground transition-colors" activeClassName="bg-primary text-primary-foreground">{t('nav.geo')}</NavLink>
           </div>
           <FilterBar customerTypeFilter={customerTypeFilter} onCustomerTypeChange={setCustomerTypeFilter} dateRange={dateRange} onDateRangeChange={setDateRange} />
         </div>
@@ -293,7 +295,7 @@ export default function Index() {
         {isLoading && (
           <div className="flex items-center justify-center gap-2 py-16">
             <Loader2 className="w-5 h-5 animate-spin text-primary" />
-            <p className="text-sm text-muted-foreground">Loading data...</p>
+            <p className="text-sm text-muted-foreground">{t('common.loading')}</p>
           </div>
         )}
 
@@ -301,7 +303,7 @@ export default function Index() {
             OVERVIEW — KPI + Pie + Top 3 + B2C Breakdown
         ═══════════════════════════════════════════════════════ */}
         <div>
-          <SectionHeader label="Overview — Main KPIs" />
+          <SectionHeader label={t('section.overview')} />
           <div className="grid grid-cols-1 xl:grid-cols-[1fr_260px] gap-4">
 
             {/* KPI grid left */}
@@ -329,10 +331,10 @@ export default function Index() {
                   <div className="absolute top-0 left-0 right-0 h-px opacity-50" style={{ background: 'linear-gradient(90deg, hsl(215,85%,50%), transparent)' }} />
                   <div className="flex items-center gap-1.5 mb-2">
                     <Package className="w-3 h-3" style={{ color: 'hsl(215,85%,60%)' }} />
-                    <p className="text-[10px] text-muted-foreground font-semibold uppercase tracking-[0.12em]">Top 3 Products</p>
+                    <p className="text-[10px] text-muted-foreground font-semibold uppercase tracking-[0.12em]">{t('kpi.top3')}</p>
                   </div>
                   <div className="space-y-1.5">
-                    {top3Products.length === 0 && <p className="text-xs text-muted-foreground">No data</p>}
+                    {top3Products.length === 0 && <p className="text-xs text-muted-foreground">{t('common.no_data')}</p>}
                     {top3Products.map((p, i) => (
                       <div key={p.sku} className="flex items-center gap-1.5">
                         <span className="text-[9px] font-bold text-muted-foreground/60 w-3 shrink-0 font-mono">{i + 1}</span>
@@ -347,9 +349,9 @@ export default function Index() {
 
                 {/* Torta B2C / B2B */}
                 <div className="kpi-card relative overflow-hidden" style={{ borderLeft: '3px solid hsl(220,20%,30%)' }}>
-                  <p className="text-[10px] text-muted-foreground font-semibold uppercase tracking-[0.12em] mb-2">Mix B2C / B2B</p>
+                  <p className="text-[10px] text-muted-foreground font-semibold uppercase tracking-[0.12em] mb-2">{t('kpi.mix')}</p>
                   {totalVal === 0 ? (
-                    <p className="text-xs text-muted-foreground">No data</p>
+                    <p className="text-xs text-muted-foreground">{t('common.no_data')}</p>
                   ) : (
                     <div className="flex items-center gap-3">
                       <div className="w-14 h-14 shrink-0">
@@ -395,7 +397,7 @@ export default function Index() {
             ANDAMENTO ORDINI
         ═══════════════════════════════════════════════════════ */}
         <div>
-          <SectionHeader label="Orders Trend" />
+          <SectionHeader label={t('section.orders_trend')} />
           <OrdersTrendChart orders={scaledOrders} allOrders={allOrders} dateRange={dateRange} />
         </div>
 
@@ -403,7 +405,7 @@ export default function Index() {
             DETTAGLIO SKU — B2C poi B2B poi Combined
         ═══════════════════════════════════════════════════════ */}
         <div>
-          <SectionHeader label="SKU Sales Detail" />
+          <SectionHeader label={t('section.sku_detail')} />
           {/* B2C + B2B side by side, Combined below */}
           <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 mb-4">
             <B2CSkuTable data={b2cSkuData} />
@@ -416,7 +418,7 @@ export default function Index() {
             MAPPA B2C
         ═══════════════════════════════════════════════════════ */}
         <div>
-          <SectionHeader label="Geographic Distribution" badge="B2C" badgeClass="badge-b2c" />
+          <SectionHeader label={t('section.geo')} badge="B2C" badgeClass="badge-b2c" />
           <B2CSalesHeatmap orders={scaledOrders} dateRange={dateRange} />
         </div>
 
@@ -425,11 +427,11 @@ export default function Index() {
         ═══════════════════════════════════════════════════════ */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
           <div>
-            <SectionHeader label="Sales by Collection" />
+            <SectionHeader label={t('section.by_collection')} />
             <CollectionBreakdown orders={scaledOrders} />
           </div>
           <div>
-            <SectionHeader label="Sales by Country" />
+            <SectionHeader label={t('section.by_country')} />
             <CountryBreakdown orders={scaledOrders} allSkus={allSkus} />
           </div>
         </div>
@@ -438,7 +440,7 @@ export default function Index() {
             TREND VENDITE
         ═══════════════════════════════════════════════════════ */}
         <div>
-          <SectionHeader label="Sales Trend Over Time" />
+          <SectionHeader label={t('section.sales_trend')} />
           <SalesTrendChart orders={scaledOrders} dateRange={dateRange} />
         </div>
 

@@ -14,6 +14,7 @@ import { Badge } from '@/components/ui/badge';
 import { CalendarIcon, Download, Loader2, AlertCircle, Image as ImageIcon, ChevronDown, Link2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { NavLink } from '@/components/NavLink';
+import { useLanguage } from '@/contexts/LanguageContext';
 import { downloadCsv } from '@/lib/csv-export';
 import {
   ResponsiveContainer, LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend,
@@ -49,6 +50,7 @@ const categoryBadgeColors: Record<string, string> = {
 };
 
 export default function MetaAds() {
+  const { t } = useLanguage();
   const [dateRange, setDateRange] = useState(() => ({
     start: subDays(new Date(), 30),
     end: new Date(),
@@ -359,10 +361,10 @@ export default function MetaAds() {
       <DashboardHeader onRefresh={() => refetch()} isLoading={isFetching} />
 
       <div className="flex gap-2 mb-6">
-        <NavLink to="/" className="px-4 py-2 rounded-lg text-sm font-medium bg-secondary text-secondary-foreground hover:bg-secondary/80 transition-colors" activeClassName="bg-primary text-primary-foreground">Sales Dashboard</NavLink>
-        <NavLink to="/meta-ads" className="px-4 py-2 rounded-lg text-sm font-medium bg-secondary text-secondary-foreground hover:bg-secondary/80 transition-colors" activeClassName="bg-primary text-primary-foreground">Meta Ads</NavLink>
-        <NavLink to="/budget-2026" className="px-4 py-2 rounded-lg text-sm font-medium bg-secondary text-secondary-foreground hover:bg-secondary/80 transition-colors" activeClassName="bg-primary text-primary-foreground">Budget 2026</NavLink>
-        <NavLink to="/geo-insights" className="px-4 py-2 rounded-lg text-sm font-medium bg-secondary text-secondary-foreground hover:bg-secondary/80 transition-colors" activeClassName="bg-primary text-primary-foreground">Geo Insights</NavLink>
+        <NavLink to="/" className="px-4 py-2 rounded-lg text-sm font-medium bg-secondary text-secondary-foreground hover:bg-secondary/80 transition-colors" activeClassName="bg-primary text-primary-foreground">{t('nav.sales')}</NavLink>
+        <NavLink to="/meta-ads" className="px-4 py-2 rounded-lg text-sm font-medium bg-secondary text-secondary-foreground hover:bg-secondary/80 transition-colors" activeClassName="bg-primary text-primary-foreground">{t('nav.meta')}</NavLink>
+        <NavLink to="/budget-2026" className="px-4 py-2 rounded-lg text-sm font-medium bg-secondary text-secondary-foreground hover:bg-secondary/80 transition-colors" activeClassName="bg-primary text-primary-foreground">{t('nav.budget')}</NavLink>
+        <NavLink to="/geo-insights" className="px-4 py-2 rounded-lg text-sm font-medium bg-secondary text-secondary-foreground hover:bg-secondary/80 transition-colors" activeClassName="bg-primary text-primary-foreground">{t('nav.geo')}</NavLink>
       </div>
 
       {/* Filters */}
@@ -387,7 +389,7 @@ export default function MetaAds() {
         <Select value={campaignFilter} onValueChange={setCampaignFilter}>
           <SelectTrigger className="w-[280px]"><SelectValue placeholder="Tutte le campagne" /></SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">Tutte le campagne</SelectItem>
+            <SelectItem value="all">{t('meta.all_campaigns')}</SelectItem>
             {campaignNames.map(name => (<SelectItem key={name} value={name}>{name}</SelectItem>))}
           </SelectContent>
         </Select>
@@ -396,7 +398,7 @@ export default function MetaAds() {
       {isLoading && (
         <div className="flex items-center justify-center h-64">
           <Loader2 className="w-8 h-8 animate-spin text-primary" />
-          <span className="ml-3 text-muted-foreground">Loading Meta Ads data...</span>
+          <span className="ml-3 text-muted-foreground">{t('meta.loading')}</span>
         </div>
       )}
 
@@ -411,11 +413,11 @@ export default function MetaAds() {
         <>
           {/* KPIs */}
           <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-4 mb-8">
-            <KPICard data={{ label: 'Total Spend', value: kpis.totalSpend, trend: 'neutral', format: 'currency' }} />
-            <KPICard data={{ label: 'Impressioni', value: kpis.totalImpressions, trend: 'neutral', format: 'number' }} />
+            <KPICard data={{ label: t('meta.kpi.spend'), value: kpis.totalSpend, trend: 'neutral', format: 'currency' }} />
+            <KPICard data={{ label: t('meta.kpi.impressions'), value: kpis.totalImpressions, trend: 'neutral', format: 'number' }} />
             <KPICard data={{ label: 'Click', value: kpis.totalClicks, trend: 'neutral', format: 'number' }} />
             <KPICard data={{ label: 'CTR', value: kpis.ctr, trend: 'neutral', format: 'percent' }} />
-            <KPICard data={{ label: 'Acquisti', value: kpis.totalPurchases, trend: 'neutral', format: 'number' }} />
+            <KPICard data={{ label: t('meta.kpi.purchases'), value: kpis.totalPurchases, trend: 'neutral', format: 'number' }} />
             <KPICard data={{ label: 'ROAS', value: kpis.roas, trend: kpis.roas >= 1 ? 'up' : 'down', format: 'number' }} />
             <KPICard data={{ label: 'MER (B2C Net)', value: totalMER, trend: totalMER >= 1 ? 'up' : 'down', format: 'number' }} />
           </div>
@@ -424,7 +426,7 @@ export default function MetaAds() {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
             <Card>
               <CardHeader className="flex flex-row items-center justify-between pb-2">
-                <CardTitle className="text-sm font-medium">Spesa Giornaliera</CardTitle>
+                <CardTitle className="text-sm font-medium">{t('meta.chart.daily_spend')}</CardTitle>
                 <Button variant="ghost" size="icon" onClick={handleExportDaily}><Download className="w-4 h-4" /></Button>
               </CardHeader>
               <CardContent>
@@ -440,7 +442,7 @@ export default function MetaAds() {
               </CardContent>
             </Card>
             <Card>
-              <CardHeader className="pb-2"><CardTitle className="text-sm font-medium">Click & CTR</CardTitle></CardHeader>
+              <CardHeader className="pb-2"><CardTitle className="text-sm font-medium">{t('meta.chart.click_ctr')}</CardTitle></CardHeader>
               <CardContent>
                 <ResponsiveContainer width="100%" height={300}>
                   <LineChart data={chartData}>
@@ -508,7 +510,7 @@ export default function MetaAds() {
           {/* Campaigns Table */}
           <Card className="mb-6">
             <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium">Performance Campagne</CardTitle>
+              <CardTitle className="text-sm font-medium">{t('meta.chart.campaigns')}</CardTitle>
               <Button variant="ghost" size="icon" onClick={handleExportCampaigns}><Download className="w-4 h-4" /></Button>
             </CardHeader>
             <CardContent>
@@ -516,13 +518,13 @@ export default function MetaAds() {
                 <table className="w-full text-sm">
                   <thead>
                     <tr className="border-b border-border">
-                      <th className="text-left py-3 px-2 text-muted-foreground font-medium">Campagna</th>
-                      <th className="text-left py-3 px-2 text-muted-foreground font-medium">Categoria</th>
-                      <th className="text-right py-3 px-2 text-muted-foreground font-medium">Spesa</th>
-                      <th className="text-right py-3 px-2 text-muted-foreground font-medium">Impr.</th>
+                      <th className="text-left py-3 px-2 text-muted-foreground font-medium">{t('meta.col.campaign')}</th>
+                      <th className="text-left py-3 px-2 text-muted-foreground font-medium">{t('meta.col.category')}</th>
+                      <th className="text-right py-3 px-2 text-muted-foreground font-medium">{t('meta.col.spend')}</th>
+                      <th className="text-right py-3 px-2 text-muted-foreground font-medium">{t('meta.col.impressions')}</th>
                       <th className="text-right py-3 px-2 text-muted-foreground font-medium">Click</th>
                       <th className="text-right py-3 px-2 text-muted-foreground font-medium">CTR</th>
-                      <th className="text-right py-3 px-2 text-muted-foreground font-medium">Acquisti</th>
+                      <th className="text-right py-3 px-2 text-muted-foreground font-medium">{t('meta.col.purchases')}</th>
                       <th className="text-right py-3 px-2 text-muted-foreground font-medium">ROAS</th>
                     </tr>
                   </thead>
@@ -554,7 +556,7 @@ export default function MetaAds() {
           {/* Adset Table */}
           <Card className="mb-6">
             <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium">Gruppi di Inserzioni (Ad Sets)</CardTitle>
+              <CardTitle className="text-sm font-medium">{t('meta.chart.adsets')}</CardTitle>
               <Button variant="ghost" size="icon" onClick={handleExportAdsets}><Download className="w-4 h-4" /></Button>
             </CardHeader>
             <CardContent>
@@ -563,13 +565,13 @@ export default function MetaAds() {
                   <thead>
                     <tr className="border-b border-border">
                       <th className="text-left py-3 px-2 text-muted-foreground font-medium">Gruppo Inserzioni</th>
-                      <th className="text-left py-3 px-2 text-muted-foreground font-medium">Campagna</th>
-                      <th className="text-left py-3 px-2 text-muted-foreground font-medium">Categoria</th>
-                      <th className="text-right py-3 px-2 text-muted-foreground font-medium">Spesa</th>
-                      <th className="text-right py-3 px-2 text-muted-foreground font-medium">Impr.</th>
+                      <th className="text-left py-3 px-2 text-muted-foreground font-medium">{t('meta.col.campaign')}</th>
+                      <th className="text-left py-3 px-2 text-muted-foreground font-medium">{t('meta.col.category')}</th>
+                      <th className="text-right py-3 px-2 text-muted-foreground font-medium">{t('meta.col.spend')}</th>
+                      <th className="text-right py-3 px-2 text-muted-foreground font-medium">{t('meta.col.impressions')}</th>
                       <th className="text-right py-3 px-2 text-muted-foreground font-medium">Click</th>
                       <th className="text-right py-3 px-2 text-muted-foreground font-medium">CTR</th>
-                      <th className="text-right py-3 px-2 text-muted-foreground font-medium">Acquisti</th>
+                      <th className="text-right py-3 px-2 text-muted-foreground font-medium">{t('meta.col.purchases')}</th>
                       <th className="text-right py-3 px-2 text-muted-foreground font-medium">ROAS</th>
                     </tr>
                   </thead>
@@ -602,7 +604,7 @@ export default function MetaAds() {
           {/* MER Table - B2C Net Sales only */}
           <Card className="mb-6">
             <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium">MER per Categoria (Net Sales B2C)</CardTitle>
+              <CardTitle className="text-sm font-medium">{t('meta.chart.mer_cat')}</CardTitle>
               <Button variant="ghost" size="icon" onClick={handleExportMER}><Download className="w-4 h-4" /></Button>
             </CardHeader>
             <CardContent>
@@ -643,7 +645,7 @@ export default function MetaAds() {
           {/* UTM Content → Net Sales B2C */}
           <Card className="mb-6">
             <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium">Net Sales B2C per UTM Content</CardTitle>
+              <CardTitle className="text-sm font-medium">{t('meta.chart.utm_net')}</CardTitle>
               <Button variant="ghost" size="icon" onClick={handleExportUtmContent}><Download className="w-4 h-4" /></Button>
             </CardHeader>
             <CardContent>
@@ -685,7 +687,7 @@ export default function MetaAds() {
           {/* Adset MER: ad set spend vs B2C net sales by category */}
           <Card className="mb-6">
             <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium">MER per Gruppo di Inserzione (Adset ↔ Net Sales B2C)</CardTitle>
+              <CardTitle className="text-sm font-medium">{t('meta.chart.mer_adset')}</CardTitle>
               <Button variant="ghost" size="icon" onClick={handleExportAdsetMer}><Download className="w-4 h-4" /></Button>
             </CardHeader>
             <CardContent>

@@ -8,6 +8,7 @@ import { useShopifyOrders } from '@/hooks/useShopifyOrders';
 import { useShopifySalesSummary } from '@/hooks/useShopifySalesSummary';
 import { getSkuCollection } from '@/lib/mock-data';
 import { Loader2, Target, TrendingUp, Calendar as CalIcon, Zap } from 'lucide-react';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 // ─── Static budget data ──────────────────────────────────────────────────────
 
@@ -86,6 +87,7 @@ const fmtK = (v: number) =>
 // ─── Component ───────────────────────────────────────────────────────────────
 
 export default function Budget2026() {
+  const { t, months: MONTHS_LANG } = useLanguage();
   const [yearStart] = useState(() => new Date(`${BUDGET_YEAR}-01-01T00:00:00Z`));
   const [today]     = useState(() => new Date());
 
@@ -161,7 +163,7 @@ export default function Budget2026() {
   const now = new Date();
   const currentMonth = now.getFullYear() === BUDGET_YEAR ? now.getMonth() : -1;
 
-  const monthlyChart = useMemo(() => MONTHS.map((month, i) => {
+  const monthlyChart = useMemo(() => MONTHS_LANG.map((month, i) => {
     const isPast = i <= currentMonth;
     const row: Record<string, number | string> = {
       month,
@@ -173,19 +175,19 @@ export default function Budget2026() {
       row[`${p.name}_budget`]  = !isPast ? (targets[p.name]?.[i] ?? 0)               : 0;
     });
     return row;
-  }), [actuals, targets, currentMonth]);
+  }), [actuals, targets, currentMonth, MONTHS_LANG]);
 
   // ── Ad Spend monthly budget ──────────────────────────────────────────────────
   const advTot2025 = RAW.advTotals.reduce((s, v) => s + v, 0);
   const advBudget  = RAW.advTotals.map(v => Math.round((v / advTot2025) * RAW.spendTarget));
-  const advChart   = MONTHS.map((month, i) => ({
+  const advChart   = MONTHS_LANG.map((month, i) => ({
     month,
     '2025 Actual': RAW.advTotals[i],
     '2026 Budget': advBudget[i],
   }));
 
   // ── MER chart ───────────────────────────────────────────────────────────────
-  const merChart = MONTHS.map((month, i) => ({
+  const merChart = MONTHS_LANG.map((month, i) => ({
     month,
     '2025 MER': RAW.mer[i],
   }));
@@ -218,26 +220,26 @@ export default function Budget2026() {
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
             <h1 className="text-lg font-bold text-foreground tracking-tight">Budget {BUDGET_YEAR}</h1>
-            <p className="text-[11px] text-muted-foreground mt-0.5">Revenue targets & YTD performance — Easysea</p>
+            <p className="text-[11px] text-muted-foreground mt-0.5">{t('budget.subtitle')}</p>
           </div>
           {isLoading && <Loader2 className="w-4 h-4 animate-spin text-primary" />}
         </div>
 
         {/* ── Nav ─────────────────────────────────────────────────────────── */}
         <div className="flex gap-1.5">
-          <NavLink to="/"           className={navCls} activeClassName={navActive}>Sales Dashboard</NavLink>
-          <NavLink to="/meta-ads"   className={navCls} activeClassName={navActive}>Meta Ads</NavLink>
-          <NavLink to="/budget-2026" className={navCls} activeClassName={navActive}>Budget 2026</NavLink>
-          <NavLink to="/geo-insights" className={navCls} activeClassName={navActive}>Geo Insights</NavLink>
+          <NavLink to="/"           className={navCls} activeClassName={navActive}>{t('nav.sales')}</NavLink>
+          <NavLink to="/meta-ads"   className={navCls} activeClassName={navActive}>{t('nav.meta')}</NavLink>
+          <NavLink to="/budget-2026" className={navCls} activeClassName={navActive}>{t('nav.budget')}</NavLink>
+          <NavLink to="/geo-insights" className={navCls} activeClassName={navActive}>{t('nav.geo')}</NavLink>
         </div>
 
         {/* ── KPI cards ───────────────────────────────────────────────────── */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
           {[
-            { label: '2026 Total Target',  value: fmtEur(totalTarget), icon: <Target className="w-3.5 h-3.5" />,     color: 'hsl(168,70%,42%)' },
-            { label: '2026 YTD Actual',    value: fmtEur(ytdActual),   icon: <TrendingUp className="w-3.5 h-3.5" />, color: 'hsl(215,85%,55%)' },
-            { label: '% Achieved',         value: `${pctDone.toFixed(1)}%`, icon: <Zap className="w-3.5 h-3.5" />,   color: pctDone >= 100 ? 'hsl(168,70%,42%)' : 'hsl(42,96%,48%)' },
-            { label: '2025 Reference',     value: fmtEur(total2025),   icon: <CalIcon className="w-3.5 h-3.5" />,   color: 'hsl(220,15%,55%)' },
+            { label: t('budget.kpi.total'), value: fmtEur(totalTarget), icon: <Target className="w-3.5 h-3.5" />,     color: 'hsl(168,70%,42%)' },
+            { label: t('budget.kpi.ytd'),  value: fmtEur(ytdActual),   icon: <TrendingUp className="w-3.5 h-3.5" />, color: 'hsl(215,85%,55%)' },
+            { label: t('budget.kpi.pct'),  value: `${pctDone.toFixed(1)}%`, icon: <Zap className="w-3.5 h-3.5" />,  color: pctDone >= 100 ? 'hsl(168,70%,42%)' : 'hsl(42,96%,48%)' },
+            { label: t('budget.kpi.ref'),  value: fmtEur(total2025),   icon: <CalIcon className="w-3.5 h-3.5" />,   color: 'hsl(220,15%,55%)' },
           ].map(k => (
             <div key={k.label} className="kpi-card" style={{ borderLeft: `3px solid ${k.color}` }}>
               <div className="flex items-center gap-1.5 mb-1.5">
@@ -251,11 +253,11 @@ export default function Budget2026() {
 
         {/* ── Monthly revenue chart ────────────────────────────────────────── */}
         <div className="chart-container">
-          <p className="section-label mb-3">Monthly Revenue — Actuals vs Budget 2026</p>
+          <p className="section-label mb-3">{t('budget.chart.monthly')}</p>
           <div className="text-[10px] text-muted-foreground mb-3 flex flex-wrap gap-4">
-            <span className="flex items-center gap-1.5"><span className="inline-block w-3 h-3 rounded-sm bg-white/20" />Solid = 2026 YTD Actual</span>
-            <span className="flex items-center gap-1.5"><span className="inline-block w-3 h-3 rounded-sm bg-white/10 border border-white/20" />Faded = 2026 Budget</span>
-            <span className="flex items-center gap-1.5"><span className="inline-block w-8 border-t-2 border-dashed border-muted-foreground/50" />2025 Reference</span>
+            <span className="flex items-center gap-1.5"><span className="inline-block w-3 h-3 rounded-sm bg-white/20" />{t('budget.legend.actual')}</span>
+            <span className="flex items-center gap-1.5"><span className="inline-block w-3 h-3 rounded-sm bg-white/10 border border-white/20" />{t('budget.legend.budget')}</span>
+            <span className="flex items-center gap-1.5"><span className="inline-block w-8 border-t-2 border-dashed border-muted-foreground/50" />{t('budget.legend.ref')}</span>
           </div>
           <ResponsiveContainer width="100%" height={320}>
             <ComposedChart data={monthlyChart} margin={{ top: 4, right: 8, left: 0, bottom: 0 }}>
@@ -293,19 +295,19 @@ export default function Budget2026() {
 
         {/* ── Product table ────────────────────────────────────────────────── */}
         <div className="chart-container overflow-x-auto">
-          <p className="section-label mb-3">Per-Product Detail — B2C Net Sales</p>
+          <p className="section-label mb-3">{t('budget.chart.products')}</p>
           <table className="data-table w-full">
             <thead>
               <tr>
-                <th className="text-left">Product</th>
-                <th className="text-right">2025 Total</th>
-                <th className="text-right">2026 Target</th>
-                <th className="text-right">2026 YTD</th>
-                <th className="text-right">Remaining</th>
-                <th className="text-center">Progress</th>
-                <th className="text-center">MER Target</th>
-                <th className="text-left">Notes</th>
-                {MONTHS.map(m => <th key={m} className="text-right text-[9px]">{m}</th>)}
+                <th className="text-left">{t('budget.col.product')}</th>
+                <th className="text-right">{t('budget.col.2025')}</th>
+                <th className="text-right">{t('budget.col.target')}</th>
+                <th className="text-right">{t('budget.col.ytd')}</th>
+                <th className="text-right">{t('budget.col.remaining')}</th>
+                <th className="text-center">{t('budget.col.progress')}</th>
+                <th className="text-center">{t('budget.col.mer')}</th>
+                <th className="text-left">{t('budget.col.notes')}</th>
+                {MONTHS_LANG.map(m => <th key={m} className="text-right text-[9px]">{m}</th>)}
               </tr>
             </thead>
             <tbody>
@@ -363,7 +365,7 @@ export default function Budget2026() {
             </tbody>
             <tfoot>
               <tr className="border-t-2 border-border font-semibold text-xs">
-                <td>Total</td>
+                <td>{t('budget.total_row')}</td>
                 <td className="text-right font-mono">{fmtEur(total2025)}</td>
                 <td className="text-right font-mono">{fmtEur(totalTarget)}</td>
                 <td className="text-right font-mono" style={{ color: 'hsl(168,70%,42%)' }}>{fmtEur(ytdActual)}</td>
@@ -405,7 +407,7 @@ export default function Budget2026() {
 
           {/* Ad Spend */}
           <div className="chart-container">
-            <p className="section-label mb-3">Ad Spend — 2025 Actual vs 2026 Budget</p>
+            <p className="section-label mb-3">{t('budget.chart.adspend')}</p>
             <div className="flex gap-4 mb-2 text-[10px] text-muted-foreground">
               <span>2025 total: {fmtEur(RAW.advTotals.reduce((s, v) => s + v, 0))}</span>
               <span className="text-foreground font-semibold">2026 budget: {fmtEur(RAW.spendTarget)}</span>
@@ -425,7 +427,7 @@ export default function Budget2026() {
 
           {/* MER */}
           <div className="chart-container">
-            <p className="section-label mb-3">MER — 2025 Actual</p>
+            <p className="section-label mb-3">{t('budget.chart.mer')}</p>
             <div className="flex flex-wrap gap-3 mb-2 text-[10px] text-muted-foreground">
               {RAW.products.map(p => (
                 <span key={p.name} className="flex items-center gap-1">
@@ -449,11 +451,11 @@ export default function Budget2026() {
 
         {/* ── Marketing calendar ───────────────────────────────────────────── */}
         <div className="chart-container overflow-x-auto">
-          <p className="section-label mb-3">Marketing Calendar 2026</p>
+          <p className="section-label mb-3">{t('budget.chart.calendar')}</p>
           <table className="data-table w-full">
             <thead>
               <tr>
-                {MONTHS.map(m => <th key={m} className="text-center">{m}</th>)}
+                {MONTHS_LANG.map(m => <th key={m} className="text-center">{m}</th>)}
               </tr>
             </thead>
             <tbody>
