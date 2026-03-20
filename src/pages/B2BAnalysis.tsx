@@ -733,7 +733,7 @@ export default function B2BAnalysis() {
             )}
 
             {/* ── AI Assistant ──────────────────────────────────── */}
-            <AiAssistant dashboardContext={aiContext} pageContext="b2b-analysis" />
+            <AiAssistant dashboardContext={aiContext} />
           </>
         )}
       </div>

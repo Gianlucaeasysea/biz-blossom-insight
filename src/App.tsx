@@ -9,6 +9,7 @@ import Budget2026 from "./pages/Budget2026";
 import GeoInsights from "./pages/GeoInsights";
 import ProductAnalysis from "./pages/ProductAnalysis";
 import B2CCustomers from "./pages/B2CCustomers";
+import B2BAnalysis from "./pages/B2BAnalysis";
 import NotFound from "./pages/NotFound";
 import { LanguageProvider } from "./contexts/LanguageContext";
 
