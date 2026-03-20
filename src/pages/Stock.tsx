@@ -90,18 +90,7 @@ export default function Stock() {
         </div>
 
         {/* Nav */}
-        <div className="flex flex-wrap gap-1.5">
-          <NavLink to="/" className={navClass} activeClassName="bg-primary text-primary-foreground">Vendite</NavLink>
-          <NavLink to="/meta-ads" className={navClass} activeClassName="bg-primary text-primary-foreground">Meta Ads</NavLink>
-          <NavLink to="/budget-2026" className={navClass} activeClassName="bg-primary text-primary-foreground">Budget</NavLink>
-          <NavLink to="/geo-insights" className={navClass} activeClassName="bg-primary text-primary-foreground">Geo Insights</NavLink>
-          <NavLink to="/product-analysis" className={navClass} activeClassName="bg-primary text-primary-foreground">Prodotti</NavLink>
-          <NavLink to="/b2c-customers" className={navClass} activeClassName="bg-primary text-primary-foreground">Clienti B2C</NavLink>
-          <NavLink to="/b2b-analysis" className={navClass} activeClassName="bg-primary text-primary-foreground">Analisi B2B</NavLink>
-          <NavLink to="/b2c-analysis" className={navClass} activeClassName="bg-primary text-primary-foreground">Analisi B2C</NavLink>
-          <NavLink to="/sales-call" className={navClass} activeClassName="bg-primary text-primary-foreground">Analisi Call Sales</NavLink>
-          <NavLink to="/stock" className={navClass} activeClassName="bg-primary text-primary-foreground">Stock</NavLink>
-        </div>
+        <DraggableNav />
 
         {/* Loading / Error */}
         {isLoading && (
