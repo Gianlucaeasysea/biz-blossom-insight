@@ -322,7 +322,7 @@ const en: Dict = {
   'geo.products_title':      '{country} — Top products',
   'geo.ai_placeholder':      'Click "Generate Analysis" to get AI insights on sales seasonality, product analysis by country and strategic recommendations.',
 
-  'nav.products':                 'Product Analysis',
+  // (nav.products already defined above)
   'products.title':               'Product Analysis',
   'products.subtitle':            'Monthly B2C + B2B revenue by collection · % weight on total',
   'products.kpi.total':           'Total Revenue',
