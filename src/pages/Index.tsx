@@ -311,7 +311,7 @@ export default function Index() {
             {/* KPI grid left */}
             <div className="space-y-3">
               {/* Row 1: totals */}
-              <div className="grid grid-cols-3 gap-3">
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 sm:gap-3">
                 {kpiMap['Total Order'] && <KPICard data={kpiMap['Total Order']} />}
                 {kpiMap['Total Order B2C'] && <KPICard data={kpiMap['Total Order B2C']} />}
                 {kpiMap['Total Order B2B'] && <KPICard data={kpiMap['Total Order B2B']} />}
