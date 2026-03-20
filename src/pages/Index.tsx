@@ -439,7 +439,7 @@ export default function Index() {
           </div>
           <div>
             <SectionHeader label={t('section.by_country')} />
-            <CountryBreakdown orders={scaledOrders} allSkus={allSkus} />
+            <CountryBreakdown orders={scaledOrders} allSkus={allSkus} allProductNames={allProductNames} />
           </div>
         </div>
 
