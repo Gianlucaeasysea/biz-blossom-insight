@@ -204,7 +204,7 @@ export function RevenueTarget({ currentRevenue, monthlyRevenues }: RevenueTarget
               <div className="flex flex-col items-center gap-0.5 min-h-[20px]">
                 {(isPast || isCurr) && actual > 0 && (
                   <>
-                    <p className="text-[10px] font-mono font-semibold text-foreground/80 leading-none truncate">
+                    <p className="text-[8px] sm:text-[10px] font-mono font-semibold text-foreground/80 leading-none truncate">
                       {fmtK(actual)}
                     </p>
                     {isPast && (
