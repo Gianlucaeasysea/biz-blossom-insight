@@ -317,7 +317,7 @@ export default function Index() {
                 {kpiMap['Total Order B2B'] && <KPICard data={kpiMap['Total Order B2B']} />}
               </div>
               {/* Row 2: revenue + n° orders — alternating B2C/B2B */}
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3">
                 {kpiMap['Revenue B2C'] && <KPICard data={kpiMap['Revenue B2C']} />}
                 {kpiMap['Revenue B2B'] && <KPICard data={kpiMap['Revenue B2B']} />}
                 {kpiMap['Total Orders B2C'] && <KPICard data={kpiMap['Total Orders B2C']} />}
