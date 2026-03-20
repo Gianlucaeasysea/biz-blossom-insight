@@ -163,9 +163,14 @@ export function CountryBreakdown({ orders, allSkus, allProductNames = [] }: { or
           <Globe className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
           <h3 className="text-sm font-semibold">Sales by Country</h3>
         </div>
-        <div className="flex items-center gap-1.5">
-          <select value={skuFilter} onChange={e => setSkuFilter(e.target.value)}
-            className="h-7 text-xs rounded border border-border/50 bg-muted/50 px-2 text-foreground">
+        <div className="flex items-center gap-1.5 flex-wrap">
+          <select value={productFilter} onChange={e => { setProductFilter(e.target.value); if (e.target.value) setSkuFilter(''); }}
+            className="h-7 text-xs rounded border border-border/50 bg-muted/50 px-2 text-foreground max-w-[180px] truncate">
+            <option value="">All Products</option>
+            {allProductNames.map(n => <option key={n} value={n}>{n}</option>)}
+          </select>
+          <select value={skuFilter} onChange={e => { setSkuFilter(e.target.value); if (e.target.value) setProductFilter(''); }}
+            className="h-7 text-xs rounded border border-border/50 bg-muted/50 px-2 text-foreground max-w-[140px]">
             <option value="">All SKUs</option>
             {allSkus.map(s => <option key={s} value={s}>{s}</option>)}
           </select>
