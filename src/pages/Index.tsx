@@ -17,6 +17,7 @@ import { AiAssistant } from '@/components/dashboard/AiAssistant';
 import { B2CSalesBreakdown } from '@/components/dashboard/B2CSalesBreakdown';
 import { RevenueTarget } from '@/components/dashboard/RevenueTarget';
 import { CustomerType } from '@/types/analytics';
+import { DraggableNav } from '@/components/DraggableNav';
 import { NavLink } from '@/components/NavLink';
 import { useShopifyOrders } from '@/hooks/useShopifyOrders';
 import { useShopifySalesSummary } from '@/hooks/useShopifySalesSummary';
