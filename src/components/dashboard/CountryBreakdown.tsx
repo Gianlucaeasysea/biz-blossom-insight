@@ -106,6 +106,8 @@ export function CountryBreakdown({ orders, allSkus, allProductNames = [] }: { or
       let amount = 0;
       if (skuFilter) {
         amount = order.products.filter(p => p.sku === skuFilter).reduce((s, p) => s + p.totalPrice, 0);
+      } else if (productFilter) {
+        amount = order.products.filter(p => p.name === productFilter).reduce((s, p) => s + p.totalPrice, 0);
       } else {
         amount = order.customerType === 'B2C' ? (order.netAmount ?? order.totalAmount) : order.totalAmount;
       }
