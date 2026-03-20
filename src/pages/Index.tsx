@@ -266,8 +266,8 @@ export default function Index() {
   );
 
   return (
-    <div className="min-h-screen bg-background p-4 sm:p-6">
-      <div className="max-w-[1520px] mx-auto space-y-5">
+    <div className="min-h-screen bg-background p-3 sm:p-4 md:p-6">
+      <div className="max-w-[1520px] mx-auto space-y-3 sm:space-y-5">
 
         {/* ── Header ──────────────────────────────────────────── */}
         <DashboardHeader onRefresh={handleRefresh} isLoading={isFetching} />
@@ -276,7 +276,7 @@ export default function Index() {
         <RevenueTarget currentRevenue={ytdRevenue} monthlyRevenues={monthlyRevenues} />
 
         {/* ── Nav + Filters bar ───────────────────────────────── */}
-        <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="space-y-2 sm:space-y-0 sm:flex sm:flex-wrap sm:items-center sm:justify-between sm:gap-3">
           <DraggableNav />
           <FilterBar customerTypeFilter={customerTypeFilter} onCustomerTypeChange={setCustomerTypeFilter} dateRange={dateRange} onDateRangeChange={setDateRange} />
         </div>
@@ -306,25 +306,25 @@ export default function Index() {
         ═══════════════════════════════════════════════════════ */}
         <div>
           <SectionHeader label={t('section.overview')} />
-          <div className="grid grid-cols-1 xl:grid-cols-[1fr_260px] gap-4">
+          <div className="grid grid-cols-1 xl:grid-cols-[1fr_260px] gap-3 sm:gap-4">
 
             {/* KPI grid left */}
             <div className="space-y-3">
               {/* Row 1: totals */}
-              <div className="grid grid-cols-3 gap-3">
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 sm:gap-3">
                 {kpiMap['Total Order'] && <KPICard data={kpiMap['Total Order']} />}
                 {kpiMap['Total Order B2C'] && <KPICard data={kpiMap['Total Order B2C']} />}
                 {kpiMap['Total Order B2B'] && <KPICard data={kpiMap['Total Order B2B']} />}
               </div>
               {/* Row 2: revenue + n° orders — alternating B2C/B2B */}
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3">
                 {kpiMap['Revenue B2C'] && <KPICard data={kpiMap['Revenue B2C']} />}
                 {kpiMap['Revenue B2B'] && <KPICard data={kpiMap['Revenue B2B']} />}
                 {kpiMap['Total Orders B2C'] && <KPICard data={kpiMap['Total Orders B2C']} />}
                 {kpiMap['Total Orders B2B'] && <KPICard data={kpiMap['Total Orders B2B']} />}
               </div>
               {/* Row 3: AOV + Top3 + Pie */}
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3">
                 {kpiMap['AOV B2C'] && <KPICard data={kpiMap['AOV B2C']} />}
                 {kpiMap['AOV B2B'] && <KPICard data={kpiMap['AOV B2B']} />}
 
@@ -409,7 +409,7 @@ export default function Index() {
         <div>
           <SectionHeader label={t('section.sku_detail')} />
           {/* B2C + B2B side by side, Combined below */}
-          <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 mb-4">
+          <div className="grid grid-cols-1 xl:grid-cols-2 gap-3 sm:gap-4 mb-3 sm:mb-4">
             <B2CSkuTable data={b2cSkuData} allProductNames={allProductNames} allSkus={allSkus} />
             <B2BSkuTable data={b2bSkuData} allProductNames={allProductNames} allSkus={allSkus} />
           </div>

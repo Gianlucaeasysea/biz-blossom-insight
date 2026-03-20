@@ -471,7 +471,7 @@ export default function SalesCallAnalysis() {
   }, [b2bData, selectedYear, prevYear]);
 
   return (
-    <div className="min-h-screen bg-background p-6">
+    <div className="min-h-screen bg-background p-3 sm:p-4 md:p-6">
       <DashboardHeader onRefresh={handleRefresh} isLoading={isLoading || isFetching} />
 
       {/* Navigation */}

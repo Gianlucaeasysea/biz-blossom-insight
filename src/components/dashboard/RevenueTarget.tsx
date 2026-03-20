@@ -79,10 +79,10 @@ export function RevenueTarget({ currentRevenue, monthlyRevenues }: RevenueTarget
   };
 
   return (
-    <div className="w-full rounded-xl border border-border/60 bg-card/80 backdrop-blur-sm px-5 py-4 mb-1">
+    <div className="w-full rounded-xl border border-border/60 bg-card/80 backdrop-blur-sm px-3 sm:px-5 py-3 sm:py-4 mb-1">
 
       {/* ── Top row ─────────────────────────────────────────────── */}
-      <div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-1 mb-4">
+      <div className="flex flex-col sm:flex-row sm:flex-wrap items-start sm:items-center justify-between gap-x-6 gap-y-2 mb-3 sm:mb-4">
 
         {/* Target label + editable value */}
         <div className="flex items-center gap-3 shrink-0">
@@ -119,7 +119,7 @@ export function RevenueTarget({ currentRevenue, monthlyRevenues }: RevenueTarget
         </div>
 
         {/* Consuntivo + % annuale + % YTD */}
-        <div className="flex items-baseline gap-2">
+        <div className="flex flex-wrap items-baseline gap-1.5 sm:gap-2">
           <span className="text-xs text-muted-foreground">{t('target.actual')}</span>
           <span className="text-base font-bold font-mono text-foreground">{fmt(currentRevenue)}</span>
           <span className="text-sm font-bold font-mono" style={{ color: globalColor }}>{pctTotal.toFixed(1)}%</span>
@@ -141,7 +141,7 @@ export function RevenueTarget({ currentRevenue, monthlyRevenues }: RevenueTarget
       </div>
 
       {/* ── 12-month segmented bar (variable width by budget) ────── */}
-      <div className="flex gap-0.5">
+      <div className="flex gap-px sm:gap-0.5 overflow-x-auto scrollbar-hide pb-1">
         {months.map((label, i) => {
           const actual   = monthlyRevenues?.[i] ?? 0;
           const moTgt    = monthlyTgts[i];
@@ -172,7 +172,7 @@ export function RevenueTarget({ currentRevenue, monthlyRevenues }: RevenueTarget
 
               {/* Bar segment */}
               <div
-                className="relative h-8 rounded overflow-hidden"
+                className="relative h-6 sm:h-8 rounded overflow-hidden"
                 style={{ background: isFuture ? 'hsl(220,15%,16%)' : 'hsl(220,15%,20%)' }}
               >
                 {fp > 0 && (
@@ -187,7 +187,7 @@ export function RevenueTarget({ currentRevenue, monthlyRevenues }: RevenueTarget
               </div>
 
               {/* Month name */}
-              <p className={`text-center text-[11px] font-semibold leading-none ${
+              <p className={`text-center text-[8px] sm:text-[11px] font-semibold leading-none ${
                 isCurr   ? 'text-primary' :
                 isFuture ? 'text-muted-foreground/35' :
                            'text-muted-foreground/70'
@@ -196,7 +196,7 @@ export function RevenueTarget({ currentRevenue, monthlyRevenues }: RevenueTarget
               </p>
 
               {/* Budget target for this month */}
-              <p className="text-center text-[9px] font-mono text-muted-foreground/50 leading-none truncate">
+              <p className="text-center text-[7px] sm:text-[9px] font-mono text-muted-foreground/50 leading-none truncate hidden sm:block">
                 {fmtK(moTgt)}
               </p>
 
@@ -204,7 +204,7 @@ export function RevenueTarget({ currentRevenue, monthlyRevenues }: RevenueTarget
               <div className="flex flex-col items-center gap-0.5 min-h-[20px]">
                 {(isPast || isCurr) && actual > 0 && (
                   <>
-                    <p className="text-[10px] font-mono font-semibold text-foreground/80 leading-none truncate">
+                    <p className="text-[8px] sm:text-[10px] font-mono font-semibold text-foreground/80 leading-none truncate">
                       {fmtK(actual)}
                     </p>
                     {isPast && (

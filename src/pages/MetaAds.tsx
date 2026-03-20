@@ -358,7 +358,7 @@ export default function MetaAds() {
   const fmtPct = (v: number) => `${v.toFixed(2)}%`;
 
   return (
-    <div className="min-h-screen bg-background text-foreground p-6 md:p-10">
+    <div className="min-h-screen bg-background text-foreground p-3 sm:p-4 md:p-6">
       <DashboardHeader onRefresh={() => refetch()} isLoading={isFetching} />
 
       <div className="mb-6">

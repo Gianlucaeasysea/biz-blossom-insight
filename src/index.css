@@ -106,7 +106,7 @@
   }
 
   .kpi-card {
-    @apply glass-card p-4 transition-all duration-200;
+    @apply glass-card p-3 sm:p-4 transition-all duration-200;
   }
   .kpi-card:hover {
     border-color: rgba(255, 255, 255, 0.16);
@@ -169,16 +169,16 @@
   }
 
   .data-table {
-    @apply w-full text-sm;
+    @apply w-full text-xs sm:text-sm;
   }
 
   .data-table th {
-    @apply text-left px-3 py-1.5 text-muted-foreground text-[10px] font-semibold uppercase tracking-wider border-b border-border sticky top-0 z-10;
+    @apply text-left px-2 sm:px-3 py-1.5 text-muted-foreground text-[9px] sm:text-[10px] font-semibold uppercase tracking-wider border-b border-border sticky top-0 z-10;
     background: hsl(var(--card));
   }
 
   .data-table td {
-    @apply px-3 py-1.5 border-b border-border/20 text-xs;
+    @apply px-2 sm:px-3 py-1.5 border-b border-border/20 text-[11px] sm:text-xs;
   }
 
   .data-table tfoot td {
@@ -203,6 +203,14 @@
 
   .scrollbar-custom::-webkit-scrollbar-thumb {
     @apply bg-muted-foreground/20 rounded-full;
+  }
+
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
   }
 
   /* react-grid-layout overrides */
