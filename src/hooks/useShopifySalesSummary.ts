@@ -48,6 +48,7 @@ export function useShopifySalesSummary({ start, end, enabled = true }: UseShopif
     },
     enabled,
     staleTime: 5 * 60 * 1000,
+    refetchInterval: 5 * 60 * 1000, // auto-refresh every 5 minutes
     retry: 2,
   });
 }
