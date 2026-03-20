@@ -90,9 +90,10 @@ interface CountryRow { country: string; sales: number; orders: number }
 type Tab = 'b2c' | 'b2b' | 'all';
 const isNotCustom = (o: Order) => !o.orderType || o.orderType.toLowerCase() !== 'custom';
 
-export function CountryBreakdown({ orders, allSkus }: { orders: Order[]; allSkus: string[] }) {
+export function CountryBreakdown({ orders, allSkus, allProductNames = [] }: { orders: Order[]; allSkus: string[]; allProductNames?: string[] }) {
   const [tab, setTab] = useState<Tab>('b2c');
   const [skuFilter, setSkuFilter] = useState('');
+  const [productFilter, setProductFilter] = useState('');
   const [sortField, setSortField] = useState<'country' | 'sales'>('sales');
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc');
 
