@@ -141,7 +141,7 @@ export function RevenueTarget({ currentRevenue, monthlyRevenues }: RevenueTarget
       </div>
 
       {/* ── 12-month segmented bar (variable width by budget) ────── */}
-      <div className="flex gap-0.5">
+      <div className="flex gap-px sm:gap-0.5 overflow-x-auto scrollbar-hide pb-1">
         {months.map((label, i) => {
           const actual   = monthlyRevenues?.[i] ?? 0;
           const moTgt    = monthlyTgts[i];
