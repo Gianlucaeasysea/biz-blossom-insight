@@ -71,6 +71,7 @@ export function useGoogleSheetsOrders(enabled = true) {
     },
     enabled,
     staleTime: 5 * 60 * 1000,
+    refetchInterval: 5 * 60 * 1000, // auto-refresh every 5 minutes
     retry: 2,
   });
 }

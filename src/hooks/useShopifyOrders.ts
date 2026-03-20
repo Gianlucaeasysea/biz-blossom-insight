@@ -108,6 +108,7 @@ export function useShopifyOrders(options: UseShopifyOrdersOptions = {}) {
     },
     enabled,
     staleTime: 5 * 60 * 1000, // 5 minutes
+    refetchInterval: 5 * 60 * 1000, // auto-refresh every 5 minutes
     retry: 2,
   });
 }
