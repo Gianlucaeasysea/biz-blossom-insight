@@ -7,6 +7,7 @@ import Index from "./pages/Index";
 import MetaAds from "./pages/MetaAds";
 import Budget2026 from "./pages/Budget2026";
 import GeoInsights from "./pages/GeoInsights";
+import ProductAnalysis from "./pages/ProductAnalysis";
 import NotFound from "./pages/NotFound";
 import { LanguageProvider } from "./contexts/LanguageContext";
 
@@ -24,6 +25,7 @@ const App = () => (
           <Route path="/meta-ads" element={<MetaAds />} />
           <Route path="/budget-2026" element={<Budget2026 />} />
           <Route path="/geo-insights" element={<GeoInsights />} />
+          <Route path="/product-analysis" element={<ProductAnalysis />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
