@@ -196,7 +196,7 @@ export function RevenueTarget({ currentRevenue, monthlyRevenues }: RevenueTarget
               </p>
 
               {/* Budget target for this month */}
-              <p className="text-center text-[9px] font-mono text-muted-foreground/50 leading-none truncate">
+              <p className="text-center text-[7px] sm:text-[9px] font-mono text-muted-foreground/50 leading-none truncate hidden sm:block">
                 {fmtK(moTgt)}
               </p>
 
