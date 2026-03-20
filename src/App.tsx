@@ -12,6 +12,7 @@ import B2CCustomers from "./pages/B2CCustomers";
 import B2BAnalysis from "./pages/B2BAnalysis";
 import B2CAnalysis from "./pages/B2CAnalysis";
 import SalesCallAnalysis from "./pages/SalesCallAnalysis";
+import Stock from "./pages/Stock";
 import NotFound from "./pages/NotFound";
 import { LanguageProvider } from "./contexts/LanguageContext";
 
@@ -34,6 +35,7 @@ const App = () => (
           <Route path="/b2b-analysis" element={<B2BAnalysis />} />
           <Route path="/b2c-analysis" element={<B2CAnalysis />} />
           <Route path="/sales-call" element={<SalesCallAnalysis />} />
+          <Route path="/stock" element={<Stock />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
