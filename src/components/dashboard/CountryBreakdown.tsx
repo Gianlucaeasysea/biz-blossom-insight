@@ -90,9 +90,10 @@ interface CountryRow { country: string; sales: number; orders: number }
 type Tab = 'b2c' | 'b2b' | 'all';
 const isNotCustom = (o: Order) => !o.orderType || o.orderType.toLowerCase() !== 'custom';
 
-export function CountryBreakdown({ orders, allSkus }: { orders: Order[]; allSkus: string[] }) {
+export function CountryBreakdown({ orders, allSkus, allProductNames = [] }: { orders: Order[]; allSkus: string[]; allProductNames?: string[] }) {
   const [tab, setTab] = useState<Tab>('b2c');
   const [skuFilter, setSkuFilter] = useState('');
+  const [productFilter, setProductFilter] = useState('');
   const [sortField, setSortField] = useState<'country' | 'sales'>('sales');
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc');
 
@@ -105,6 +106,8 @@ export function CountryBreakdown({ orders, allSkus }: { orders: Order[]; allSkus
       let amount = 0;
       if (skuFilter) {
         amount = order.products.filter(p => p.sku === skuFilter).reduce((s, p) => s + p.totalPrice, 0);
+      } else if (productFilter) {
+        amount = order.products.filter(p => p.name === productFilter).reduce((s, p) => s + p.totalPrice, 0);
       } else {
         amount = order.customerType === 'B2C' ? (order.netAmount ?? order.totalAmount) : order.totalAmount;
       }
@@ -135,7 +138,7 @@ export function CountryBreakdown({ orders, allSkus }: { orders: Order[]; allSkus
       });
 
     return { b2cRows: doSort(Object.values(b2c)), b2bRows: doSort(Object.values(b2b)), allRows: doSort(Object.values(allMap)) };
-  }, [orders, skuFilter, sortField, sortDir]);
+  }, [orders, skuFilter, productFilter, sortField, sortDir]);
 
   const rows = tab === 'b2c' ? b2cRows : tab === 'b2b' ? b2bRows : allRows;
   const total = rows.reduce((s, r) => s + r.sales, 0);
@@ -160,9 +163,14 @@ export function CountryBreakdown({ orders, allSkus }: { orders: Order[]; allSkus
           <Globe className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
           <h3 className="text-sm font-semibold">Sales by Country</h3>
         </div>
-        <div className="flex items-center gap-1.5">
-          <select value={skuFilter} onChange={e => setSkuFilter(e.target.value)}
-            className="h-7 text-xs rounded border border-border/50 bg-muted/50 px-2 text-foreground">
+        <div className="flex items-center gap-1.5 flex-wrap">
+          <select value={productFilter} onChange={e => { setProductFilter(e.target.value); if (e.target.value) setSkuFilter(''); }}
+            className="h-7 text-xs rounded border border-border/50 bg-muted/50 px-2 text-foreground max-w-[180px] truncate">
+            <option value="">All Products</option>
+            {allProductNames.map(n => <option key={n} value={n}>{n}</option>)}
+          </select>
+          <select value={skuFilter} onChange={e => { setSkuFilter(e.target.value); if (e.target.value) setProductFilter(''); }}
+            className="h-7 text-xs rounded border border-border/50 bg-muted/50 px-2 text-foreground max-w-[140px]">
             <option value="">All SKUs</option>
             {allSkus.map(s => <option key={s} value={s}>{s}</option>)}
           </select>

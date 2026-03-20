@@ -214,7 +214,7 @@ export function getCombinedSkuBreakdown(orders: Order[]): Array<{
 
 // SKU to Collection mapping
 export function getSkuCollection(sku: string): string {
-  if (!sku) return 'Other';
+  if (!sku) return 'Side products';
   if (['FS-101-1', 'FM-101-1', 'FCM-101-1'].includes(sku)) return 'Winch Handle';
   if (['OA-101', 'OA-102', 'OA-103', 'OA-104', 'OA-105', 'SRA-101', 'SRA-102', 'SRA-103', 'SRA-104'].includes(sku)) return 'Low Friction & Solid Rings';
   if (['OB-102', 'OB-103', 'OB-104'].includes(sku)) return 'Blocks';
@@ -222,7 +222,7 @@ export function getSkuCollection(sku: string): string {
   if (sku === 'W2G-101') return 'Inflatable';
   if (sku.startsWith('J')) return 'JAKE';
   if (sku === 'SHIPPING') return 'Shipping';
-  return 'Other';
+  return 'Side products';
 }
 
 export interface SkuDetail {

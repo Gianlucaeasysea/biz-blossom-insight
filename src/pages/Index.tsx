@@ -202,8 +202,14 @@ export default function Index() {
 
   const allSkus = useMemo(() => {
     const skuSet = new Set<string>();
-    filteredOrders.forEach(o => o.products.forEach(p => skuSet.add(p.sku)));
+    filteredOrders.forEach(o => o.products.forEach(p => { if (p.sku) skuSet.add(p.sku); }));
     return Array.from(skuSet).sort();
+  }, [filteredOrders]);
+
+  const allProductNames = useMemo(() => {
+    const nameSet = new Set<string>();
+    filteredOrders.forEach(o => o.products.forEach(p => { if (p.name) nameSet.add(p.name); }));
+    return Array.from(nameSet).sort();
   }, [filteredOrders]);
 
   const kpiMap = useMemo(() => Object.fromEntries(kpis.map(k => [k.label, k])), [kpis]);
@@ -409,10 +415,10 @@ export default function Index() {
           <SectionHeader label={t('section.sku_detail')} />
           {/* B2C + B2B side by side, Combined below */}
           <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 mb-4">
-            <B2CSkuTable data={b2cSkuData} />
-            <B2BSkuTable data={b2bSkuData} />
+            <B2CSkuTable data={b2cSkuData} allProductNames={allProductNames} allSkus={allSkus} />
+            <B2BSkuTable data={b2bSkuData} allProductNames={allProductNames} allSkus={allSkus} />
           </div>
-          <CombinedSkuTable data={combinedSkuData} />
+          <CombinedSkuTable data={combinedSkuData} allProductNames={allProductNames} allSkus={allSkus} />
         </div>
 
         {/* ═══════════════════════════════════════════════════════
@@ -433,7 +439,7 @@ export default function Index() {
           </div>
           <div>
             <SectionHeader label={t('section.by_country')} />
-            <CountryBreakdown orders={scaledOrders} allSkus={allSkus} />
+            <CountryBreakdown orders={scaledOrders} allSkus={allSkus} allProductNames={allProductNames} />
           </div>
         </div>
 

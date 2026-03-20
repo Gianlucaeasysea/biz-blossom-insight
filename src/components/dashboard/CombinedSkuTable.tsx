@@ -1,22 +1,27 @@
 import { useState, useMemo } from 'react';
 import { Search, ArrowUpDown, Download } from 'lucide-react';
 import { Input } from '@/components/ui/input';
+import { ProductFilter } from '@/components/dashboard/ProductFilter';
 import { downloadCsv } from '@/lib/csv-export';
 
 interface SkuRow { sku: string; name: string; qtySold: number; totalValue: number; b2cValue: number; b2bValue: number; }
 type SortField = 'sku' | 'name' | 'qtySold' | 'totalValue' | 'b2cValue' | 'b2bValue';
 
-export function CombinedSkuTable({ data }: { data: SkuRow[] }) {
+export function CombinedSkuTable({ data, allProductNames = [], allSkus = [] }: { data: SkuRow[]; allProductNames?: string[]; allSkus?: string[] }) {
   const [search, setSearch] = useState('');
+  const [selectedProduct, setSelectedProduct] = useState('');
+  const [selectedSku, setSelectedSku] = useState('');
   const [sortField, setSortField] = useState<SortField>('totalValue');
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc');
 
   const filtered = useMemo(() => {
     let result = [...data];
+    if (selectedProduct) result = result.filter(r => r.name === selectedProduct);
+    if (selectedSku) result = result.filter(r => r.sku === selectedSku);
     if (search) { const s = search.toLowerCase(); result = result.filter(r => r.sku.toLowerCase().includes(s) || r.name.toLowerCase().includes(s)); }
     result.sort((a, b) => { const cmp = typeof a[sortField] === 'string' ? (a[sortField] as string).localeCompare(b[sortField] as string) : (a[sortField] as number) - (b[sortField] as number); return sortDir === 'asc' ? cmp : -cmp; });
     return result;
-  }, [data, search, sortField, sortDir]);
+  }, [data, search, selectedProduct, selectedSku, sortField, sortDir]);
 
   const handleSort = (f: SortField) => { if (sortField === f) setSortDir(d => d === 'asc' ? 'desc' : 'asc'); else { setSortField(f); setSortDir('desc'); } };
   const fmt = (v: number) => new Intl.NumberFormat('it-IT', { style: 'currency', currency: 'EUR' }).format(v);
@@ -42,10 +47,15 @@ export function CombinedSkuTable({ data }: { data: SkuRow[] }) {
           </span>
           <h3 className="text-sm font-semibold text-foreground">Combined SKU Detail</h3>
         </div>
-        <div className="flex items-center gap-2">
-          <div className="relative w-full sm:w-56">
+        <div className="flex items-center gap-2 flex-wrap">
+          <ProductFilter
+            productNames={allProductNames} skus={allSkus}
+            selectedProduct={selectedProduct} selectedSku={selectedSku}
+            onProductChange={setSelectedProduct} onSkuChange={setSelectedSku}
+          />
+          <div className="relative w-full sm:w-40">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
-            <Input placeholder="Search SKU..." value={search} onChange={e => setSearch(e.target.value)} className="pl-9 h-8 text-xs bg-muted/50 border-border/50" />
+            <Input placeholder="Search..." value={search} onChange={e => setSearch(e.target.value)} className="pl-9 h-7 text-xs bg-muted/50 border-border/50" />
           </div>
           <button onClick={handleExport} className="p-2 rounded-md hover:bg-muted/50 text-muted-foreground hover:text-foreground transition-colors" title="Export CSV">
             <Download className="w-4 h-4" />
