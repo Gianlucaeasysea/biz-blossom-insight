@@ -15,6 +15,7 @@ import B2CAnalysis from "./pages/B2CAnalysis";
 import SalesCallAnalysis from "./pages/SalesCallAnalysis";
 import Stock from "./pages/Stock";
 import Login from "./pages/Login";
+import ResetPassword from "./pages/ResetPassword";
 import NotFound from "./pages/NotFound";
 import { LanguageProvider } from "./contexts/LanguageContext";
 
@@ -29,6 +30,7 @@ const App = () => (
       <BrowserRouter>
         <Routes>
           <Route path="/login" element={<Login />} />
+          <Route path="/reset-password" element={<ResetPassword />} />
           <Route path="/" element={<ProtectedRoute><Index /></ProtectedRoute>} />
           <Route path="/meta-ads" element={<ProtectedRoute><MetaAds /></ProtectedRoute>} />
           <Route path="/budget-2026" element={<ProtectedRoute><Budget2026 /></ProtectedRoute>} />
