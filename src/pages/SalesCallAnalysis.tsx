@@ -474,17 +474,9 @@ export default function SalesCallAnalysis() {
       <DashboardHeader onRefresh={handleRefresh} isLoading={isLoading || isFetching} />
 
       {/* Navigation */}
-      <nav className="flex flex-wrap gap-2 mb-7">
-        <NavLink to="/" className={NAV_CLS} activeClassName={NAV_ACTIVE}>{t('nav.sales')}</NavLink>
-        <NavLink to="/meta-ads" className={NAV_CLS} activeClassName={NAV_ACTIVE}>{t('nav.meta')}</NavLink>
-        <NavLink to="/budget-2026" className={NAV_CLS} activeClassName={NAV_ACTIVE}>{t('nav.budget')}</NavLink>
-        <NavLink to="/geo-insights" className={NAV_CLS} activeClassName={NAV_ACTIVE}>{t('nav.geo')}</NavLink>
-        <NavLink to="/product-analysis" className={NAV_CLS} activeClassName={NAV_ACTIVE}>{t('nav.products')}</NavLink>
-        <NavLink to="/b2c-customers" className={NAV_CLS} activeClassName={NAV_ACTIVE}>Clienti B2C</NavLink>
-        <NavLink to="/b2b-analysis" className={NAV_CLS} activeClassName={NAV_ACTIVE}>Analisi B2B</NavLink>
-        <NavLink to="/b2c-analysis" className={NAV_CLS} activeClassName={NAV_ACTIVE}>Analisi B2C</NavLink>
-        <NavLink to="/sales-call" className={NAV_CLS} activeClassName={NAV_ACTIVE}>Analisi Call Sales</NavLink>
-      </nav>
+      <div className="mb-7">
+        <DraggableNav />
+      </div>
 
       {/* Page title */}
       <div className="flex flex-wrap items-start justify-between gap-4 mb-6">

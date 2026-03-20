@@ -330,15 +330,7 @@ ${freqData.map(f => `${f.name}: ${f.value}`).join('\n')}`;
         <DashboardHeader onRefresh={() => refetch()} isLoading={isFetching} />
 
         {/* Nav */}
-        <div className="flex flex-wrap items-center gap-1.5">
-          <NavLink to="/" className="px-3.5 py-1.5 rounded-lg text-xs font-semibold bg-muted text-muted-foreground hover:text-foreground transition-colors" activeClassName="bg-primary text-primary-foreground">{t('nav.sales')}</NavLink>
-          <NavLink to="/meta-ads" className="px-3.5 py-1.5 rounded-lg text-xs font-semibold bg-muted text-muted-foreground hover:text-foreground transition-colors" activeClassName="bg-primary text-primary-foreground">{t('nav.meta')}</NavLink>
-          <NavLink to="/budget-2026" className="px-3.5 py-1.5 rounded-lg text-xs font-semibold bg-muted text-muted-foreground hover:text-foreground transition-colors" activeClassName="bg-primary text-primary-foreground">{t('nav.budget')}</NavLink>
-          <NavLink to="/geo-insights" className="px-3.5 py-1.5 rounded-lg text-xs font-semibold bg-muted text-muted-foreground hover:text-foreground transition-colors" activeClassName="bg-primary text-primary-foreground">{t('nav.geo')}</NavLink>
-          <NavLink to="/product-analysis" className="px-3.5 py-1.5 rounded-lg text-xs font-semibold bg-muted text-muted-foreground hover:text-foreground transition-colors" activeClassName="bg-primary text-primary-foreground">{t('nav.products')}</NavLink>
-          <NavLink to="/b2c-customers" className="px-3.5 py-1.5 rounded-lg text-xs font-semibold bg-muted text-muted-foreground hover:text-foreground transition-colors" activeClassName="bg-primary text-primary-foreground">Clienti B2C</NavLink>
-          <NavLink to="/sales-call" className="px-3.5 py-1.5 rounded-lg text-xs font-semibold bg-muted text-muted-foreground hover:text-foreground transition-colors" activeClassName="bg-primary text-primary-foreground">Analisi Call Sales</NavLink>
-        </div>
+        <DraggableNav />
 
         {/* ═══ DATE RANGE FILTER ═══ */}
         <div className="flex flex-wrap items-center gap-3">
