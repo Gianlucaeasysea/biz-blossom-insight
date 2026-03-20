@@ -158,7 +158,6 @@ const it: Dict = {
   'geo.ai_placeholder':      'Clicca "Genera Analisi" per ottenere insight AI sulla stagionalità di vendita, analisi prodotti per paese e raccomandazioni strategiche.',
 
   // ── Product Analysis ─────────────────────────────────────────────────
-  'nav.products':                 'Analisi Prodotti',
   'products.title':               'Analisi per Prodotto',
   'products.subtitle':            'Fatturato mensile B2C + B2B per collezione · Peso % sul totale',
   'products.kpi.total':           'Fatturato Totale',
