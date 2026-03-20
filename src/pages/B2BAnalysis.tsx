@@ -97,7 +97,7 @@ function buildB2BOrders(orders: Order[]): B2BOrderRow[] {
         name: p.name,
         sku: p.sku,
         qty: p.quantity,
-        unitPrice: p.unitPrice || (p.totalPrice / p.quantity),
+        unitPrice: p.quantity > 0 ? p.totalPrice / p.quantity : p.unitPrice,
         totalPrice: p.totalPrice,
       });
       row.totalPrice += p.totalPrice;
