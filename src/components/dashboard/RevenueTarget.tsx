@@ -172,7 +172,7 @@ export function RevenueTarget({ currentRevenue, monthlyRevenues }: RevenueTarget
 
               {/* Bar segment */}
               <div
-                className="relative h-8 rounded overflow-hidden"
+                className="relative h-6 sm:h-8 rounded overflow-hidden"
                 style={{ background: isFuture ? 'hsl(220,15%,16%)' : 'hsl(220,15%,20%)' }}
               >
                 {fp > 0 && (
