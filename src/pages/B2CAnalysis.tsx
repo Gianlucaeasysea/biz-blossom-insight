@@ -453,10 +453,11 @@ export default function B2CAnalysis() {
                   <AreaChart data={monthlyTrend}>
                     <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" opacity={0.3} />
                     <XAxis dataKey="month" tick={{ fontSize: 10 }} stroke="hsl(var(--muted-foreground))" />
-                    <YAxis tick={{ fontSize: 10 }} stroke="hsl(var(--muted-foreground))" tickFormatter={v => `€${(v / 1000).toFixed(0)}k`} />
+                    <YAxis yAxisId="left" tick={{ fontSize: 10 }} stroke="hsl(var(--muted-foreground))" tickFormatter={v => `€${(v / 1000).toFixed(0)}k`} />
+                    <YAxis yAxisId="right" orientation="right" tick={{ fontSize: 10 }} stroke="hsl(var(--muted-foreground))" />
                     <Tooltip formatter={(v: number, name: string) => name === 'revenue' ? fmtDec(v) : v} />
                     <Legend wrapperStyle={{ fontSize: 10 }} />
-                    <Area type="monotone" dataKey="revenue" name="Net Sales" stroke="hsl(168,70%,42%)" fill="hsl(168,70%,42%)" fillOpacity={0.15} strokeWidth={2} />
+                    <Area type="monotone" dataKey="revenue" name="Net Sales" stroke="hsl(168,70%,42%)" fill="hsl(168,70%,42%)" fillOpacity={0.15} strokeWidth={2} yAxisId="left" />
                     <Area type="monotone" dataKey="orders" name="Ordini" stroke="hsl(210,80%,55%)" fill="hsl(210,80%,55%)" fillOpacity={0.1} strokeWidth={1.5} yAxisId="right" />
                   </AreaChart>
                 </ResponsiveContainer>
