@@ -69,6 +69,17 @@ export function DashboardHeader({ onRefresh, isLoading }: DashboardHeaderProps) 
         >
           <RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} />
         </Button>
+
+        {/* Logout */}
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={handleLogout}
+          className="text-muted-foreground hover:text-destructive"
+          title="Logout"
+        >
+          <LogOut className="w-4 h-4" />
+        </Button>
       </div>
     </header>
   );
