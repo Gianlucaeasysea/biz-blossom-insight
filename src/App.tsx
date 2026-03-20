@@ -12,6 +12,7 @@ import B2CCustomers from "./pages/B2CCustomers";
 import B2BAnalysis from "./pages/B2BAnalysis";
 import B2CAnalysis from "./pages/B2CAnalysis";
 import SalesCallAnalysis from "./pages/SalesCallAnalysis";
+import Stock from "./pages/Stock";
 import NotFound from "./pages/NotFound";
 import { LanguageProvider } from "./contexts/LanguageContext";
 
