@@ -30,7 +30,7 @@ export function FilterBar({
   ];
 
   return (
-    <div className="flex flex-wrap items-center gap-3">
+    <div className="flex flex-wrap items-center gap-2 sm:gap-3">
       {/* Type toggle */}
       <div className="flex rounded-lg bg-muted/60 p-0.5 gap-0.5">
         {(['all', 'B2C', 'B2B'] as const).map(type => {
@@ -41,7 +41,7 @@ export function FilterBar({
             <button
               key={type}
               onClick={() => onCustomerTypeChange(type)}
-              className={`px-3 py-1.5 text-xs font-semibold rounded-md transition-all duration-150 ${
+              className={`px-2 sm:px-3 py-1.5 text-[11px] sm:text-xs font-semibold rounded-md transition-all duration-150 ${
                 isActive && type === 'all'
                   ? 'bg-primary text-primary-foreground shadow-sm'
                   : !isActive
@@ -68,7 +68,7 @@ export function FilterBar({
           <button
             key={p.days}
             onClick={() => onDateRangeChange({ start: subDays(new Date(), p.days), end: new Date() })}
-            className="px-2.5 py-1.5 text-xs text-muted-foreground hover:text-foreground rounded transition-colors"
+            className="px-2 sm:px-2.5 py-1.5 text-[11px] sm:text-xs text-muted-foreground hover:text-foreground rounded transition-colors"
           >
             {p.label}
           </button>
@@ -78,15 +78,16 @@ export function FilterBar({
       {/* Date range picker */}
       <Popover open={calendarOpen} onOpenChange={setCalendarOpen}>
         <PopoverTrigger asChild>
-          <Button variant="ghost" size="sm" className="text-xs text-muted-foreground hover:text-foreground gap-1.5">
+          <Button variant="ghost" size="sm" className="text-[11px] sm:text-xs text-muted-foreground hover:text-foreground gap-1 sm:gap-1.5 h-8 px-2 sm:px-3">
             <Calendar className="w-3.5 h-3.5" />
-            {format(dateRange.start, 'dd MMM', { locale: enUS })} – {format(dateRange.end, 'dd MMM yy', { locale: enUS })}
+            <span className="hidden xs:inline">{format(dateRange.start, 'dd MMM', { locale: enUS })} – </span>
+            {format(dateRange.end, 'dd MMM yy', { locale: enUS })}
             <ChevronDown className="w-3 h-3" />
           </Button>
         </PopoverTrigger>
-        <PopoverContent className="w-auto p-0 bg-popover border-border" align="start">
-          <div className="flex">
-            <div className="border-r border-border">
+        <PopoverContent className="w-auto p-0 bg-popover border-border" align="end" side="bottom">
+          <div className="flex flex-col sm:flex-row">
+            <div className="border-b sm:border-b-0 sm:border-r border-border">
               <CalendarComponent
                 mode="single"
                 selected={dateRange.start}
