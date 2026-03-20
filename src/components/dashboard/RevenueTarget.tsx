@@ -79,7 +79,7 @@ export function RevenueTarget({ currentRevenue, monthlyRevenues }: RevenueTarget
   };
 
   return (
-    <div className="w-full rounded-xl border border-border/60 bg-card/80 backdrop-blur-sm px-5 py-4 mb-1">
+    <div className="w-full rounded-xl border border-border/60 bg-card/80 backdrop-blur-sm px-3 sm:px-5 py-3 sm:py-4 mb-1">
 
       {/* ── Top row ─────────────────────────────────────────────── */}
       <div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-1 mb-4">
