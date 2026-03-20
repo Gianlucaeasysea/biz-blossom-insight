@@ -1,17 +1,22 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useCallback } from 'react';
 import { subDays, format, differenceInDays } from 'date-fns';
+import { enUS } from 'date-fns/locale';
 import { DashboardHeader } from '@/components/dashboard/DashboardHeader';
 import { NavLink } from '@/components/NavLink';
 import { useShopifyOrders } from '@/hooks/useShopifyOrders';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { Order } from '@/types/analytics';
 import { downloadCsv } from '@/lib/csv-export';
+import { AiAssistant } from '@/components/dashboard/AiAssistant';
 import {
   Users, UserPlus, UserCheck, Repeat, TrendingUp, Globe, ShoppingBag,
   ArrowUpDown, Download, Search, Megaphone, DollarSign, BarChart3,
-  Loader2, AlertCircle,
+  Loader2, AlertCircle, Calendar, ChevronDown,
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Calendar as CalendarComponent } from '@/components/ui/calendar';
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell,
   PieChart, Pie,
@@ -19,6 +24,15 @@ import {
 
 const fmt = (v: number) => new Intl.NumberFormat('it-IT', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 }).format(v);
 const fmtDec = (v: number) => new Intl.NumberFormat('it-IT', { style: 'currency', currency: 'EUR' }).format(v);
+
+// ─── Normalize acquisition source ─────────────────────────────────────────
+function normalizeSource(src: string): string {
+  const lower = src.toLowerCase().replace(/[\s_-]+/g, '');
+  if (lower === 'metaads' || lower === 'meta' || lower === 'facebook' || lower === 'fb' || lower === 'instagram' || lower === 'ig') return 'Meta Ads';
+  if (lower === 'google' || lower === 'googleads') return 'Google';
+  if (lower === 'direct' || lower === '') return 'Direct';
+  return src;
+}
 
 // ─── Derived customer record ──────────────────────────────────────────────
 interface CustomerRecord {
@@ -32,13 +46,24 @@ interface CustomerRecord {
   daysSinceLast: number;
   country: string;
   city: string;
-  source: string; // primary acquisition channel
-  products: string[]; // unique product names
+  source: string;
+  products: string[];
   skus: string[];
 }
 
-function buildCustomers(orders: Order[]): CustomerRecord[] {
-  const b2c = orders.filter(o => o.customerType === 'B2C');
+function buildCustomers(orders: Order[], dateRange: { start: Date; end: Date }): CustomerRecord[] {
+  const startTime = dateRange.start.getTime();
+  const endOfDay = new Date(dateRange.end);
+  endOfDay.setHours(23, 59, 59, 999);
+  const endTime = endOfDay.getTime();
+
+  const b2c = orders.filter(o => {
+    if (o.customerType !== 'B2C') return false;
+    const d = o.date instanceof Date ? o.date : new Date(o.date);
+    const t = d.getTime();
+    return t >= startTime && t <= endTime;
+  });
+
   const map: Record<string, {
     name: string; orders: number; totalSpent: number;
     firstOrder: Date; lastOrder: Date; country: string; city: string;
@@ -63,8 +88,8 @@ function buildCustomers(orders: Order[]): CustomerRecord[] {
     if (d < c.firstOrder) c.firstOrder = d;
     if (d > c.lastOrder) { c.lastOrder = d; c.country = o.destinationCountry || o.country || c.country; c.city = o.destinationCity || c.city; }
 
-    // Acquisition source
-    const src = o.utm?.utm_source || (o.referringSite ? new URL(o.referringSite).hostname.replace('www.', '') : 'Direct');
+    const rawSrc = o.utm?.utm_source || (o.referringSite ? (() => { try { return new URL(o.referringSite!).hostname.replace('www.', ''); } catch { return o.referringSite!; } })() : 'Direct');
+    const src = normalizeSource(rawSrc);
     c.sources[src] = (c.sources[src] || 0) + 1;
 
     o.products.forEach(p => { c.products.add(p.name); c.skus.add(p.sku); });
@@ -131,18 +156,36 @@ const SectionHeader = ({ label }: { label: string }) => (
   </div>
 );
 
+// ─── Date range presets ───────────────────────────────────────────────────
+const DATE_PRESETS = [
+  { label: '30g', days: 30 },
+  { label: '90g', days: 90 },
+  { label: '6m', days: 180 },
+  { label: '1a', days: 365 },
+  { label: 'Tutto', days: null },
+];
+
 export default function B2CCustomers() {
   const { t } = useLanguage();
-  const [shopifyMinDate] = useState(() => new Date('2025-01-01T00:00:00Z'));
+
+  // Fetch ALL orders from 2023
+  const [shopifyMinDate] = useState(() => new Date('2023-01-01T00:00:00Z'));
   const { data: shopifyOrders = [], isLoading, isError, error, refetch, isFetching } = useShopifyOrders({
     limit: 250, status: 'any', createdAtMin: shopifyMinDate, enabled: true,
   });
+
+  // Date range filter (default: all time from 2023)
+  const [dateRange, setDateRange] = useState<{ start: Date; end: Date }>({
+    start: new Date('2023-01-01'),
+    end: new Date(),
+  });
+  const [calendarOpen, setCalendarOpen] = useState(false);
 
   const [search, setSearch] = useState('');
   const [sortField, setSortField] = useState<'totalSpent' | 'orders' | 'name' | 'daysSinceLast' | 'avgOrderValue'>('totalSpent');
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc');
 
-  const customers = useMemo(() => buildCustomers(shopifyOrders), [shopifyOrders]);
+  const customers = useMemo(() => buildCustomers(shopifyOrders, dateRange), [shopifyOrders, dateRange]);
 
   // ── KPIs ──────────────────────────────────────────────────────────────
   const kpis = useMemo(() => {
@@ -248,6 +291,36 @@ export default function B2CCustomers() {
       filteredCustomers.map(c => [c.name, c.orders, c.totalSpent.toFixed(2), c.avgOrderValue.toFixed(2), format(c.firstOrder, 'yyyy-MM-dd'), format(c.lastOrder, 'yyyy-MM-dd'), c.daysSinceLast, c.country, c.city, c.source, getRFMSegment(c)]));
   };
 
+  // ── AI context builder ────────────────────────────────────────────────
+  const aiContext = useMemo(() => {
+    const segSummary = rfmData.map(d => `${d.name}: ${d.count} clienti, Revenue €${d.revenue}`).join('\n');
+    const topCountries = countryData.slice(0, 5).map(c => `${c.country}: ${c.count} clienti, €${Math.round(c.revenue)}`).join('\n');
+    const topSources = sourceData.slice(0, 5).map(s => `${s.source}: ${s.count} clienti, €${Math.round(s.revenue)}`).join('\n');
+    return `ANALISI CLIENTI B2C (${format(dateRange.start, 'dd/MM/yyyy')} - ${format(dateRange.end, 'dd/MM/yyyy')})
+
+KPI:
+- Clienti Totali: ${kpis.total}
+- Nuovi (30gg): ${kpis.newLast30}
+- Repeat Rate: ${kpis.repeatRate.toFixed(1)}%
+- Clienti Repeat: ${kpis.repeatCount}
+- Revenue Totale: €${Math.round(kpis.totalRevenue)}
+- LTV Medio: €${Math.round(kpis.avgLTV)}
+- AOV Medio: €${Math.round(kpis.avgAOV)}
+- Ordini/Cliente: ${kpis.avgOrders.toFixed(1)}
+
+SEGMENTAZIONE RFM:
+${segSummary}
+
+TOP PAESI:
+${topCountries}
+
+CANALI DI ACQUISIZIONE:
+${topSources}
+
+DISTRIBUZIONE FREQUENZA:
+${freqData.map(f => `${f.name}: ${f.value}`).join('\n')}`;
+  }, [kpis, rfmData, countryData, sourceData, freqData, dateRange]);
+
   const PALETTE = ['hsl(168,70%,42%)', 'hsl(210,80%,55%)', 'hsl(42,96%,48%)', 'hsl(280,60%,55%)', 'hsl(25,90%,55%)', 'hsl(0,65%,52%)', 'hsl(190,70%,50%)', 'hsl(330,60%,55%)'];
 
   return (
@@ -264,6 +337,53 @@ export default function B2CCustomers() {
           <NavLink to="/geo-insights" className="px-3.5 py-1.5 rounded-lg text-xs font-semibold bg-muted text-muted-foreground hover:text-foreground transition-colors" activeClassName="bg-primary text-primary-foreground">{t('nav.geo')}</NavLink>
           <NavLink to="/product-analysis" className="px-3.5 py-1.5 rounded-lg text-xs font-semibold bg-muted text-muted-foreground hover:text-foreground transition-colors" activeClassName="bg-primary text-primary-foreground">{t('nav.products')}</NavLink>
           <NavLink to="/b2c-customers" className="px-3.5 py-1.5 rounded-lg text-xs font-semibold bg-muted text-muted-foreground hover:text-foreground transition-colors" activeClassName="bg-primary text-primary-foreground">Clienti B2C</NavLink>
+        </div>
+
+        {/* ═══ DATE RANGE FILTER ═══ */}
+        <div className="flex flex-wrap items-center gap-3">
+          <div className="flex rounded-md bg-muted p-0.5">
+            {DATE_PRESETS.map(p => (
+              <button
+                key={p.label}
+                onClick={() => setDateRange({
+                  start: p.days ? subDays(new Date(), p.days) : new Date('2023-01-01'),
+                  end: new Date(),
+                })}
+                className="px-2.5 py-1.5 text-xs text-muted-foreground hover:text-foreground rounded transition-colors"
+              >
+                {p.label}
+              </button>
+            ))}
+          </div>
+          <Popover open={calendarOpen} onOpenChange={setCalendarOpen}>
+            <PopoverTrigger asChild>
+              <Button variant="ghost" size="sm" className="text-xs text-muted-foreground hover:text-foreground gap-1.5">
+                <Calendar className="w-3.5 h-3.5" />
+                {format(dateRange.start, 'dd MMM yyyy', { locale: enUS })} – {format(dateRange.end, 'dd MMM yyyy', { locale: enUS })}
+                <ChevronDown className="w-3 h-3" />
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-0 bg-popover border-border" align="start">
+              <div className="flex">
+                <div className="border-r border-border">
+                  <CalendarComponent
+                    mode="single"
+                    selected={dateRange.start}
+                    onSelect={date => date && setDateRange(prev => ({ ...prev, start: date }))}
+                    locale={enUS}
+                    className="p-3 pointer-events-auto"
+                  />
+                </div>
+                <CalendarComponent
+                  mode="single"
+                  selected={dateRange.end}
+                  onSelect={date => date && setDateRange(prev => ({ ...prev, end: date }))}
+                  locale={enUS}
+                  className="p-3 pointer-events-auto"
+                />
+              </div>
+            </PopoverContent>
+          </Popover>
         </div>
 
         {isError && (
@@ -473,6 +593,9 @@ export default function B2CCustomers() {
           </>
         )}
       </div>
+
+      {/* AI Marketing Assistant */}
+      <AiAssistant dashboardContext={aiContext} />
     </div>
   );
 }
