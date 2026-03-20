@@ -187,7 +187,7 @@ export function RevenueTarget({ currentRevenue, monthlyRevenues }: RevenueTarget
               </div>
 
               {/* Month name */}
-              <p className={`text-center text-[11px] font-semibold leading-none ${
+              <p className={`text-center text-[8px] sm:text-[11px] font-semibold leading-none ${
                 isCurr   ? 'text-primary' :
                 isFuture ? 'text-muted-foreground/35' :
                            'text-muted-foreground/70'
