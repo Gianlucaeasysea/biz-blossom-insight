@@ -202,8 +202,14 @@ export default function Index() {
 
   const allSkus = useMemo(() => {
     const skuSet = new Set<string>();
-    filteredOrders.forEach(o => o.products.forEach(p => skuSet.add(p.sku)));
+    filteredOrders.forEach(o => o.products.forEach(p => { if (p.sku) skuSet.add(p.sku); }));
     return Array.from(skuSet).sort();
+  }, [filteredOrders]);
+
+  const allProductNames = useMemo(() => {
+    const nameSet = new Set<string>();
+    filteredOrders.forEach(o => o.products.forEach(p => { if (p.name) nameSet.add(p.name); }));
+    return Array.from(nameSet).sort();
   }, [filteredOrders]);
 
   const kpiMap = useMemo(() => Object.fromEntries(kpis.map(k => [k.label, k])), [kpis]);
