@@ -8,6 +8,11 @@ const it: Dict = {
   'nav.meta':   'Meta Ads',
   'nav.budget': 'Budget 2026',
   'nav.geo':    'Geo Insights',
+  'nav.b2c_customers': 'Clienti B2C',
+  'nav.b2b_analysis': 'Analisi B2B',
+  'nav.b2c_analysis': 'Analisi B2C',
+  'nav.sales_call': 'Analisi Call Sales',
+  'nav.stock': 'Stock',
 
   // ── Header ────────────────────────────────────────────────────────────
   'header.subtitle': 'Dashboard B2C + B2B',
