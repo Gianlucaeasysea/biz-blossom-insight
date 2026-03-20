@@ -3,7 +3,8 @@ import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip,
   ResponsiveContainer, ReferenceLine, ReferenceArea,
 } from 'recharts';
-import { Download, CalendarDays, Plus, X, Pencil } from 'lucide-react';
+import { Download, CalendarDays, Plus, X } from 'lucide-react';
+import { useLanguage } from '@/contexts/LanguageContext';
 import { Order } from '@/types/analytics';
 import {
   format, eachDayOfInterval, eachWeekOfInterval, eachMonthOfInterval,
@@ -40,12 +41,7 @@ const EVENT_COLORS: Record<CalendarEvent['type'], string> = {
   other:    'hsl(215, 60%, 60%)',
 };
 
-const EVENT_TYPE_LABELS: Record<CalendarEvent['type'], string> = {
-  preorder: 'Pre Order',
-  launch:   'Launch',
-  promo:    'Promo',
-  other:    'Evento',
-};
+// labels are resolved via t('orders.type.*') in the component
 
 // ─── Built-in events ─────────────────────────────────────────────────────────
 const BUILTIN_EVENTS: CalendarEvent[] = [
@@ -72,7 +68,7 @@ function saveCustomEvents(evs: CalendarEvent[]) {
 const fmtCurrency = (v: number) =>
   new Intl.NumberFormat('it-IT', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 }).format(v);
 
-const MONTHS_SHORT = ['Gen','Feb','Mar','Apr','Mag','Giu','Lug','Ago','Set','Ott','Nov','Dic'];
+// months resolved from language context in component
 
 // month label as used on the chart X axis
 function monthLabel(year: number, month: number) {
@@ -81,6 +77,9 @@ function monthLabel(year: number, month: number) {
 
 // ─── Component ───────────────────────────────────────────────────────────────
 export function OrdersTrendChart({ orders, allOrders, dateRange }: OrdersTrendChartProps) {
+  const { t, months: MONTHS_SHORT } = useLanguage();
+  const evtLabel = (type: CalendarEvent['type']) => t(`orders.type.${type}`);
+
   const [granularity, setGranularity] = useState<Granularity>('month');
   const [activeYear, setActiveYear] = useState<number | null>(null);
   const [showEvents, setShowEvents] = useState(true);
@@ -265,7 +264,7 @@ export function OrdersTrendChart({ orders, allOrders, dateRange }: OrdersTrendCh
         ))}
         {payload.length > 1 && (
           <div className="flex items-center gap-2 pt-1.5 mt-1 border-t border-border/50">
-            <span className="text-muted-foreground flex-1">Totale</span>
+            <span className="text-muted-foreground flex-1">{t('common.total')}</span>
             <span className="font-mono font-bold text-foreground">{fmtCurrency(total)}</span>
           </div>
         )}
@@ -288,9 +287,9 @@ export function OrdersTrendChart({ orders, allOrders, dateRange }: OrdersTrendCh
   const B2B_CUSTOM_COLOR = 'hsl(40, 90%, 55%)';
 
   const granularities = [
-    { value: 'day'   as Granularity, label: 'Day'   },
-    { value: 'week'  as Granularity, label: 'Week'  },
-    { value: 'month' as Granularity, label: 'Month' },
+    { value: 'day'   as Granularity, label: t('common.day')   },
+    { value: 'week'  as Granularity, label: t('common.week')  },
+    { value: 'month' as Granularity, label: t('common.month') },
   ];
 
   return (
@@ -298,9 +297,9 @@ export function OrdersTrendChart({ orders, allOrders, dateRange }: OrdersTrendCh
       {/* ── Header ──────────────────────────────────────────────────────── */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-5">
         <div>
-          <h3 className="text-sm font-semibold text-foreground">Orders Trend</h3>
+          <h3 className="text-sm font-semibold text-foreground">{t('orders.title')}</h3>
           <p className="text-xs text-muted-foreground">
-            {activeYear ? `Anno ${activeYear} — mensile` : 'B2C + B2B (+ B2B Custom)'}
+            {activeYear ? t('orders.year_monthly', { y: String(activeYear) }) : t('orders.subtitle')}
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
@@ -308,7 +307,7 @@ export function OrdersTrendChart({ orders, allOrders, dateRange }: OrdersTrendCh
           <div className="flex rounded-md bg-muted p-0.5">
             <button onClick={() => setActiveYear(null)}
               className={`px-2.5 py-1 text-xs font-medium rounded transition-colors ${activeYear === null ? 'bg-secondary text-foreground' : 'text-muted-foreground hover:text-foreground'}`}>
-              All
+              {t('common.all')}
             </button>
             {YEARS.map(y => (
               <button key={y} onClick={() => setActiveYear(activeYear === y ? null : y)}
@@ -330,7 +329,7 @@ export function OrdersTrendChart({ orders, allOrders, dateRange }: OrdersTrendCh
             </div>
           )}
 
-          <button onClick={handleExport} className="p-2 rounded-md hover:bg-muted/50 text-muted-foreground hover:text-foreground transition-colors" title="Export CSV">
+          <button onClick={handleExport} className="p-2 rounded-md hover:bg-muted/50 text-muted-foreground hover:text-foreground transition-colors" title={t('common.export_csv')}>
             <Download className="w-4 h-4" />
           </button>
         </div>
@@ -401,7 +400,7 @@ export function OrdersTrendChart({ orders, allOrders, dateRange }: OrdersTrendCh
           <button onClick={() => setShowEvents(v => !v)}
             className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground hover:text-foreground transition-colors">
             <CalendarDays className="w-3.5 h-3.5" />
-            <span>Eventi</span>
+            <span>{t('orders.events')}</span>
             {visibleEvents.length > 0 && (
               <span className="px-1.5 py-0.5 rounded-full bg-muted text-[10px] font-semibold">{visibleEvents.length}</span>
             )}
@@ -413,20 +412,20 @@ export function OrdersTrendChart({ orders, allOrders, dateRange }: OrdersTrendCh
             className="flex items-center gap-1 px-2 py-1 rounded-md text-[11px] font-medium bg-muted/60 text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
           >
             {showForm ? <X className="w-3 h-3" /> : <Plus className="w-3 h-3" />}
-            {showForm ? 'Annulla' : 'Aggiungi evento'}
+            {showForm ? t('orders.cancel') : t('orders.add_event')}
           </button>
         </div>
 
         {/* ── Add event form ───────────────────────────────────────────── */}
         {showForm && (
           <div className="mb-3 p-3 rounded-lg bg-muted/30 border border-border/50 space-y-3">
-            <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">Nuovo evento</p>
+            <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">{t('orders.new_event')}</p>
 
             {/* Name + Type */}
             <div className="flex gap-2">
               <input
                 type="text"
-                placeholder="Nome evento"
+                placeholder={t('orders.event_name')}
                 value={form.label}
                 onChange={e => setForm(f => ({ ...f, label: e.target.value }))}
                 onKeyDown={e => e.key === 'Enter' && addEvent()}
@@ -437,15 +436,15 @@ export function OrdersTrendChart({ orders, allOrders, dateRange }: OrdersTrendCh
                 onChange={e => setForm(f => ({ ...f, type: e.target.value as CalendarEvent['type'] }))}
                 className="h-8 px-2 text-xs rounded-md bg-muted border border-border text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
               >
-                {(Object.keys(EVENT_TYPE_LABELS) as CalendarEvent['type'][]).map(t => (
-                  <option key={t} value={t}>{EVENT_TYPE_LABELS[t]}</option>
+                {(['preorder','launch','promo','other'] as CalendarEvent['type'][]).map(tp => (
+                  <option key={tp} value={tp}>{evtLabel(tp)}</option>
                 ))}
               </select>
             </div>
 
             {/* Start date */}
             <div className="flex items-center gap-2">
-              <span className="text-[11px] text-muted-foreground w-14 shrink-0">Inizio</span>
+              <span className="text-[11px] text-muted-foreground w-14 shrink-0">{t('orders.start')}</span>
               <select
                 value={form.startMonth}
                 onChange={e => setForm(f => ({ ...f, startMonth: e.target.value, endMonth: e.target.value }))}
@@ -464,7 +463,7 @@ export function OrdersTrendChart({ orders, allOrders, dateRange }: OrdersTrendCh
 
             {/* End date */}
             <div className="flex items-center gap-2">
-              <span className="text-[11px] text-muted-foreground w-14 shrink-0">Fine</span>
+              <span className="text-[11px] text-muted-foreground w-14 shrink-0">{t('orders.end')}</span>
               <select
                 value={form.endMonth}
                 onChange={e => setForm(f => ({ ...f, endMonth: e.target.value }))}
@@ -479,7 +478,7 @@ export function OrdersTrendChart({ orders, allOrders, dateRange }: OrdersTrendCh
               >
                 {[2024, 2025, 2026, 2027].map(y => <option key={y} value={String(y)}>{y}</option>)}
               </select>
-              <span className="text-[10px] text-muted-foreground/50">(stesso mese = evento singolo)</span>
+              <span className="text-[10px] text-muted-foreground/50">{t('orders.same_month')}</span>
             </div>
 
             {/* Preview + submit */}
@@ -497,7 +496,7 @@ export function OrdersTrendChart({ orders, allOrders, dateRange }: OrdersTrendCh
               )}
               <button onClick={addEvent} disabled={!form.label.trim()}
                 className="ml-auto px-3 py-1.5 rounded-md text-xs font-semibold bg-primary text-primary-foreground hover:opacity-90 transition-opacity disabled:opacity-40 disabled:cursor-not-allowed">
-                Aggiungi
+                {t('orders.add')}
               </button>
             </div>
           </div>
@@ -521,12 +520,12 @@ export function OrdersTrendChart({ orders, allOrders, dateRange }: OrdersTrendCh
                   <span>{ev.label}</span>
                   <span className="text-[9px] px-1 py-0.5 rounded font-bold uppercase tracking-wide"
                     style={{ backgroundColor: EVENT_COLORS[ev.type] + '30' }}>
-                    {EVENT_TYPE_LABELS[ev.type]}
+                    {evtLabel(ev.type)}
                   </span>
                   {ev.custom && (
                     <button onClick={() => deleteEvent(ev.id)}
                       className="ml-0.5 opacity-0 group-hover:opacity-100 transition-opacity hover:opacity-100"
-                      title="Rimuovi">
+                      title={t('orders.remove')}>
                       <X className="w-3 h-3" style={{ color: EVENT_COLORS[ev.type] }} />
                     </button>
                   )}
@@ -537,7 +536,7 @@ export function OrdersTrendChart({ orders, allOrders, dateRange }: OrdersTrendCh
         )}
 
         {showEvents && visibleEvents.length === 0 && (
-          <p className="text-[11px] text-muted-foreground/40 italic">Nessun evento nel periodo visualizzato</p>
+          <p className="text-[11px] text-muted-foreground/40 italic">{t('orders.no_events')}</p>
         )}
       </div>
     </div>

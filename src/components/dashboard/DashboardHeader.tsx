@@ -1,6 +1,14 @@
 import { RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import companyLogo from '@/assets/company-logo.png';
+import { useLanguage } from '@/contexts/LanguageContext';
+import { Language } from '@/lib/i18n';
+
+const LANGS: { code: Language; flag: string }[] = [
+  { code: 'it', flag: '🇮🇹' },
+  { code: 'en', flag: '🇬🇧' },
+  { code: 'de', flag: '🇩🇪' },
+];
 
 interface DashboardHeaderProps {
   onRefresh?: () => void;
@@ -8,6 +16,8 @@ interface DashboardHeaderProps {
 }
 
 export function DashboardHeader({ onRefresh, isLoading }: DashboardHeaderProps) {
+  const { lang, setLang, t } = useLanguage();
+
   return (
     <header className="flex items-center justify-between mb-8">
       <div className="flex items-center gap-5">
@@ -17,19 +27,41 @@ export function DashboardHeader({ onRefresh, isLoading }: DashboardHeaderProps) 
           <h1 className="text-xl font-bold tracking-tight text-foreground">
             EASYSEA ANALYTICS
           </h1>
-          <p className="text-xs text-muted-foreground mt-0.5">Dashboard B2C + B2B</p>
+          <p className="text-xs text-muted-foreground mt-0.5">{t('header.subtitle')}</p>
         </div>
       </div>
 
-      <Button
-        variant="ghost"
-        size="sm"
-        onClick={onRefresh}
-        disabled={isLoading}
-        className="text-muted-foreground hover:text-foreground"
-      >
-        <RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} />
-      </Button>
+      <div className="flex items-center gap-3">
+        {/* Language switcher */}
+        <div className="flex items-center rounded-lg bg-muted p-0.5 gap-0.5">
+          {LANGS.map(({ code, flag }) => (
+            <button
+              key={code}
+              onClick={() => setLang(code)}
+              title={code.toUpperCase()}
+              className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-semibold transition-all ${
+                lang === code
+                  ? 'bg-background text-foreground shadow-sm'
+                  : 'text-muted-foreground hover:text-foreground'
+              }`}
+            >
+              <span className="text-sm leading-none">{flag}</span>
+              <span className="uppercase tracking-wide">{code}</span>
+            </button>
+          ))}
+        </div>
+
+        {/* Refresh */}
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={onRefresh}
+          disabled={isLoading}
+          className="text-muted-foreground hover:text-foreground"
+        >
+          <RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} />
+        </Button>
+      </div>
     </header>
   );
 }
