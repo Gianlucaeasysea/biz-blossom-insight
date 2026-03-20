@@ -1,7 +1,7 @@
 import { useState, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { Package, Search, ArrowUpDown, ChevronLeft, ChevronRight, Loader2, AlertCircle, RefreshCw } from 'lucide-react';
-import { NavLink } from '@/components/NavLink';
+import { DraggableNav } from '@/components/DraggableNav';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { useShopifyProducts, ShopifyProductRow } from '@/hooks/useShopifyProducts';
