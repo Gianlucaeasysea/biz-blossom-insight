@@ -182,6 +182,12 @@ const en: Dict = {
   'nav.meta':   'Meta Ads',
   'nav.budget': 'Budget 2026',
   'nav.geo':    'Geo Insights',
+  'nav.products': 'Product Analysis',
+  'nav.b2c_customers': 'B2C Customers',
+  'nav.b2b_analysis': 'B2B Analysis',
+  'nav.b2c_analysis': 'B2C Analysis',
+  'nav.sales_call': 'Sales Call Analysis',
+  'nav.stock': 'Stock',
 
   'header.subtitle': 'B2C + B2B Dashboard',
 
