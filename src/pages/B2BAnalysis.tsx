@@ -484,6 +484,7 @@ export default function B2BAnalysis() {
             <NavLink to="/product-analysis" className={navLinkClass} activeClassName={activeClass}>{t('nav.products')}</NavLink>
             <NavLink to="/b2c-customers" className={navLinkClass} activeClassName={activeClass}>Clienti B2C</NavLink>
             <NavLink to="/b2b-analysis" className={navLinkClass} activeClassName={activeClass}>Analisi B2B</NavLink>
+            <NavLink to="/b2c-analysis" className={navLinkClass} activeClassName={activeClass}>Analisi B2C</NavLink>
           </div>
 
           {/* Date range */}
