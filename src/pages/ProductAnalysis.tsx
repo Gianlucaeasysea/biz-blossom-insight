@@ -6,6 +6,7 @@ import {
 import { DashboardHeader } from '@/components/dashboard/DashboardHeader';
 import { NavLink } from '@/components/NavLink';
 import { useShopifyOrders } from '@/hooks/useShopifyOrders';
+import { useShopifySalesSummary } from '@/hooks/useShopifySalesSummary';
 import { useGoogleSheetsOrders } from '@/hooks/useGoogleSheetsOrders';
 import { getSkuCollection } from '@/lib/mock-data';
 import { useLanguage } from '@/contexts/LanguageContext';
@@ -81,9 +82,36 @@ export default function ProductAnalysis() {
   });
   const { data: gsOrders = [], isLoading: isLoadingGS, isFetching: isFetchingGS, refetch: refetchGS } = useGoogleSheetsOrders(true);
 
+  // Shopify Analytics net sales for the selected year (canonical B2C figure)
+  const yearSummaryRange = useMemo(() => {
+    const start = new Date(`${selectedYear}-01-01T00:00:00Z`);
+    const end = new Date().getFullYear() === selectedYear
+      ? new Date()
+      : new Date(`${selectedYear}-12-31T23:59:59Z`);
+    return { start, end };
+  }, [selectedYear]);
+
+  const { data: yearSalesSummary } = useShopifySalesSummary({
+    start: yearSummaryRange.start,
+    end: yearSummaryRange.end,
+    enabled: true,
+  });
+
   const allOrders = useMemo(() => [...shopifyOrders, ...gsOrders], [shopifyOrders, gsOrders]);
   const isLoading = isLoadingShopify || isLoadingGS;
   const isFetching = isFetchingShopify || isFetchingGS;
+
+  // Scale factor: aligns sum(order.netAmount) to Shopify Analytics netSales (same logic as Index.tsx)
+  const b2cNetScaleFactor = useMemo(() => {
+    if (!yearSalesSummary?.netSales) return 1;
+    const rawB2CNet = allOrders
+      .filter(o => {
+        const d = o.date instanceof Date ? o.date : new Date(o.date);
+        return o.customerType === 'B2C' && d.getFullYear() === selectedYear;
+      })
+      .reduce((s, o) => s + (o.netAmount ?? o.totalAmount), 0);
+    return rawB2CNet > 0 ? yearSalesSummary.netSales / rawB2CNet : 1;
+  }, [allOrders, yearSalesSummary, selectedYear]);
 
   const handleRefresh = () => { refetchShopify(); refetchGS(); };
 
@@ -110,10 +138,11 @@ export default function ProductAnalysis() {
         if (!product) return; // skip Shipping, Other, etc.
 
         if (order.customerType === 'B2C') {
-          // Distribute order net proportionally
+          // Net sales per line item: distribute order.netAmount proportionally by gross line price,
+          // then scale by b2cNetScaleFactor to align with Shopify Analytics net sales (ground truth).
           const orderNet = order.netAmount ?? order.totalAmount;
           const itemsGross = order.products.reduce((s, p) => s + p.totalPrice, 0);
-          const itemNet = itemsGross > 0 ? orderNet * (prod.totalPrice / itemsGross) : 0;
+          const itemNet = (itemsGross > 0 ? orderNet * (prod.totalPrice / itemsGross) : 0) * b2cNetScaleFactor;
           grid[product].b2c[mo] += itemNet;
           monthTotal[mo] += itemNet;
         } else if (order.customerType === 'B2B' && !isCustom) {
@@ -144,7 +173,7 @@ export default function ProductAnalysis() {
     });
 
     return { productData, grandTotals };
-  }, [allOrders, selectedYear, months]);
+  }, [allOrders, selectedYear, months, b2cNetScaleFactor]);
 
   const overallTotal = PRODUCTS.reduce((s, p) => s + grandTotals[p].total, 0);
   const overallB2C   = PRODUCTS.reduce((s, p) => s + grandTotals[p].b2c, 0);
