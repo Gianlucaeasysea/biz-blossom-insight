@@ -324,7 +324,7 @@ export default function Index() {
                 {kpiMap['Total Orders B2B'] && <KPICard data={kpiMap['Total Orders B2B']} />}
               </div>
               {/* Row 3: AOV + Top3 + Pie */}
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3">
                 {kpiMap['AOV B2C'] && <KPICard data={kpiMap['AOV B2C']} />}
                 {kpiMap['AOV B2B'] && <KPICard data={kpiMap['AOV B2B']} />}
 
