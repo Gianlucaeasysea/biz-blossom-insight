@@ -409,7 +409,7 @@ export default function Index() {
         <div>
           <SectionHeader label={t('section.sku_detail')} />
           {/* B2C + B2B side by side, Combined below */}
-          <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 mb-4">
+          <div className="grid grid-cols-1 xl:grid-cols-2 gap-3 sm:gap-4 mb-3 sm:mb-4">
             <B2CSkuTable data={b2cSkuData} allProductNames={allProductNames} allSkus={allSkus} />
             <B2BSkuTable data={b2bSkuData} allProductNames={allProductNames} allSkus={allSkus} />
           </div>
