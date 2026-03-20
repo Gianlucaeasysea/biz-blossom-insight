@@ -1,8 +1,10 @@
-import { RefreshCw } from 'lucide-react';
+import { RefreshCw, LogOut } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import companyLogo from '@/assets/company-logo.png';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { Language } from '@/lib/i18n';
+import { supabase } from '@/integrations/supabase/client';
 
 const LANGS: { code: Language; flag: string }[] = [
   { code: 'it', flag: '🇮🇹' },
@@ -17,6 +19,12 @@ interface DashboardHeaderProps {
 
 export function DashboardHeader({ onRefresh, isLoading }: DashboardHeaderProps) {
   const { lang, setLang, t } = useLanguage();
+  const navigate = useNavigate();
+
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    navigate('/login');
+  };
 
   return (
     <header className="flex items-center justify-between mb-8">
@@ -60,6 +68,17 @@ export function DashboardHeader({ onRefresh, isLoading }: DashboardHeaderProps) 
           className="text-muted-foreground hover:text-foreground"
         >
           <RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} />
+        </Button>
+
+        {/* Logout */}
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={handleLogout}
+          className="text-muted-foreground hover:text-destructive"
+          title="Logout"
+        >
+          <LogOut className="w-4 h-4" />
         </Button>
       </div>
     </header>
