@@ -138,7 +138,7 @@ export function CountryBreakdown({ orders, allSkus, allProductNames = [] }: { or
       });
 
     return { b2cRows: doSort(Object.values(b2c)), b2bRows: doSort(Object.values(b2b)), allRows: doSort(Object.values(allMap)) };
-  }, [orders, skuFilter, sortField, sortDir]);
+  }, [orders, skuFilter, productFilter, sortField, sortDir]);
 
   const rows = tab === 'b2c' ? b2cRows : tab === 'b2b' ? b2bRows : allRows;
   const total = rows.reduce((s, r) => s + r.sales, 0);
