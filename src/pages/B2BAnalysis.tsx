@@ -97,7 +97,7 @@ function buildB2BOrders(orders: Order[]): B2BOrderRow[] {
         name: p.name,
         sku: p.sku,
         qty: p.quantity,
-        unitPrice: p.unitPrice || (p.totalPrice / p.quantity),
+        unitPrice: p.quantity > 0 ? p.totalPrice / p.quantity : p.unitPrice,
         totalPrice: p.totalPrice,
       });
       row.totalPrice += p.totalPrice;
@@ -484,6 +484,7 @@ export default function B2BAnalysis() {
             <NavLink to="/product-analysis" className={navLinkClass} activeClassName={activeClass}>{t('nav.products')}</NavLink>
             <NavLink to="/b2c-customers" className={navLinkClass} activeClassName={activeClass}>Clienti B2C</NavLink>
             <NavLink to="/b2b-analysis" className={navLinkClass} activeClassName={activeClass}>Analisi B2B</NavLink>
+            <NavLink to="/b2c-analysis" className={navLinkClass} activeClassName={activeClass}>Analisi B2C</NavLink>
           </div>
 
           {/* Date range */}

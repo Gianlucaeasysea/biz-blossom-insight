@@ -10,6 +10,7 @@ import GeoInsights from "./pages/GeoInsights";
 import ProductAnalysis from "./pages/ProductAnalysis";
 import B2CCustomers from "./pages/B2CCustomers";
 import B2BAnalysis from "./pages/B2BAnalysis";
+import B2CAnalysis from "./pages/B2CAnalysis";
 import NotFound from "./pages/NotFound";
 import { LanguageProvider } from "./contexts/LanguageContext";
 
@@ -30,6 +31,7 @@ const App = () => (
           <Route path="/product-analysis" element={<ProductAnalysis />} />
           <Route path="/b2c-customers" element={<B2CCustomers />} />
           <Route path="/b2b-analysis" element={<B2BAnalysis />} />
+          <Route path="/b2c-analysis" element={<B2CAnalysis />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
