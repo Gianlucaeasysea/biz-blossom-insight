@@ -325,8 +325,8 @@ ${freqData.map(f => `${f.name}: ${f.value}`).join('\n')}`;
   const PALETTE = ['hsl(168,70%,42%)', 'hsl(210,80%,55%)', 'hsl(42,96%,48%)', 'hsl(280,60%,55%)', 'hsl(25,90%,55%)', 'hsl(0,65%,52%)', 'hsl(190,70%,50%)', 'hsl(330,60%,55%)'];
 
   return (
-    <div className="min-h-screen bg-background p-4 sm:p-6">
-      <div className="max-w-[1520px] mx-auto space-y-5">
+    <div className="min-h-screen bg-background p-3 sm:p-4 md:p-6">
+      <div className="max-w-[1520px] mx-auto space-y-3 sm:space-y-5">
 
         <DashboardHeader onRefresh={() => refetch()} isLoading={isFetching} />
 

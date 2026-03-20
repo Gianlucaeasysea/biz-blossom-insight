@@ -214,8 +214,8 @@ export default function Budget2026() {
   const navActive = 'bg-primary text-primary-foreground';
 
   return (
-    <div className="min-h-screen bg-background p-4 sm:p-6">
-      <div className="max-w-[1520px] mx-auto space-y-5">
+    <div className="min-h-screen bg-background p-3 sm:p-4 md:p-6">
+      <div className="max-w-[1520px] mx-auto space-y-3 sm:space-y-5">
 
         {/* ── Header ──────────────────────────────────────────────────────── */}
         <div className="flex flex-wrap items-center justify-between gap-3">
