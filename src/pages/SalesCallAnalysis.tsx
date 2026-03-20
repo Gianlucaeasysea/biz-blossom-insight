@@ -1,17 +1,13 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useCallback } from 'react';
 import { DraggableNav } from '@/components/DraggableNav';
 import { DashboardHeader } from '@/components/dashboard/DashboardHeader';
-import { NavLink } from '@/components/NavLink';
 import { useShopifyOrders } from '@/hooks/useShopifyOrders';
 import { useGoogleSheetsOrders } from '@/hooks/useGoogleSheetsOrders';
 import { useShopifySalesSummary } from '@/hooks/useShopifySalesSummary';
 import { getSkuCollection } from '@/lib/mock-data';
 import { useLanguage } from '@/contexts/LanguageContext';
-import { Loader2 } from 'lucide-react';
-
-const NAV_CLS =
-  'px-3.5 py-1.5 rounded-lg text-xs font-semibold bg-muted text-muted-foreground hover:text-foreground transition-colors';
-const NAV_ACTIVE = 'bg-primary text-primary-foreground';
+import { Loader2, Pencil, Check, X, Info } from 'lucide-react';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 // ─── Product mapping ──────────────────────────────────────────────────────────
 const COLLECTION_TO_PRODUCT: Record<string, string> = {
@@ -22,21 +18,15 @@ const COLLECTION_TO_PRODUCT: Record<string, string> = {
   Inflatable: 'Way2',
   'Side products': 'Side Products',
 };
-const PRODUCTS = [
-  'Flipper',
-  'Olli Block',
-  'Olli Ring',
-  'Jake',
-  'Way2',
-  'Side Products',
-] as const;
+const PRODUCTS = ['Flipper', 'Olli Block', 'Olli Ring', 'Jake', 'Way2', 'Side Products'] as const;
 type Product = (typeof PRODUCTS)[number];
 
 // ─── Formatters ───────────────────────────────────────────────────────────────
 const fmt = (v: number) =>
-  v === 0
-    ? '—'
-    : new Intl.NumberFormat('it-IT', { maximumFractionDigits: 0 }).format(Math.round(v));
+  v === 0 ? '—' : new Intl.NumberFormat('it-IT', { maximumFractionDigits: 0 }).format(Math.round(v));
+
+const fmtEur = (v: number) =>
+  v === 0 ? '—' : new Intl.NumberFormat('it-IT', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 }).format(Math.round(v));
 
 const pctStr = (curr: number, prev: number): string => {
   if (prev === 0) return curr > 0 ? '+∞' : '—';
@@ -47,41 +37,129 @@ const pctStr = (curr: number, prev: number): string => {
 const pctCls = (curr: number, prev: number): string => {
   if (prev === 0) return 'text-muted-foreground';
   const p = (curr - prev) / Math.abs(prev);
-  return p >= 0.02
-    ? 'text-green-600 dark:text-green-400 font-semibold'
-    : p <= -0.02
-    ? 'text-red-500 dark:text-red-400 font-semibold'
+  return p >= 0.02 ? 'text-emerald-600 dark:text-emerald-400 font-semibold'
+    : p <= -0.02 ? 'text-red-500 dark:text-red-400 font-semibold'
     : 'text-muted-foreground';
 };
 
 const sumArr = (arr: number[]) => arr.reduce((a, b) => a + b, 0);
 
-const MONTHS = [
-  'Gen', 'Feb', 'Mar', 'Apr', 'Mag', 'Giu',
-  'Lug', 'Ago', 'Set', 'Ott', 'Nov', 'Dic',
-];
+const MONTHS = ['Gen', 'Feb', 'Mar', 'Apr', 'Mag', 'Giu', 'Lug', 'Ago', 'Set', 'Ott', 'Nov', 'Dic'];
 
 // ─── Types ────────────────────────────────────────────────────────────────────
-interface MonthSlot {
-  raccolti: number;
-  evasi: number;
-  products: Record<Product, number>;
-}
-
-interface B2BMonthSlot {
-  raccolti: number;
-  consegnati: number;
-  products: Record<Product, number>;
-}
+interface MonthSlot { raccolti: number; evasi: number; products: Record<Product, number>; }
+interface B2BMonthSlot { raccolti: number; consegnati: number; products: Record<Product, number>; }
 
 interface TableRow {
+  id: string;
   label: string;
   sub?: string;
+  tooltip?: string;
   currMonthly: number[];
   prevMonthly: number[];
   isHeader?: boolean;
   dimmed?: boolean;
   isProduct?: boolean;
+  isDerived?: boolean; // computed row, not directly editable
+}
+
+// ─── Editable Cell ────────────────────────────────────────────────────────────
+function EditableCell({
+  value,
+  onSave,
+  isHeader,
+  accentCls,
+  isCurrent,
+  prevValue,
+}: {
+  value: number;
+  onSave: (v: number) => void;
+  isHeader?: boolean;
+  accentCls: string;
+  isCurrent?: boolean;
+  prevValue: number;
+}) {
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState('');
+
+  const startEdit = () => {
+    setDraft(String(Math.round(value)));
+    setEditing(true);
+  };
+
+  const save = () => {
+    const parsed = parseFloat(draft.replace(/[^\d.-]/g, ''));
+    if (!isNaN(parsed)) onSave(parsed);
+    setEditing(false);
+  };
+
+  const cancel = () => setEditing(false);
+
+  if (editing) {
+    return (
+      <td className={`px-1 py-1 border-l border-border/10 ${isCurrent ? 'bg-primary/5' : ''}`}>
+        <div className="flex items-center gap-0.5">
+          <input
+            type="text"
+            value={draft}
+            onChange={(e) => setDraft(e.target.value)}
+            onKeyDown={(e) => { if (e.key === 'Enter') save(); if (e.key === 'Escape') cancel(); }}
+            autoFocus
+            className="w-full text-[11px] px-1 py-0.5 rounded border border-primary bg-background text-right tabular-nums focus:outline-none"
+          />
+          <button onClick={save} className="p-0.5 text-emerald-600 hover:bg-emerald-500/10 rounded"><Check className="w-3 h-3" /></button>
+          <button onClick={cancel} className="p-0.5 text-red-500 hover:bg-red-500/10 rounded"><X className="w-3 h-3" /></button>
+        </div>
+      </td>
+    );
+  }
+
+  return (
+    <td
+      className={`px-2 py-2 text-right tabular-nums border-l border-border/10 group/cell cursor-pointer hover:bg-primary/5 transition-colors ${isCurrent ? 'bg-primary/8' : ''}`}
+      onDoubleClick={startEdit}
+      title="Doppio click per modificare"
+    >
+      <div className="relative">
+        <div className={`text-[11px] leading-tight ${isHeader ? `font-bold ${accentCls}` : 'text-foreground/90'}`}>
+          {fmt(value)}
+        </div>
+        <div className="text-[10px] text-muted-foreground leading-tight">{fmt(prevValue)}</div>
+        {(value > 0 || prevValue > 0) && (
+          <div className={`text-[9px] leading-tight ${pctCls(value, prevValue)}`}>
+            {pctStr(value, prevValue)}
+          </div>
+        )}
+        <Pencil className="w-2.5 h-2.5 text-muted-foreground/40 absolute top-0 right-0 opacity-0 group-hover/cell:opacity-100 transition-opacity" />
+      </div>
+    </td>
+  );
+}
+
+// ─── Summary Card ─────────────────────────────────────────────────────────────
+function SummaryCard({ label, value, prevValue, color, tooltip }: {
+  label: string; value: number; prevValue: number; color: 'blue' | 'orange'; tooltip?: string;
+}) {
+  const accent = color === 'blue' ? 'text-blue-600 dark:text-blue-400' : 'text-orange-600 dark:text-orange-400';
+  const bg = color === 'blue' ? 'bg-blue-500/5 border-blue-500/20' : 'bg-orange-500/5 border-orange-500/20';
+  return (
+    <div className={`rounded-xl border ${bg} px-4 py-3 flex-1 min-w-[140px]`}>
+      <div className="flex items-center gap-1.5 mb-1">
+        <span className="text-[11px] text-muted-foreground font-medium">{label}</span>
+        {tooltip && (
+          <TooltipProvider><Tooltip><TooltipTrigger><Info className="w-3 h-3 text-muted-foreground/50" /></TooltipTrigger>
+            <TooltipContent side="top" className="max-w-[220px] text-xs">{tooltip}</TooltipContent></Tooltip></TooltipProvider>
+        )}
+      </div>
+      <div className={`text-lg font-bold tabular-nums ${accent}`}>{fmtEur(value)}</div>
+      <div className="flex items-center gap-2 mt-0.5">
+        <span className="text-[10px] text-muted-foreground tabular-nums">{fmtEur(prevValue)} anno prec.</span>
+        {(value > 0 || prevValue > 0) && (
+          <span className={`text-[10px] tabular-nums ${pctCls(value, prevValue)}`}>{pctStr(value, prevValue)}</span>
+        )}
+      </div>
+    </div>
+  );
 }
 
 // ─── SalesTable sub-component ─────────────────────────────────────────────────
@@ -92,6 +170,7 @@ function SalesTable({
   selectedYear,
   prevYear,
   rows,
+  onCellEdit,
 }: {
   title: string;
   subtitle: string;
@@ -99,71 +178,94 @@ function SalesTable({
   selectedYear: number;
   prevYear: number;
   rows: TableRow[];
+  onCellEdit: (rowId: string, monthIndex: number, value: number) => void;
 }) {
-  const borderCls =
-    color === 'blue'
-      ? 'border-blue-500/25'
-      : 'border-orange-500/25';
-  const accentCls =
-    color === 'blue'
-      ? 'text-blue-600 dark:text-blue-400'
-      : 'text-orange-600 dark:text-orange-400';
-  const headerBg =
-    color === 'blue' ? 'bg-blue-500/8' : 'bg-orange-500/8';
+  const borderCls = color === 'blue' ? 'border-blue-500/20' : 'border-orange-500/20';
+  const accentCls = color === 'blue' ? 'text-blue-600 dark:text-blue-400' : 'text-orange-600 dark:text-orange-400';
+  const headerBg = color === 'blue' ? 'bg-blue-500/5' : 'bg-orange-500/5';
+  const titleBg = color === 'blue' ? 'bg-gradient-to-r from-blue-600/10 to-blue-500/5' : 'bg-gradient-to-r from-orange-600/10 to-orange-500/5';
 
   const nowMonth = new Date().getMonth();
   const nowYear = new Date().getFullYear();
   const productRows = rows.filter((r) => r.isProduct);
 
+  // Summary cards data
+  const headerRow = rows.find(r => r.isHeader);
+  const revenueRow = rows.find(r => r.label.includes('fatturato'));
+  const portfolioRow = rows.find(r => r.label.includes('portafoglio'));
+
   return (
     <div className={`rounded-2xl border ${borderCls} overflow-hidden shadow-sm`}>
-      <div className={`px-5 py-3.5 border-b border-border/30 ${headerBg}`}>
-        <div className="flex items-baseline gap-3">
-          <span className={`text-base font-bold ${accentCls}`}>{title}</span>
-          <span className="text-xs text-muted-foreground">{subtitle}</span>
+      {/* Title bar */}
+      <div className={`px-5 py-4 border-b border-border/20 ${titleBg}`}>
+        <div className="flex items-center gap-3">
+          <div className={`w-3 h-3 rounded-full ${color === 'blue' ? 'bg-blue-500' : 'bg-orange-500'}`} />
+          <span className={`text-lg font-bold ${accentCls}`}>{title}</span>
+          <span className="text-xs text-muted-foreground bg-background/50 px-2 py-0.5 rounded-full">{subtitle}</span>
         </div>
       </div>
 
+      {/* Summary cards */}
+      <div className="flex flex-wrap gap-3 px-5 py-4 border-b border-border/15 bg-card/50">
+        {headerRow && (
+          <SummaryCard
+            label="Ordini Raccolti"
+            value={sumArr(headerRow.currMonthly)}
+            prevValue={sumArr(headerRow.prevMonthly)}
+            color={color}
+            tooltip={color === 'blue' ? 'Net Sales totale per data ordine' : 'Somma prezzo prodotti per data ordine'}
+          />
+        )}
+        {revenueRow && (
+          <SummaryCard
+            label="Fatturato"
+            value={sumArr(revenueRow.currMonthly)}
+            prevValue={sumArr(revenueRow.prevMonthly)}
+            color={color}
+            tooltip={color === 'blue' ? 'Net Sales solo ordini evasi (fulfilled)' : 'Somma prezzo ordini consegnati (per delivery date)'}
+          />
+        )}
+        {portfolioRow && (
+          <SummaryCard
+            label="Portafoglio Ordini"
+            value={sumArr(portfolioRow.currMonthly)}
+            prevValue={sumArr(portfolioRow.prevMonthly)}
+            color={color}
+            tooltip="Differenza tra raccolti e fatturato"
+          />
+        )}
+      </div>
+
+      {/* Edit hint */}
+      <div className="px-5 py-1.5 bg-muted/20 border-b border-border/10 flex items-center gap-2 text-[10px] text-muted-foreground">
+        <Pencil className="w-3 h-3" />
+        <span>Doppio click su una cella per modificare il valore manualmente</span>
+      </div>
+
+      {/* Table */}
       <div className="overflow-x-auto">
         <table className="w-full text-xs border-collapse">
           <thead>
-            <tr className={`${headerBg} border-b border-border/30`}>
-              <th className="sticky left-0 z-20 bg-card text-left px-4 py-2.5 min-w-[220px] font-semibold text-foreground border-r border-border/25">
+            <tr className={`${headerBg} border-b border-border/20`}>
+              <th className="sticky left-0 z-20 bg-card text-left px-4 py-2.5 min-w-[200px] font-semibold text-foreground border-r border-border/20">
                 Voce
               </th>
-              <th className={`px-3 py-2.5 text-right font-bold ${accentCls} border-r border-border/25 min-w-[95px]`}>
+              <th className={`px-3 py-2.5 text-right font-bold ${accentCls} border-r border-border/20 min-w-[90px]`}>
                 TOT {selectedYear}
               </th>
-              <th className="px-3 py-2.5 text-right font-medium text-muted-foreground border-r border-border/25 min-w-[85px]">
+              <th className="px-3 py-2.5 text-right font-medium text-muted-foreground border-r border-border/20 min-w-[80px]">
                 TOT {prevYear}
               </th>
-              <th className="px-3 py-2.5 text-center font-medium text-muted-foreground border-r border-border/40 min-w-[60px]">
+              <th className="px-3 py-2.5 text-center font-medium text-muted-foreground border-r border-border/30 min-w-[55px]">
                 YoY
               </th>
               {MONTHS.map((m, i) => (
                 <th
                   key={i}
-                  className={`px-2 py-2.5 text-center font-semibold min-w-[88px] border-l border-border/10
+                  className={`px-2 py-2.5 text-center font-semibold min-w-[85px] border-l border-border/10
                     ${i === nowMonth && nowYear === selectedYear ? `${accentCls} underline decoration-dotted` : 'text-foreground/70'}`}
                 >
                   {m}
-                </th>
-              ))}
-            </tr>
-            <tr className="border-b border-border/20 bg-muted/15 text-muted-foreground">
-              <th className="sticky left-0 z-20 bg-card/90 px-4 py-1 border-r border-border/25" />
-              <th className="px-3 py-1 border-r border-border/25" />
-              <th className="px-3 py-1 border-r border-border/25" />
-              <th className="px-3 py-1 border-r border-border/40" />
-              {MONTHS.map((_, i) => (
-                <th key={i} className="px-1 py-1 border-l border-border/10">
-                  <div className="flex justify-center gap-1 text-[9px]">
-                    <span className={accentCls}>{String(selectedYear).slice(2)}R</span>
-                    <span className="text-border">/</span>
-                    <span>{String(prevYear).slice(2)}R</span>
-                    <span className="text-border">/</span>
-                    <span>%</span>
-                  </div>
                 </th>
               ))}
             </tr>
@@ -173,54 +275,69 @@ function SalesTable({
             {rows.map((row, ri) => {
               const currTot = sumArr(row.currMonthly);
               const prevTot = sumArr(row.prevMonthly);
+              const canEdit = !row.isDerived;
+
               return (
                 <tr
                   key={ri}
-                  className={`border-b border-border/10 transition-colors hover:bg-muted/20
+                  className={`border-b border-border/10 transition-colors hover:bg-muted/15
                     ${row.isHeader ? `font-semibold ${headerBg}` : ''}
-                    ${row.dimmed ? 'opacity-60' : ''}
+                    ${row.dimmed ? 'opacity-50' : ''}
                   `}
                 >
-                  <td
-                    className={`sticky left-0 z-10 bg-card/97 backdrop-blur-sm px-4 py-2 border-r border-border/25 ${row.isProduct ? 'pl-8' : ''}`}
-                  >
-                    <div className={`font-medium leading-tight ${row.isHeader ? accentCls : 'text-foreground'}`}>
-                      {row.isProduct && <span className="text-muted-foreground mr-1.5">↳</span>}
-                      {row.label}
+                  <td className={`sticky left-0 z-10 bg-card/97 backdrop-blur-sm px-4 py-2 border-r border-border/20 ${row.isProduct ? 'pl-7' : ''}`}>
+                    <div className="flex items-center gap-1.5">
+                      {row.isProduct && <span className="text-muted-foreground/50">↳</span>}
+                      <div>
+                        <div className={`font-medium leading-tight ${row.isHeader ? accentCls : 'text-foreground'}`}>
+                          {row.label}
+                        </div>
+                        {row.sub && <div className="text-[10px] text-muted-foreground mt-0.5">{row.sub}</div>}
+                      </div>
+                      {row.tooltip && (
+                        <TooltipProvider><Tooltip><TooltipTrigger><Info className="w-3 h-3 text-muted-foreground/40" /></TooltipTrigger>
+                          <TooltipContent side="right" className="max-w-[200px] text-xs">{row.tooltip}</TooltipContent></Tooltip></TooltipProvider>
+                      )}
                     </div>
-                    {row.sub && (
-                      <div className="text-[10px] text-muted-foreground mt-0.5">{row.sub}</div>
-                    )}
                   </td>
-                  <td className={`px-3 py-2 text-right border-r border-border/25 tabular-nums ${row.isHeader ? `font-bold ${accentCls}` : 'font-medium text-foreground'}`}>
+                  <td className={`px-3 py-2 text-right border-r border-border/20 tabular-nums ${row.isHeader ? `font-bold ${accentCls}` : 'font-medium text-foreground'}`}>
                     {fmt(currTot)}
                   </td>
-                  <td className="px-3 py-2 text-right border-r border-border/25 tabular-nums text-muted-foreground">
+                  <td className="px-3 py-2 text-right border-r border-border/20 tabular-nums text-muted-foreground">
                     {fmt(prevTot)}
                   </td>
-                  <td className={`px-3 py-2 text-center border-r border-border/40 tabular-nums ${pctCls(currTot, prevTot)}`}>
+                  <td className={`px-3 py-2 text-center border-r border-border/30 tabular-nums ${pctCls(currTot, prevTot)}`}>
                     {pctStr(currTot, prevTot)}
                   </td>
-                  {row.currMonthly.map((cv, mi) => {
-                    const pv = row.prevMonthly[mi];
-                    const isCurr = mi === nowMonth && nowYear === selectedYear;
-                    return (
-                      <td
+                  {canEdit ? (
+                    row.currMonthly.map((cv, mi) => (
+                      <EditableCell
                         key={mi}
-                        className={`px-2 py-2 text-right tabular-nums border-l border-border/10 ${isCurr ? 'bg-primary/5' : ''}`}
-                      >
-                        <div className={`text-[11px] leading-tight ${row.isHeader ? `font-bold ${accentCls}` : 'text-foreground/90'}`}>
-                          {fmt(cv)}
-                        </div>
-                        <div className="text-[10px] text-muted-foreground leading-tight">{fmt(pv)}</div>
-                        {(cv > 0 || pv > 0) && (
-                          <div className={`text-[9px] leading-tight ${pctCls(cv, pv)}`}>
-                            {pctStr(cv, pv)}
+                        value={cv}
+                        prevValue={row.prevMonthly[mi]}
+                        onSave={(v) => onCellEdit(row.id, mi, v)}
+                        isHeader={row.isHeader}
+                        accentCls={accentCls}
+                        isCurrent={mi === nowMonth && nowYear === selectedYear}
+                      />
+                    ))
+                  ) : (
+                    row.currMonthly.map((cv, mi) => {
+                      const pv = row.prevMonthly[mi];
+                      const isCurr = mi === nowMonth && nowYear === selectedYear;
+                      return (
+                        <td key={mi} className={`px-2 py-2 text-right tabular-nums border-l border-border/10 ${isCurr ? 'bg-primary/5' : ''}`}>
+                          <div className={`text-[11px] leading-tight ${row.isHeader ? `font-bold ${accentCls}` : 'text-foreground/90 italic'}`}>
+                            {fmt(cv)}
                           </div>
-                        )}
-                      </td>
-                    );
-                  })}
+                          <div className="text-[10px] text-muted-foreground leading-tight">{fmt(pv)}</div>
+                          {(cv > 0 || pv > 0) && (
+                            <div className={`text-[9px] leading-tight ${pctCls(cv, pv)}`}>{pctStr(cv, pv)}</div>
+                          )}
+                        </td>
+                      );
+                    })
+                  )}
                 </tr>
               );
             })}
@@ -228,19 +345,19 @@ function SalesTable({
 
           {productRows.length > 0 && (
             <tfoot>
-              <tr className={`border-t-2 border-border/30 font-semibold ${headerBg}`}>
-                <td className={`sticky left-0 z-10 bg-card/97 px-4 py-2.5 border-r border-border/25 ${accentCls}`}>
-                  tot ordini raccolti
-                  <div className="text-[10px] font-normal text-muted-foreground">somma categorie prodotto</div>
+              <tr className={`border-t-2 border-border/25 font-semibold ${headerBg}`}>
+                <td className={`sticky left-0 z-10 bg-card/97 px-4 py-2.5 border-r border-border/20 ${accentCls}`}>
+                  Σ Categorie prodotto
+                  <div className="text-[10px] font-normal text-muted-foreground">somma ordini raccolti</div>
                 </td>
                 {(() => {
                   const cTot = sumArr(productRows.map((r) => sumArr(r.currMonthly)));
                   const pTot = sumArr(productRows.map((r) => sumArr(r.prevMonthly)));
                   return (
                     <>
-                      <td className={`px-3 py-2.5 text-right border-r border-border/25 tabular-nums font-bold ${accentCls}`}>{fmt(cTot)}</td>
-                      <td className="px-3 py-2.5 text-right border-r border-border/25 tabular-nums text-muted-foreground">{fmt(pTot)}</td>
-                      <td className={`px-3 py-2.5 text-center border-r border-border/40 tabular-nums ${pctCls(cTot, pTot)}`}>{pctStr(cTot, pTot)}</td>
+                      <td className={`px-3 py-2.5 text-right border-r border-border/20 tabular-nums font-bold ${accentCls}`}>{fmt(cTot)}</td>
+                      <td className="px-3 py-2.5 text-right border-r border-border/20 tabular-nums text-muted-foreground">{fmt(pTot)}</td>
+                      <td className={`px-3 py-2.5 text-center border-r border-border/30 tabular-nums ${pctCls(cTot, pTot)}`}>{pctStr(cTot, pTot)}</td>
                     </>
                   );
                 })()}
@@ -272,20 +389,18 @@ export default function SalesCallAnalysis() {
   const [selectedYear, setSelectedYear] = useState<number>(() => new Date().getFullYear());
   const prevYear = selectedYear - 1;
 
-  const { data: shopifyOrders = [], isLoading: isLoadingShopify, isFetching: isFetchingShopify, refetch: refetchShopify } = useShopifyOrders({
-    limit: 250,
-    status: 'any',
-    createdAtMin: new Date('2025-01-01T00:00:00Z'),
-    enabled: true,
-  });
+  // Manual overrides: key = `${channel}-${rowId}-${monthIndex}`, value = number
+  const [overrides, setOverrides] = useState<Record<string, number>>({});
 
+  const { data: shopifyOrders = [], isLoading: isLoadingShopify, isFetching: isFetchingShopify, refetch: refetchShopify } = useShopifyOrders({
+    limit: 250, status: 'any', createdAtMin: new Date('2025-01-01T00:00:00Z'), enabled: true,
+  });
   const { data: gsOrders = [], isLoading: isLoadingGS, isFetching: isFetchingGS, refetch: refetchGS } = useGoogleSheetsOrders(true);
 
   const currYearRange = useMemo(() => ({
     start: new Date(`${selectedYear}-01-01T00:00:00Z`),
     end: new Date().getFullYear() === selectedYear ? new Date() : new Date(`${selectedYear}-12-31T23:59:59Z`),
   }), [selectedYear]);
-
   const prevYearRange = useMemo(() => ({
     start: new Date(`${prevYear}-01-01T00:00:00Z`),
     end: new Date(`${prevYear}-12-31T23:59:59Z`),
@@ -319,15 +434,11 @@ export default function SalesCallAnalysis() {
   const b2cData = useMemo(() => {
     const makeSlots = (): MonthSlot[] =>
       Array.from({ length: 12 }, () => ({
-        raccolti: 0,
-        evasi: 0,
+        raccolti: 0, evasi: 0,
         products: Object.fromEntries(PRODUCTS.map((p) => [p, 0])) as Record<Product, number>,
       }));
 
-    const data: Record<number, MonthSlot[]> = {
-      [selectedYear]: makeSlots(),
-      [prevYear]: makeSlots(),
-    };
+    const data: Record<number, MonthSlot[]> = { [selectedYear]: makeSlots(), [prevYear]: makeSlots() };
 
     allOrders.filter((o) => o.customerType === 'B2C').forEach((order) => {
       const d = order.date instanceof Date ? order.date : new Date(order.date);
@@ -338,7 +449,10 @@ export default function SalesCallAnalysis() {
       const net = (order.netAmount ?? order.totalAmount) * scale;
 
       data[year][mo].raccolti += net;
-      if (order.status === 'completed') data[year][mo].evasi += net;
+      // FATTURATO B2C = solo ordini evasi (fulfilled / completed)
+      if (order.status === 'completed') {
+        data[year][mo].evasi += net;
+      }
 
       const grossSum = order.products.reduce((s, p) => s + p.totalPrice, 0);
       order.products.forEach((prod) => {
@@ -357,15 +471,11 @@ export default function SalesCallAnalysis() {
   const b2bData = useMemo(() => {
     const makeSlots = (): B2BMonthSlot[] =>
       Array.from({ length: 12 }, () => ({
-        raccolti: 0,
-        consegnati: 0,
+        raccolti: 0, consegnati: 0,
         products: Object.fromEntries(PRODUCTS.map((p) => [p, 0])) as Record<Product, number>,
       }));
 
-    const data: Record<number, B2BMonthSlot[]> = {
-      [selectedYear]: makeSlots(),
-      [prevYear]: makeSlots(),
-    };
+    const data: Record<number, B2BMonthSlot[]> = { [selectedYear]: makeSlots(), [prevYear]: makeSlots() };
 
     allOrders
       .filter((o) => o.customerType === 'B2B' && (!o.orderType || o.orderType.toLowerCase() !== 'custom'))
@@ -377,7 +487,6 @@ export default function SalesCallAnalysis() {
 
         if (year === selectedYear || year === prevYear) {
           data[year][mo].raccolti += amount;
-
           const grossSum = order.products.reduce((s, p) => s + p.totalPrice, 0);
           order.products.forEach((prod) => {
             const col = getSkuCollection(prod.sku);
@@ -401,90 +510,132 @@ export default function SalesCallAnalysis() {
     return data;
   }, [allOrders, selectedYear, prevYear]);
 
+  // ── Apply overrides helper ──────────────────────────────────────────────────
+  const applyOverrides = useCallback((channel: string, rowId: string, monthly: number[]): number[] => {
+    return monthly.map((v, mi) => {
+      const key = `${channel}-${rowId}-${mi}`;
+      return overrides[key] !== undefined ? overrides[key] : v;
+    });
+  }, [overrides]);
+
+  const handleB2CCellEdit = useCallback((rowId: string, monthIndex: number, value: number) => {
+    setOverrides(prev => ({ ...prev, [`b2c-${rowId}-${monthIndex}`]: value }));
+  }, []);
+
+  const handleB2BCellEdit = useCallback((rowId: string, monthIndex: number, value: number) => {
+    setOverrides(prev => ({ ...prev, [`b2b-${rowId}-${monthIndex}`]: value }));
+  }, []);
+
   // ── Build table rows ────────────────────────────────────────────────────────
   const b2cRows: TableRow[] = useMemo(() => {
     const curr = b2cData[selectedYear] ?? [];
     const prev = b2cData[prevYear] ?? [];
-    return [
+
+    const raccoltiCurr = applyOverrides('b2c', 'raccolti', curr.map(m => m.raccolti));
+    const raccoltiPrev = prev.map(m => m.raccolti);
+    const evasiCurr = applyOverrides('b2c', 'evasi', curr.map(m => m.evasi));
+    const evasiPrev = prev.map(m => m.evasi);
+
+    const rows: TableRow[] = [
       {
+        id: 'raccolti',
         label: 'Ordini raccolti',
         sub: 'NET SALES — per data ordine',
-        currMonthly: curr.map((m) => m.raccolti),
-        prevMonthly: prev.map((m) => m.raccolti),
+        tooltip: 'Vendite nette totali (gross - sconti - resi) di tutti gli ordini Shopify',
+        currMonthly: raccoltiCurr,
+        prevMonthly: raccoltiPrev,
         isHeader: true,
       },
       {
+        id: 'evasi',
         label: 'di cui fatturato',
-        sub: 'ordini con status "completato"',
-        currMonthly: curr.map((m) => m.evasi),
-        prevMonthly: prev.map((m) => m.evasi),
+        sub: 'solo ordini evasi (fulfilled)',
+        tooltip: 'Net Sales dei soli ordini con status "fulfilled/completed" — la merce effettivamente spedita',
+        currMonthly: evasiCurr,
+        prevMonthly: evasiPrev,
       },
       {
+        id: 'portafoglio',
         label: 'portafoglio ordini',
         sub: 'raccolti − fatturato',
-        currMonthly: curr.map((m) => Math.max(0, m.raccolti - m.evasi)),
-        prevMonthly: prev.map((m) => Math.max(0, m.raccolti - m.evasi)),
+        currMonthly: raccoltiCurr.map((v, i) => Math.max(0, v - evasiCurr[i])),
+        prevMonthly: raccoltiPrev.map((v, i) => Math.max(0, v - evasiPrev[i])),
         dimmed: true,
+        isDerived: true,
       },
       ...PRODUCTS.map((product) => ({
+        id: `prod-${product}`,
         label: product,
         sub: 'valore ordini raccolti per categoria',
-        currMonthly: curr.map((m) => m.products[product] ?? 0),
-        prevMonthly: prev.map((m) => m.products[product] ?? 0),
+        currMonthly: applyOverrides('b2c', `prod-${product}`, curr.map(m => m.products[product] ?? 0)),
+        prevMonthly: prev.map(m => m.products[product] ?? 0),
         isProduct: true,
       })),
     ];
-  }, [b2cData, selectedYear, prevYear]);
+    return rows;
+  }, [b2cData, selectedYear, prevYear, applyOverrides]);
 
   const b2bRows: TableRow[] = useMemo(() => {
     const curr = b2bData[selectedYear] ?? [];
     const prev = b2bData[prevYear] ?? [];
+
+    const raccoltiCurr = applyOverrides('b2b', 'raccolti', curr.map(m => m.raccolti));
+    const raccoltiPrev = prev.map(m => m.raccolti);
+    const consegnatiCurr = applyOverrides('b2b', 'consegnati', curr.map(m => m.consegnati));
+    const consegnatiPrev = prev.map(m => m.consegnati);
+
     return [
       {
+        id: 'raccolti',
         label: 'Ordini raccolti',
-        sub: 'SUM PRICE — per data ordine (order date)',
-        currMonthly: curr.map((m) => m.raccolti),
-        prevMonthly: prev.map((m) => m.raccolti),
+        sub: 'SUM PRICE — per order date',
+        tooltip: 'Somma del prezzo dei prodotti per data ordine (esclusi ordini custom)',
+        currMonthly: raccoltiCurr,
+        prevMonthly: raccoltiPrev,
         isHeader: true,
       },
       {
+        id: 'consegnati',
         label: 'di cui fatturato (consegnati)',
-        sub: 'SUM PRICE — per data consegna (delivery date)',
-        currMonthly: curr.map((m) => m.consegnati),
-        prevMonthly: prev.map((m) => m.consegnati),
+        sub: 'SUM PRICE — per delivery date',
+        tooltip: 'Somma del prezzo dei prodotti filtrata per data di consegna (delivery date)',
+        currMonthly: consegnatiCurr,
+        prevMonthly: consegnatiPrev,
       },
       {
+        id: 'portafoglio',
         label: 'portafoglio ordini',
         sub: 'raccolti − consegnati',
-        currMonthly: curr.map((m) => Math.max(0, m.raccolti - m.consegnati)),
-        prevMonthly: prev.map((m) => Math.max(0, m.raccolti - m.consegnati)),
+        currMonthly: raccoltiCurr.map((v, i) => Math.max(0, v - consegnatiCurr[i])),
+        prevMonthly: raccoltiPrev.map((v, i) => Math.max(0, v - consegnatiPrev[i])),
         dimmed: true,
+        isDerived: true,
       },
       ...PRODUCTS.map((product) => ({
+        id: `prod-${product}`,
         label: product,
         sub: 'valore ordini raccolti per categoria',
-        currMonthly: curr.map((m) => m.products[product] ?? 0),
-        prevMonthly: prev.map((m) => m.products[product] ?? 0),
+        currMonthly: applyOverrides('b2b', `prod-${product}`, curr.map(m => m.products[product] ?? 0)),
+        prevMonthly: prev.map(m => m.products[product] ?? 0),
         isProduct: true,
       })),
     ];
-  }, [b2bData, selectedYear, prevYear]);
+  }, [b2bData, selectedYear, prevYear, applyOverrides]);
 
   return (
     <div className="min-h-screen bg-background p-3 sm:p-4 md:p-6">
       <DashboardHeader onRefresh={handleRefresh} isLoading={isLoading || isFetching} />
 
-      {/* Navigation */}
       <div className="mb-7">
         <DraggableNav />
       </div>
 
-      {/* Page title */}
+      {/* Page title + year selector */}
       <div className="flex flex-wrap items-start justify-between gap-4 mb-6">
         <div>
-          <h2 className="text-2xl font-bold tracking-tight">Analisi Call Sales</h2>
+          <h2 className="text-2xl font-bold tracking-tight">{t('salesCallAnalysis')}</h2>
           <p className="text-sm text-muted-foreground mt-1">
-            Ordini raccolti vs fatturati — B2C (Net Sales) & B2B (Price) — per categoria prodotto — mensilizzato
+            Ordini raccolti vs fatturati — B2C (Net Sales) & B2B (Price) — mensilizzato con confronto YoY
           </p>
         </div>
         <div className="flex items-center gap-1.5 rounded-xl bg-muted p-0.5">
@@ -503,37 +654,53 @@ export default function SalesCallAnalysis() {
       </div>
 
       {/* Legend */}
-      <div className="flex flex-wrap items-center gap-4 mb-5 text-[11px] text-muted-foreground bg-muted/30 rounded-lg px-4 py-2.5">
+      <div className="flex flex-wrap items-center gap-3 sm:gap-4 mb-5 text-[11px] text-muted-foreground bg-muted/30 rounded-lg px-4 py-2.5">
         <span className="font-semibold text-foreground">Legenda:</span>
-        <span><span className="font-mono bg-blue-500/10 text-blue-600 dark:text-blue-400 px-1.5 py-0.5 rounded">{String(selectedYear).slice(2)}R</span> = anno corrente (actual)</span>
-        <span><span className="font-mono bg-muted px-1.5 py-0.5 rounded">{String(prevYear).slice(2)}R</span> = anno precedente (reference)</span>
-        <span><span className="font-mono bg-green-500/10 text-green-600 dark:text-green-400 px-1.5 py-0.5 rounded">+%</span> = variazione YoY</span>
-        <span className="ml-auto italic">Colonna evidenziata = mese corrente</span>
+        <span><span className="font-mono bg-blue-500/10 text-blue-600 dark:text-blue-400 px-1.5 py-0.5 rounded">{String(selectedYear).slice(2)}R</span> = anno corrente</span>
+        <span><span className="font-mono bg-muted px-1.5 py-0.5 rounded">{String(prevYear).slice(2)}R</span> = anno precedente</span>
+        <span><span className="font-mono bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 px-1.5 py-0.5 rounded">+%</span> = variazione YoY</span>
+        <span className="sm:ml-auto italic">Doppio click = modifica manuale</span>
       </div>
 
       {isLoading ? (
         <div className="flex items-center justify-center h-64 gap-3">
           <Loader2 className="w-7 h-7 animate-spin text-muted-foreground" />
-          <span className="text-muted-foreground">Caricamento dati in corso...</span>
+          <span className="text-muted-foreground">Caricamento dati…</span>
         </div>
       ) : (
         <div className="space-y-8">
           <SalesTable
-            title="B2C"
-            subtitle={`Shopify — Net Sales | ${selectedYear} vs ${prevYear} | scala Shopify Analytics`}
+            title="B2C — Shopify"
+            subtitle={`Net Sales · ${selectedYear} vs ${prevYear}`}
             color="blue"
             selectedYear={selectedYear}
             prevYear={prevYear}
             rows={b2cRows}
+            onCellEdit={handleB2CCellEdit}
           />
           <SalesTable
-            title="B2B"
-            subtitle={`Google Sheets — Price | ${selectedYear} vs ${prevYear} | raccolti per order date · consegnati per delivery date`}
+            title="B2B — Google Sheets"
+            subtitle={`Price · ${selectedYear} vs ${prevYear}`}
             color="orange"
             selectedYear={selectedYear}
             prevYear={prevYear}
             rows={b2bRows}
+            onCellEdit={handleB2BCellEdit}
           />
+        </div>
+      )}
+
+      {Object.keys(overrides).length > 0 && (
+        <div className="mt-4 flex items-center justify-end gap-3">
+          <span className="text-xs text-muted-foreground italic">
+            {Object.keys(overrides).length} celle modificate manualmente
+          </span>
+          <button
+            onClick={() => setOverrides({})}
+            className="text-xs px-3 py-1.5 rounded-lg bg-destructive/10 text-destructive hover:bg-destructive/20 transition-colors font-medium"
+          >
+            Ripristina tutti i valori originali
+          </button>
         </div>
       )}
     </div>
