@@ -154,7 +154,8 @@ export default function Index() {
 
   const kpis = useMemo(() => {
     const computed = calculateKPIs(filteredOrders);
-    // Override Revenue B2B with delivery-date-filtered value and Revenue B2C with fulfilledAt-filtered value
+    // Revenue B2C will be overridden after b2cSkuData is computed (see revenueB2CFromSku)
+    // Override Revenue B2B with delivery-date-filtered value
     const withOverrides = computed.map(k => {
       if (k.label === 'Revenue B2B') return { ...k, value: revenueB2B };
       if (k.label === 'Revenue B2C') return { ...k, value: revenueB2C };
