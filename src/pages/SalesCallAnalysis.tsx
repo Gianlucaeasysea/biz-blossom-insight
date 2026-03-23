@@ -451,16 +451,16 @@ export default function SalesCallAnalysis() {
       data[year][mo].raccolti += net;
 
       // FATTURATO B2C = solo ordini evasi, posizionati nel mese di fulfillment
+      // Usa lo scale factor dell'anno di fulfillment, non dell'anno dell'ordine
       if (order.status === 'completed' && order.fulfilledAt) {
         const fd = order.fulfilledAt instanceof Date ? order.fulfilledAt : new Date(order.fulfilledAt);
         const fYear = fd.getFullYear();
         const fMo = fd.getMonth();
-        if (fYear === selectedYear || fYear === prevYear) {
-          if (data[fYear]) data[fYear][fMo].evasi += net;
+        if ((fYear === selectedYear || fYear === prevYear) && data[fYear]) {
+          const fScale = fYear === selectedYear ? currScaleFactor : prevScaleFactor;
+          const fNet = (order.netAmount ?? order.totalAmount) * fScale;
+          data[fYear][fMo].evasi += fNet;
         }
-      } else if (order.status === 'completed') {
-        // fallback: se non c'è fulfilledAt usa la data ordine
-        data[year][mo].evasi += net;
       }
 
       const grossSum = order.products.reduce((s, p) => s + p.totalPrice, 0);
