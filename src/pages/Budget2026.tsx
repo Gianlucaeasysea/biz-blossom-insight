@@ -18,13 +18,13 @@ const BUDGET_YEAR = 2026;
 
 const RAW = {
   products: [
-    { name: 'FLIPPER',       sales: [3627,9425,8610,20679,11117,14764,14089,16285,7548,5752,15785,5672],  target: 200320, notes: '',                                       mer: 2.6 },
-    { name: 'OLLI BLOCK',    sales: [12177,4647,2669,9479,12177,7642,5770,7795,3601,4409,15241,3573],    target: 120190, notes: '',                                       mer: 2.8 },
-    { name: 'OLLI RING',     sales: [474,2295,2059,4002,5180,4416,2350,3389,1136,1052,3064,1104],        target: 34000,  notes: '',                                       mer: 2.2 },
-    { name: 'JAKE',          sales: [0,0,0,0,0,0,0,0,0,0,0,16788],                                      target: 99180,  notes: 'a partire da marzo',   startMonth: 2,   mer: 2.8 },
-    { name: 'WAY2',          sales: [0,0,0,0,0,0,0,0,0,22175,7959,2707],                                target: 112200, notes: 'a partire da febbraio', startMonth: 1,   mer: 2.8 },
-    { name: 'SIDE PRODUCTS', sales: [131,0,657,2281,2315,3406,2063,3182,2247,1514,4773,261],             target: 31030,  notes: '',                                       mer: 2.5 },
-    { name: 'EA ELEMENTS',   sales: [0,0,0,0,0,0,0,0,0,0,0,0],                                         target: 30000,  notes: 'lancio nuova collezione a partire da maggio', startMonth: 4, mer: 2.7 },
+    { name: 'FLIPPER',       sales: [3627,9425,8610,20679,11117,14764,14089,16285,7548,5752,15785,5672],  bdg: [5357,6534,9462,21443,29330,25249,17211,27851,9220,7027,34708,6928],  target: 200320, notes: '',                                       mer: 2.6 },
+    { name: 'OLLI BLOCK',    sales: [12177,4647,2669,9479,12177,7642,5770,7795,3601,4409,15241,3573],    bdg: [3190,3890,6261,12765,17460,15032,10246,16577,5487,4500,20659,4125],  target: 120192, notes: '',                                       mer: 2.8 },
+    { name: 'OLLI RING',     sales: [474,2295,2059,4002,5180,4416,2350,3389,1136,1052,3064,1104],        bdg: [837,1019,1639,4005,5858,4463,2685,4344,1436,1095,5415,1199],         target: 33995,  notes: '',                                       mer: 2.2 },
+    { name: 'JAKE',          sales: [0,0,0,0,0,0,0,0,0,0,0,16788],                                      bdg: [0,0,24767,8460,13659,9965,6791,10990,3637,2771,15400,2734],          target: 99174,  notes: 'a partire da marzo',   startMonth: 2,   mer: 2.8 },
+    { name: 'WAY2',          sales: [0,0,0,0,0,0,0,0,0,22175,7959,2707],                                bdg: [0,3707,5966,12164,16637,14323,9761,15796,5230,5000,19687,3929],      target: 112200, notes: 'a partire da febbraio', startMonth: 1,   mer: 2.8 },
+    { name: 'SIDE PRODUCTS', sales: [131,0,657,2281,2315,3406,2063,3182,2247,1514,4773,261],             bdg: [787,963,1547,3157,4317,3715,2534,4100,2264,1520,5108,1020],          target: 31032,  notes: '',                                       mer: 2.5 },
+    { name: 'EA ELEMENTS',   sales: [0,0,0,0,0,0,0,0,0,0,0,0],                                         bdg: [0,0,0,0,5586,4809,3278,5303,1755,1339,6610,1320],                   target: 30000,  notes: 'lancio nuova collezione a partire da maggio', startMonth: 4, mer: 2.7 },
   ],
   mer:      [2.2,2.4,2.2,2.5,3.5,2.8,2.7,3.5,2.0,2.1,3.5,2.1],
   calendar: [
@@ -41,8 +41,8 @@ const RAW = {
     { initiative: 'Black Friday 26',      weight: 1.8 },
     { initiative: '—',                    weight: 1.0 },
   ],
-  spendTarget: 238000,
-  advTotals: [6833,6230,8623,15654,18115,11973,16541,12650,7417,20154,17849,14279],
+  spendTarget: 238038,
+  advTotals: [13024,11867,16544,19562,23822,17838,15143,19087,13372,37808,44833,5138],
 };
 
 const PRODUCT_COLORS: Record<string, string> = {
