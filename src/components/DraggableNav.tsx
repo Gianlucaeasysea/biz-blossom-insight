@@ -21,6 +21,7 @@ const DEFAULT_ITEMS: NavItem[] = [
   { to: '/b2c-analysis', labelKey: 'nav.b2c_analysis' },
   { to: '/sales-call', labelKey: 'nav.sales_call' },
   { to: '/stock', labelKey: 'nav.stock' },
+  { to: '/frank', labelKey: 'nav.frank' },
 ];
 
 function loadOrder(): NavItem[] {

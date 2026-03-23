@@ -42,6 +42,7 @@ const App = () => (
           <Route path="/b2c-analysis" element={<ProtectedRoute><B2CAnalysis /></ProtectedRoute>} />
           <Route path="/sales-call" element={<ProtectedRoute><SalesCallAnalysis /></ProtectedRoute>} />
           <Route path="/stock" element={<ProtectedRoute><Stock /></ProtectedRoute>} />
+          <Route path="/frank" element={<ProtectedRoute><Frank /></ProtectedRoute>} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
