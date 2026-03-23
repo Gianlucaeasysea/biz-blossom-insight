@@ -355,6 +355,7 @@ const de: Dict = {
   'nav.b2c_analysis': 'B2C-Analyse',
   'nav.sales_call': 'Vertriebsanruf-Analyse',
   'nav.stock': 'Bestand',
+  'nav.frank': 'Frank AI',
 
   'header.subtitle': 'B2C + B2B Dashboard',
 

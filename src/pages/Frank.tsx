@@ -73,13 +73,13 @@ Top 15 clienti: ${topClients.map(([c, v]) => `${c}: €${v.toFixed(0)}`).join(';
     }
 
     if (products?.length) {
-      const inStock = products.filter(p => p.totalInventory > 0);
-      const outOfStock = products.filter(p => p.totalInventory <= 0);
+      const inStock = products.filter(p => p.inventoryQuantity > 0);
+      const outOfStock = products.filter(p => p.inventoryQuantity <= 0);
       parts.push(`=== STOCK PRODOTTI ===
 Totale varianti: ${products.length}
 In stock: ${inStock.length}
 Esauriti: ${outOfStock.length}
-Dettaglio stock: ${products.slice(0, 30).map(p => `${p.sku || p.title}: ${p.totalInventory}pz`).join('; ')}`);
+Dettaglio stock: ${products.slice(0, 30).map(p => `${p.sku || p.productTitle}: ${p.inventoryQuantity}pz`).join('; ')}`);
     }
 
     return parts.join('\n\n') || 'Dati non ancora caricati.';
