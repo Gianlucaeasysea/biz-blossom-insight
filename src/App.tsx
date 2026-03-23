@@ -14,6 +14,7 @@ import B2BAnalysis from "./pages/B2BAnalysis";
 import B2CAnalysis from "./pages/B2CAnalysis";
 import SalesCallAnalysis from "./pages/SalesCallAnalysis";
 import Stock from "./pages/Stock";
+import Frank from "./pages/Frank";
 import Login from "./pages/Login";
 import ResetPassword from "./pages/ResetPassword";
 import NotFound from "./pages/NotFound";
