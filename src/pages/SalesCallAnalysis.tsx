@@ -449,8 +449,17 @@ export default function SalesCallAnalysis() {
       const net = (order.netAmount ?? order.totalAmount) * scale;
 
       data[year][mo].raccolti += net;
-      // FATTURATO B2C = solo ordini evasi (fulfilled / completed)
-      if (order.status === 'completed') {
+
+      // FATTURATO B2C = solo ordini evasi, posizionati nel mese di fulfillment
+      if (order.status === 'completed' && order.fulfilledAt) {
+        const fd = order.fulfilledAt instanceof Date ? order.fulfilledAt : new Date(order.fulfilledAt);
+        const fYear = fd.getFullYear();
+        const fMo = fd.getMonth();
+        if (fYear === selectedYear || fYear === prevYear) {
+          if (data[fYear]) data[fYear][fMo].evasi += net;
+        }
+      } else if (order.status === 'completed') {
+        // fallback: se non c'è fulfilledAt usa la data ordine
         data[year][mo].evasi += net;
       }
 

@@ -40,6 +40,7 @@ interface ShopifyOrdersResponse {
     landingSite?: string | null;
     referringSite?: string | null;
     utm?: Record<string, string> | null;
+    fulfilledAt?: string | null;
   }>;
   count: number;
   error?: string;
@@ -104,6 +105,7 @@ export function useShopifyOrders(options: UseShopifyOrdersOptions = {}) {
       return data.orders.map((order) => ({
         ...order,
         date: new Date(order.date),
+        fulfilledAt: order.fulfilledAt ? new Date(order.fulfilledAt) : null,
       }));
     },
     enabled,
