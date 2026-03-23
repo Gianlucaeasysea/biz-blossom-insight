@@ -7,6 +7,8 @@ import { useShopifyOrders } from '@/hooks/useShopifyOrders';
 import { useGoogleSheetsOrders } from '@/hooks/useGoogleSheetsOrders';
 import { useShopifyProducts } from '@/hooks/useShopifyProducts';
 import { downloadCsv } from '@/lib/csv-export';
+import { FrankFilters, getDefaultFilters, type FrankDataFilters } from '@/components/frank/FrankFilters';
+import { buildFilteredContext } from '@/components/frank/buildFilteredContext';
 
 type Msg = { role: 'user' | 'assistant'; content: string; files?: UploadedFile[] };
 type UploadedFile = { name: string; content: string; type: string };
@@ -18,6 +20,7 @@ export default function Frank() {
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [uploadedFiles, setUploadedFiles] = useState<UploadedFile[]>([]);
+  const [filters, setFilters] = useState<FrankDataFilters>(getDefaultFilters);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -31,59 +34,8 @@ export default function Frank() {
   }, [messages]);
 
   const dataContext = useMemo(() => {
-    const parts: string[] = [];
-
-    if (shopifyOrders?.length) {
-      const total = shopifyOrders.reduce((s, o) => s + (o.netAmount ?? o.totalAmount), 0);
-      const fulfilled = shopifyOrders.filter(o => o.status === 'completed');
-      const fulfilledTotal = fulfilled.reduce((s, o) => s + (o.netAmount ?? o.totalAmount), 0);
-      const countries = new Map<string, number>();
-      shopifyOrders.forEach(o => {
-        const c = o.country || 'Unknown';
-        countries.set(c, (countries.get(c) || 0) + (o.netAmount ?? o.totalAmount));
-      });
-      const skuMap = new Map<string, { qty: number; rev: number }>();
-      shopifyOrders.forEach(o => o.products.forEach(p => {
-        const k = p.sku || p.name;
-        const e = skuMap.get(k) || { qty: 0, rev: 0 };
-        e.qty += p.quantity; e.rev += p.totalPrice;
-        skuMap.set(k, e);
-      }));
-      const topSkus = [...skuMap.entries()].sort((a, b) => b[1].rev - a[1].rev).slice(0, 20);
-
-      parts.push(`=== DATI B2C (Shopify) ===
-Totale ordini: ${shopifyOrders.length}
-Net Sales totale: €${total.toFixed(0)}
-Ordini evasi: ${fulfilled.length} (€${fulfilledTotal.toFixed(0)})
-Top 20 SKU per revenue: ${topSkus.map(([k, v]) => `${k}: ${v.qty}pz €${v.rev.toFixed(0)}`).join('; ')}
-Paesi: ${[...countries.entries()].sort((a, b) => b[1] - a[1]).map(([c, v]) => `${c}: €${v.toFixed(0)}`).join('; ')}
-Range date: ${shopifyOrders.length ? shopifyOrders[shopifyOrders.length - 1].date + ' → ' + shopifyOrders[0].date : 'N/A'}`);
-    }
-
-    if (b2bOrders?.length) {
-      const total = b2bOrders.reduce((s, o) => s + o.totalAmount, 0);
-      const byClient = new Map<string, number>();
-      b2bOrders.forEach(o => byClient.set(o.customerName, (byClient.get(o.customerName) || 0) + o.totalAmount));
-      const topClients = [...byClient.entries()].sort((a, b) => b[1] - a[1]).slice(0, 15);
-
-      parts.push(`=== DATI B2B (Google Sheets) ===
-Totale ordini: ${b2bOrders.length}
-Fatturato totale: €${total.toFixed(0)}
-Top 15 clienti: ${topClients.map(([c, v]) => `${c}: €${v.toFixed(0)}`).join('; ')}`);
-    }
-
-    if (products?.length) {
-      const inStock = products.filter(p => p.inventoryQuantity > 0);
-      const outOfStock = products.filter(p => p.inventoryQuantity <= 0);
-      parts.push(`=== STOCK PRODOTTI ===
-Totale varianti: ${products.length}
-In stock: ${inStock.length}
-Esauriti: ${outOfStock.length}
-Dettaglio stock: ${products.slice(0, 30).map(p => `${p.sku || p.productTitle}: ${p.inventoryQuantity}pz`).join('; ')}`);
-    }
-
-    return parts.join('\n\n') || 'Dati non ancora caricati.';
-  }, [shopifyOrders, b2bOrders, products]);
+    return buildFilteredContext(shopifyOrders, b2bOrders, products, filters);
+  }, [shopifyOrders, b2bOrders, products, filters]);
 
   const handleFileUpload = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
@@ -234,8 +186,13 @@ Dettaglio stock: ${products.slice(0, 30).map(p => `${p.sku || p.productTitle}: $
           </Button>
         </div>
 
+        {/* Data Filters */}
+        <div className="py-2">
+          <FrankFilters filters={filters} onChange={setFilters} />
+        </div>
+
         {/* Messages */}
-        <div className="flex-1 overflow-y-auto py-4 space-y-4 min-h-0" style={{ maxHeight: 'calc(100vh - 220px)' }}>
+        <div className="flex-1 overflow-y-auto py-4 space-y-4 min-h-0" style={{ maxHeight: 'calc(100vh - 280px)' }}>
           {messages.length === 0 && (
             <div className="text-center py-16 space-y-4">
               <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto">
