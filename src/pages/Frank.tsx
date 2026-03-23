@@ -186,8 +186,13 @@ export default function Frank() {
           </Button>
         </div>
 
+        {/* Data Filters */}
+        <div className="py-2">
+          <FrankFilters filters={filters} onChange={setFilters} />
+        </div>
+
         {/* Messages */}
-        <div className="flex-1 overflow-y-auto py-4 space-y-4 min-h-0" style={{ maxHeight: 'calc(100vh - 220px)' }}>
+        <div className="flex-1 overflow-y-auto py-4 space-y-4 min-h-0" style={{ maxHeight: 'calc(100vh - 280px)' }}>
           {messages.length === 0 && (
             <div className="text-center py-16 space-y-4">
               <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto">
