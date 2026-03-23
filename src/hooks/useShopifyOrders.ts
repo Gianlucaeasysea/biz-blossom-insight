@@ -105,6 +105,7 @@ export function useShopifyOrders(options: UseShopifyOrdersOptions = {}) {
       return data.orders.map((order) => ({
         ...order,
         date: new Date(order.date),
+        fulfilledAt: order.fulfilledAt ? new Date(order.fulfilledAt) : null,
       }));
     },
     enabled,

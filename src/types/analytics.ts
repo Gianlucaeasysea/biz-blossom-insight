@@ -12,6 +12,7 @@ export interface Order {
   customerName: string;
   date: Date;
   deliveryDate?: Date | null;
+  fulfilledAt?: Date | null;
   payedDate?: Date | null;
   products: OrderProduct[];
   totalAmount: number;

@@ -581,6 +581,9 @@ serve(async (req) => {
         landingSite: order.landing_site || null,
         referringSite: order.referring_site || null,
         utm: Object.keys(utm).length > 0 ? utm : null,
+        fulfilledAt: order.fulfillments?.length
+          ? order.fulfillments.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())[0].created_at
+          : null,
       };
     });
 
