@@ -9,8 +9,9 @@ import { useShopifyProducts } from '@/hooks/useShopifyProducts';
 import { downloadCsv } from '@/lib/csv-export';
 import { FrankFilters, getDefaultFilters, type FrankDataFilters } from '@/components/frank/FrankFilters';
 import { buildFilteredContext } from '@/components/frank/buildFilteredContext';
+import { supabase } from '@/integrations/supabase/client';
 
-type Msg = { role: 'user' | 'assistant'; content: string; files?: UploadedFile[] };
+type Msg = { role: 'user' | 'assistant'; content: string; files?: UploadedFile[]; id?: string };
 type UploadedFile = { name: string; content: string; type: string };
 
 const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/frank-ai`;
@@ -21,6 +22,7 @@ export default function Frank() {
   const [isLoading, setIsLoading] = useState(false);
   const [uploadedFiles, setUploadedFiles] = useState<UploadedFile[]>([]);
   const [filters, setFilters] = useState<FrankDataFilters>(getDefaultFilters);
+  const [historyLoaded, setHistoryLoaded] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -28,6 +30,40 @@ export default function Frank() {
   const { data: shopifyOrders } = useShopifyOrders();
   const { data: b2bOrders } = useGoogleSheetsOrders();
   const { data: products } = useShopifyProducts();
+
+  // Load chat history on mount
+  useEffect(() => {
+    const loadHistory = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('frank_chat_messages')
+          .select('id, role, content, created_at')
+          .order('created_at', { ascending: true })
+          .limit(100);
+
+        if (!error && data && data.length > 0) {
+          setMessages(data.map(m => ({
+            role: m.role as 'user' | 'assistant',
+            content: m.content,
+            id: m.id,
+          })));
+        }
+      } catch (e) {
+        console.error('Error loading chat history:', e);
+      }
+      setHistoryLoaded(true);
+    };
+    loadHistory();
+  }, []);
+
+  // Save message to DB
+  const saveMessage = useCallback(async (role: 'user' | 'assistant', content: string) => {
+    try {
+      await supabase.from('frank_chat_messages').insert({ role, content });
+    } catch (e) {
+      console.error('Error saving message:', e);
+    }
+  }, []);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -89,6 +125,9 @@ export default function Frank() {
     setUploadedFiles([]);
     setMessages(prev => [...prev, userMsg]);
     setIsLoading(true);
+
+    // Save user message to DB
+    saveMessage('user', text);
 
     let assistantSoFar = '';
     const upsertAssistant = (chunk: string) => {
@@ -152,19 +191,32 @@ export default function Frank() {
           }
         }
       }
+
+      // Save assistant response to DB
+      if (assistantSoFar) {
+        saveMessage('assistant', assistantSoFar);
+      }
     } catch (e) {
       console.error('Frank AI error:', e);
       upsertAssistant('⚠️ Errore di connessione. Riprova.');
     }
 
     setIsLoading(false);
-  }, [input, isLoading, messages, dataContext, uploadedFiles]);
+  }, [input, isLoading, messages, dataContext, uploadedFiles, saveMessage]);
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
   };
 
-  const clearChat = () => { setMessages([]); };
+  const clearChat = async () => {
+    setMessages([]);
+    // Clear DB history
+    try {
+      await supabase.from('frank_chat_messages').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+    } catch (e) {
+      console.error('Error clearing chat:', e);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
@@ -193,7 +245,7 @@ export default function Frank() {
 
         {/* Messages */}
         <div className="flex-1 overflow-y-auto py-4 space-y-4 min-h-0" style={{ maxHeight: 'calc(100vh - 280px)' }}>
-          {messages.length === 0 && (
+          {messages.length === 0 && historyLoaded && (
             <div className="text-center py-16 space-y-4">
               <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto">
                 <Bot className="w-8 h-8 text-primary" />
