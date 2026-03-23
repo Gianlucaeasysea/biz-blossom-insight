@@ -152,13 +152,35 @@ export default function Index() {
       .reduce((s, o) => s + (o.netAmount ?? o.totalAmount), 0);
   }, [allOrders, dateRange]);
 
+  // Scaling factor: align all order-derived B2C net sales to Shopify Analytics netSales (ground truth).
+  const b2cNetScaleFactor = useMemo(() => {
+    if (!shopifySalesSummary?.netSales || customerTypeFilter === 'B2B') return 1;
+    const rawB2CNet = filteredOrders
+      .filter(o => o.customerType === 'B2C')
+      .reduce((s, o) => s + (o.netAmount ?? o.totalAmount), 0);
+    return rawB2CNet > 0 ? shopifySalesSummary.netSales / rawB2CNet : 1;
+  }, [filteredOrders, shopifySalesSummary, customerTypeFilter]);
+
+  const b2cSkuData = useMemo(() => {
+    const raw = getB2CSkuBreakdown(filteredOrders, allOrders, dateRange);
+    if (b2cNetScaleFactor === 1) return raw;
+    return raw.map(r => ({
+      ...r,
+      netSalesTotal: Math.round(r.netSalesTotal * b2cNetScaleFactor * 100) / 100,
+      netSalesFulfilled: Math.round(r.netSalesFulfilled * b2cNetScaleFactor * 100) / 100,
+    }));
+  }, [filteredOrders, allOrders, dateRange, b2cNetScaleFactor]);
+
+  // Revenue B2C KPI = sum of fulfilled net sales from SKU table (ensures exact match)
+  const revenueB2CScaled = useMemo(() =>
+    b2cSkuData.reduce((s, r) => s + r.netSalesFulfilled, 0),
+  [b2cSkuData]);
+
   const kpis = useMemo(() => {
     const computed = calculateKPIs(filteredOrders);
-    // Revenue B2C will be overridden after b2cSkuData is computed (see revenueB2CFromSku)
-    // Override Revenue B2B with delivery-date-filtered value
     const withOverrides = computed.map(k => {
       if (k.label === 'Revenue B2B') return { ...k, value: revenueB2B };
-      if (k.label === 'Revenue B2C') return { ...k, value: revenueB2C };
+      if (k.label === 'Revenue B2C') return { ...k, value: revenueB2CScaled };
       return k;
     });
     // When Shopify Analytics summary is available, use its net_sales as the canonical B2C figure
@@ -178,26 +200,7 @@ export default function Index() {
       });
     }
     return withOverrides;
-  }, [filteredOrders, revenueB2B, revenueB2C, shopifySalesSummary, customerTypeFilter]);
-  // Scaling factor: align all order-derived B2C net sales to Shopify Analytics netSales (ground truth).
-  // sum(order.netAmount) can differ from Analytics due to cancelled orders, timing, or custom SKUs.
-  const b2cNetScaleFactor = useMemo(() => {
-    if (!shopifySalesSummary?.netSales || customerTypeFilter === 'B2B') return 1;
-    const rawB2CNet = filteredOrders
-      .filter(o => o.customerType === 'B2C')
-      .reduce((s, o) => s + (o.netAmount ?? o.totalAmount), 0);
-    return rawB2CNet > 0 ? shopifySalesSummary.netSales / rawB2CNet : 1;
-  }, [filteredOrders, shopifySalesSummary, customerTypeFilter]);
-
-  const b2cSkuData = useMemo(() => {
-    const raw = getB2CSkuBreakdown(filteredOrders, allOrders, dateRange);
-    if (b2cNetScaleFactor === 1) return raw;
-    return raw.map(r => ({
-      ...r,
-      netSalesTotal: Math.round(r.netSalesTotal * b2cNetScaleFactor * 100) / 100,
-      netSalesFulfilled: Math.round(r.netSalesFulfilled * b2cNetScaleFactor * 100) / 100,
-    }));
-  }, [filteredOrders, allOrders, dateRange, b2cNetScaleFactor]);
+  }, [filteredOrders, revenueB2B, revenueB2CScaled, shopifySalesSummary, customerTypeFilter]);
   const b2bSkuData = useMemo(() => getB2BSkuBreakdown(filteredOrders), [filteredOrders]);
   const combinedSkuData = useMemo(() => {
     const raw = getCombinedSkuBreakdown(filteredOrders);
