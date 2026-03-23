@@ -443,15 +443,25 @@ export default function SalesCallAnalysis() {
     allOrders.filter((o) => o.customerType === 'B2C').forEach((order) => {
       const d = order.date instanceof Date ? order.date : new Date(order.date);
       const year = d.getFullYear();
-      if (year !== selectedYear && year !== prevYear) return;
       const mo = d.getMonth();
-      const scale = year === selectedYear ? currScaleFactor : prevScaleFactor;
-      const net = (order.netAmount ?? order.totalAmount) * scale;
 
-      data[year][mo].raccolti += net;
+      // Raccolti: only if order date is in selected or prev year
+      if (year === selectedYear || year === prevYear) {
+        const scale = year === selectedYear ? currScaleFactor : prevScaleFactor;
+        const net = (order.netAmount ?? order.totalAmount) * scale;
+        data[year][mo].raccolti += net;
+
+        const grossSum = order.products.reduce((s, p) => s + p.totalPrice, 0);
+        order.products.forEach((prod) => {
+          const col = getSkuCollection(prod.sku);
+          const product = COLLECTION_TO_PRODUCT[col] as Product | undefined;
+          if (!product) return;
+          const share = grossSum > 0 ? prod.totalPrice / grossSum : 0;
+          data[year][mo].products[product] += net * share;
+        });
+      }
 
       // FATTURATO B2C = solo ordini evasi, posizionati nel mese di fulfillment
-      // Usa lo scale factor dell'anno di fulfillment, non dell'anno dell'ordine
       if (order.status === 'completed' && order.fulfilledAt) {
         const fd = order.fulfilledAt instanceof Date ? order.fulfilledAt : new Date(order.fulfilledAt);
         const fYear = fd.getFullYear();
@@ -462,15 +472,6 @@ export default function SalesCallAnalysis() {
           data[fYear][fMo].evasi += fNet;
         }
       }
-
-      const grossSum = order.products.reduce((s, p) => s + p.totalPrice, 0);
-      order.products.forEach((prod) => {
-        const col = getSkuCollection(prod.sku);
-        const product = COLLECTION_TO_PRODUCT[col] as Product | undefined;
-        if (!product) return;
-        const share = grossSum > 0 ? prod.totalPrice / grossSum : 0;
-        data[year][mo].products[product] += net * share;
-      });
     });
 
     return data;
