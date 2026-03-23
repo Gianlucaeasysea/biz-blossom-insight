@@ -74,6 +74,11 @@ interface ShopifyOrder {
   landing_site?: string | null;
   referring_site?: string | null;
   note_attributes?: Array<{ name: string; value: string }>;
+  fulfillments?: Array<{
+    id: number;
+    status: string;
+    created_at: string;
+  }>;
 }
 
 interface ShopifyQlColumn {
