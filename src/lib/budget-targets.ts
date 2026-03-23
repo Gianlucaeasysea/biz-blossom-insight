@@ -1,29 +1,18 @@
 /**
  * Budget 2026 monthly targets — single source of truth.
+ * Values from "BDG MKT_V2" sheet (REVENUE BDG 2026).
  * Used by Budget2026 page AND RevenueTarget progress bar.
  */
 
 export const BUDGET_PRODUCTS = [
-  { name: 'FLIPPER',       sales: [3627,9425,8610,20679,11117,14764,14089,16285,7548,5752,15785,5672],  target: 200320, startMonth: 0 },
-  { name: 'OLLI BLOCK',    sales: [12177,4647,2669,9479,12177,7642,5770,7795,3601,4409,15241,3573],    target: 120190, startMonth: 0 },
-  { name: 'OLLI RING',     sales: [474,2295,2059,4002,5180,4416,2350,3389,1136,1052,3064,1104],        target: 34000,  startMonth: 0 },
-  { name: 'JAKE',          sales: [0,0,0,0,0,0,0,0,0,0,0,16788],                                      target: 99180,  startMonth: 2 },
-  { name: 'WAY2',          sales: [0,0,0,0,0,0,0,0,0,22175,7959,2707],                                target: 112200, startMonth: 1 },
-  { name: 'SIDE PRODUCTS', sales: [131,0,657,2281,2315,3406,2063,3182,2247,1514,4773,261],             target: 31030,  startMonth: 0 },
-  { name: 'EA ELEMENTS',   sales: [0,0,0,0,0,0,0,0,0,0,0,0],                                         target: 30000,  startMonth: 4 },
+  { name: 'FLIPPER',       monthlyTargets: [5357, 6534, 9462, 21443, 29330, 25249, 17211, 27851, 9220, 7027, 34708, 6928],  target: 200320, startMonth: 0 },
+  { name: 'OLLI BLOCK',    monthlyTargets: [3190, 3890, 6261, 12765, 17460, 15032, 10246, 16577, 5487, 4500, 20659, 4125],  target: 120192, startMonth: 0 },
+  { name: 'OLLI RING',     monthlyTargets: [837, 1019, 1639, 4005, 5858, 4463, 2685, 4344, 1436, 1095, 5415, 1199],        target: 33995,  startMonth: 0 },
+  { name: 'JAKE',          monthlyTargets: [0, 0, 24767, 8460, 13659, 9965, 6791, 10990, 3637, 2771, 15400, 2734],         target: 99174,  startMonth: 2 },
+  { name: 'WAY2',          monthlyTargets: [0, 3707, 5966, 12164, 16637, 14323, 9761, 15796, 5230, 5000, 19687, 3929],     target: 112200, startMonth: 1 },
+  { name: 'SIDE PRODUCTS', monthlyTargets: [787, 963, 1547, 3157, 4317, 3715, 2534, 4100, 2264, 1520, 5108, 1020],         target: 31032,  startMonth: 0 },
+  { name: 'EA ELEMENTS',   monthlyTargets: [0, 0, 0, 0, 5586, 4809, 3278, 5303, 1755, 1339, 6610, 1320],                  target: 30000,  startMonth: 4 },
 ] as const;
-
-/** Distribute an annual target across 12 months using 2025 seasonality */
-function monthlyTargetsForProduct(p: typeof BUDGET_PRODUCTS[number]): number[] {
-  const sm = p.startMonth;
-  const nonZero = p.sales.filter(v => v > 0).length;
-  if (nonZero < 6) {
-    const active = 12 - sm;
-    return Array.from({ length: 12 }, (_, i) => i >= sm ? Math.round(p.target / active) : 0);
-  }
-  const tot = p.sales.reduce((s, v) => s + v, 0);
-  return p.sales.map(v => tot > 0 ? Math.round((v / tot) * p.target) : 0);
-}
 
 /** Total annual target across all products */
 export const BUDGET_ANNUAL_TARGET = BUDGET_PRODUCTS.reduce((s, p) => s + p.target, 0);
@@ -32,8 +21,13 @@ export const BUDGET_ANNUAL_TARGET = BUDGET_PRODUCTS.reduce((s, p) => s + p.targe
 export const BUDGET_MONTHLY_TARGETS: number[] = (() => {
   const months = new Array(12).fill(0);
   BUDGET_PRODUCTS.forEach(p => {
-    const mt = monthlyTargetsForProduct(p);
-    mt.forEach((v, i) => { months[i] += v; });
+    p.monthlyTargets.forEach((v, i) => { months[i] += v; });
   });
   return months;
 })();
+
+/** Per-product monthly targets (for Budget2026 page) */
+export function getProductMonthlyTargets(productName: string): number[] {
+  const p = BUDGET_PRODUCTS.find(bp => bp.name === productName);
+  return p ? [...p.monthlyTargets] : new Array(12).fill(0);
+}
