@@ -154,28 +154,30 @@ export default function Index() {
 
   const kpis = useMemo(() => {
     const computed = calculateKPIs(filteredOrders);
-    // Override Revenue B2B with delivery-date-filtered value
-    const withRevenueB2B = computed.map(k =>
-      k.label === 'Revenue B2B' ? { ...k, value: revenueB2B } : k
-    );
+    // Override Revenue B2B with delivery-date-filtered value and Revenue B2C with fulfilledAt-filtered value
+    const withOverrides = computed.map(k => {
+      if (k.label === 'Revenue B2B') return { ...k, value: revenueB2B };
+      if (k.label === 'Revenue B2C') return { ...k, value: revenueB2C };
+      return k;
+    });
     // When Shopify Analytics summary is available, use its net_sales as the canonical B2C figure
     if (shopifySalesSummary?.netSales !== undefined && customerTypeFilter !== 'B2B') {
       const analyticsNetSales = shopifySalesSummary.netSales;
-      return withRevenueB2B.map(k => {
+      return withOverrides.map(k => {
         if (k.label === 'Total Order B2C') return { ...k, value: analyticsNetSales };
         if (k.label === 'Total Order') {
-          const b2bVal = withRevenueB2B.find(c => c.label === 'Total Order B2B')?.value ?? 0;
+          const b2bVal = withOverrides.find(c => c.label === 'Total Order B2B')?.value ?? 0;
           return { ...k, value: analyticsNetSales + b2bVal };
         }
         if (k.label === 'AOV B2C') {
-          const b2cCount = withRevenueB2B.find(c => c.label === 'Total Orders B2C')?.value ?? 0;
+          const b2cCount = withOverrides.find(c => c.label === 'Total Orders B2C')?.value ?? 0;
           return { ...k, value: b2cCount > 0 ? analyticsNetSales / b2cCount : 0 };
         }
         return k;
       });
     }
-    return withRevenueB2B;
-  }, [filteredOrders, revenueB2B, shopifySalesSummary, customerTypeFilter]);
+    return withOverrides;
+  }, [filteredOrders, revenueB2B, revenueB2C, shopifySalesSummary, customerTypeFilter]);
   // Scaling factor: align all order-derived B2C net sales to Shopify Analytics netSales (ground truth).
   // sum(order.netAmount) can differ from Analytics due to cancelled orders, timing, or custom SKUs.
   const b2cNetScaleFactor = useMemo(() => {
