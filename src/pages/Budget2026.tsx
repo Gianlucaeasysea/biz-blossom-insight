@@ -67,16 +67,9 @@ const COLLECTION_MAP: Record<string, string> = {
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
-/** Distribute annual 2026 target across 12 months using 2025 seasonality (or flat from startMonth) */
+/** Return explicit monthly budget targets from BDG MKT_V2 */
 function monthlyTargets(p: typeof RAW.products[0]): number[] {
-  const sm = p.startMonth ?? 0;
-  const nonZero = p.sales.filter(v => v > 0).length;
-  if (nonZero < 6) {
-    const active = 12 - sm;
-    return MONTHS.map((_, i) => i >= sm ? Math.round(p.target / active) : 0);
-  }
-  const tot = p.sales.reduce((s, v) => s + v, 0);
-  return p.sales.map(v => tot > 0 ? Math.round((v / tot) * p.target) : 0);
+  return [...p.bdg];
 }
 
 const fmtEur = (v: number) =>
