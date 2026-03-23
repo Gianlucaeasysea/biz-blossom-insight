@@ -7,6 +7,8 @@ import { useShopifyOrders } from '@/hooks/useShopifyOrders';
 import { useGoogleSheetsOrders } from '@/hooks/useGoogleSheetsOrders';
 import { useShopifyProducts } from '@/hooks/useShopifyProducts';
 import { downloadCsv } from '@/lib/csv-export';
+import { FrankFilters, getDefaultFilters, type FrankDataFilters } from '@/components/frank/FrankFilters';
+import { buildFilteredContext } from '@/components/frank/buildFilteredContext';
 
 type Msg = { role: 'user' | 'assistant'; content: string; files?: UploadedFile[] };
 type UploadedFile = { name: string; content: string; type: string };
