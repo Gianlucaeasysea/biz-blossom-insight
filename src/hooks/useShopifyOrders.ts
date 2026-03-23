@@ -40,6 +40,7 @@ interface ShopifyOrdersResponse {
     landingSite?: string | null;
     referringSite?: string | null;
     utm?: Record<string, string> | null;
+    fulfilledAt?: string | null;
   }>;
   count: number;
   error?: string;
