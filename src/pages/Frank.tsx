@@ -81,10 +81,10 @@ export default function Frank() {
     return data.id;
   }, [activeConversationId]);
 
-  const saveMessage = useCallback(async (role: 'user' | 'assistant', content: string, convId: string) => {
+  const saveMessage = useCallback(async (role: 'user' | 'assistant', content: string, convId: string | null) => {
+    if (!convId) return;
     try {
       await supabase.from('frank_chat_messages').insert({ role, content, conversation_id: convId });
-      // Update conversation timestamp
       await supabase.from('frank_conversations').update({ updated_at: new Date().toISOString() }).eq('id', convId);
     } catch (e) {
       console.error('Error saving message:', e);
