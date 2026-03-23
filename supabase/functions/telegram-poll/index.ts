@@ -1,4 +1,3 @@
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
@@ -6,19 +5,27 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-serve(async (req) => {
+Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
+
+  console.log("telegram-poll: START");
 
   try {
     const TELEGRAM_BOT_TOKEN = Deno.env.get("TELEGRAM_BOT_TOKEN");
-    if (!TELEGRAM_BOT_TOKEN) throw new Error("TELEGRAM_BOT_TOKEN not configured");
+    if (!TELEGRAM_BOT_TOKEN) {
+      console.error("TELEGRAM_BOT_TOKEN not found");
+      return new Response(JSON.stringify({ error: "TELEGRAM_BOT_TOKEN not configured" }), {
+        status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    console.log("Token found, length:", TELEGRAM_BOT_TOKEN.length);
 
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
     const SUPABASE_ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY") || Deno.env.get("SUPABASE_PUBLISHABLE_KEY");
-    const FRANK_BOT_URL = `${supabaseUrl}/functions/v1/telegram-bot`;
 
     // Read current offset
     const { data: state, error: stateErr } = await supabase
@@ -35,23 +42,25 @@ serve(async (req) => {
     }
 
     const currentOffset = state.update_offset;
-    console.log("Polling with offset:", currentOffset);
+    console.log("Current offset:", currentOffset);
 
-    // Quick poll (no long polling - just check for new messages)
-    const response = await fetch(
-      `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/getUpdates`,
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          offset: currentOffset,
-          timeout: 0,
-          allowed_updates: ["message"],
-        }),
-      }
-    );
+    // Quick poll (timeout: 0 = no long polling)
+    const tgUrl = `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/getUpdates`;
+    console.log("Fetching updates...");
+    
+    const response = await fetch(tgUrl, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        offset: currentOffset,
+        timeout: 0,
+        allowed_updates: ["message"],
+      }),
+    });
 
     const data = await response.json();
+    console.log("Telegram response ok:", response.ok, "updates:", data.result?.length ?? 0);
+
     if (!response.ok) {
       console.error("Telegram API error:", JSON.stringify(data));
       return new Response(JSON.stringify({ error: data }), {
@@ -60,7 +69,6 @@ serve(async (req) => {
     }
 
     const updates = data.result ?? [];
-    console.log("Got updates:", updates.length);
 
     if (updates.length === 0) {
       return new Response(JSON.stringify({ ok: true, processed: 0 }), {
@@ -79,21 +87,16 @@ serve(async (req) => {
       }));
 
     if (rows.length > 0) {
-      const { error: insertErr } = await supabase
-        .from("telegram_messages")
-        .upsert(rows, { onConflict: "update_id" });
-
-      if (insertErr) {
-        console.error("Insert error:", insertErr.message);
-      }
+      await supabase.from("telegram_messages").upsert(rows, { onConflict: "update_id" });
     }
 
     // Process each message through Frank AI
+    const FRANK_BOT_URL = `${supabaseUrl}/functions/v1/telegram-bot`;
     for (const update of updates) {
       if (update.message?.text) {
-        console.log("Processing message from chat:", update.message.chat.id, "text:", update.message.text);
+        console.log("Processing:", update.message.text.slice(0, 50));
         try {
-          const botResp = await fetch(FRANK_BOT_URL, {
+          await fetch(FRANK_BOT_URL, {
             method: "POST",
             headers: {
               "Content-Type": "application/json",
@@ -105,10 +108,8 @@ serve(async (req) => {
               text: update.message.text,
             }),
           });
-          const botData = await botResp.json();
-          console.log("Frank response status:", botResp.status, JSON.stringify(botData).slice(0, 200));
         } catch (e) {
-          console.error("Error processing message:", e);
+          console.error("Frank processing error:", e);
         }
       }
     }
@@ -120,11 +121,13 @@ serve(async (req) => {
       .update({ update_offset: newOffset, updated_at: new Date().toISOString() })
       .eq("id", 1);
 
+    console.log("Done. Processed:", updates.length, "New offset:", newOffset);
+
     return new Response(JSON.stringify({ ok: true, processed: updates.length, newOffset }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (e) {
-    console.error("telegram-poll error:", e);
+    console.error("telegram-poll FATAL:", e);
     return new Response(JSON.stringify({ error: e instanceof Error ? e.message : "Unknown" }), {
       status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
