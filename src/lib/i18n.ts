@@ -13,6 +13,7 @@ const it: Dict = {
   'nav.b2c_analysis': 'Analisi B2C',
   'nav.sales_call': 'Analisi Call Sales',
   'nav.stock': 'Stock',
+  'nav.frank': 'Frank AI',
 
   // ── Header ────────────────────────────────────────────────────────────
   'header.subtitle': 'Dashboard B2C + B2B',
