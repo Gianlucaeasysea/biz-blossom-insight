@@ -69,19 +69,22 @@ export default function Frank() {
   }, [shopifyOrders, b2bOrders, products, filters]);
 
   // Create or get conversation
-  const ensureConversation = useCallback(async (firstMessage: string): Promise<string> => {
+  const ensureConversation = useCallback(async (firstMessage: string): Promise<string | null> => {
     if (activeConversationId) return activeConversationId;
     const title = firstMessage.slice(0, 60) + (firstMessage.length > 60 ? '…' : '');
-    const { data } = await supabase.from('frank_conversations').insert({ title }).select('id').single();
-    const id = data?.id;
-    if (id) setActiveConversationId(id);
-    return id || '';
+    const { data, error } = await supabase.from('frank_conversations').insert({ title }).select('id').single();
+    if (error || !data?.id) {
+      console.error('Error creating conversation:', error);
+      return null;
+    }
+    setActiveConversationId(data.id);
+    return data.id;
   }, [activeConversationId]);
 
-  const saveMessage = useCallback(async (role: 'user' | 'assistant', content: string, convId: string) => {
+  const saveMessage = useCallback(async (role: 'user' | 'assistant', content: string, convId: string | null) => {
+    if (!convId) return;
     try {
       await supabase.from('frank_chat_messages').insert({ role, content, conversation_id: convId });
-      // Update conversation timestamp
       await supabase.from('frank_conversations').update({ updated_at: new Date().toISOString() }).eq('id', convId);
     } catch (e) {
       console.error('Error saving message:', e);
