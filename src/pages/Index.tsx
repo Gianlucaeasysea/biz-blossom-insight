@@ -189,14 +189,14 @@ export default function Index() {
   }, [filteredOrders, shopifySalesSummary, customerTypeFilter]);
 
   const b2cSkuData = useMemo(() => {
-    const raw = getB2CSkuBreakdown(filteredOrders);
+    const raw = getB2CSkuBreakdown(filteredOrders, allOrders, dateRange);
     if (b2cNetScaleFactor === 1) return raw;
     return raw.map(r => ({
       ...r,
       netSalesTotal: Math.round(r.netSalesTotal * b2cNetScaleFactor * 100) / 100,
       netSalesFulfilled: Math.round(r.netSalesFulfilled * b2cNetScaleFactor * 100) / 100,
     }));
-  }, [filteredOrders, b2cNetScaleFactor]);
+  }, [filteredOrders, allOrders, dateRange, b2cNetScaleFactor]);
   const b2bSkuData = useMemo(() => getB2BSkuBreakdown(filteredOrders), [filteredOrders]);
   const combinedSkuData = useMemo(() => {
     const raw = getCombinedSkuBreakdown(filteredOrders);
