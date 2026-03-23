@@ -137,6 +137,21 @@ export default function Index() {
       .reduce((s, o) => s + o.products.reduce((ps, p) => ps + p.totalPrice, 0), 0);
   }, [allOrders, dateRange]);
 
+  // Revenue B2C: net sales of orders where fulfilledAt is within the date range
+  const revenueB2C = useMemo(() => {
+    const endOfDay = new Date(dateRange.end);
+    endOfDay.setHours(23, 59, 59, 999);
+    return allOrders
+      .filter(o => {
+        if (o.customerType !== 'B2C') return false;
+        if (o.status !== 'completed') return false;
+        if (!o.fulfilledAt) return false;
+        const fd = o.fulfilledAt instanceof Date ? o.fulfilledAt : new Date(o.fulfilledAt as string);
+        return fd >= dateRange.start && fd <= endOfDay;
+      })
+      .reduce((s, o) => s + (o.netAmount ?? o.totalAmount), 0);
+  }, [allOrders, dateRange]);
+
   const kpis = useMemo(() => {
     const computed = calculateKPIs(filteredOrders);
     // Override Revenue B2B with delivery-date-filtered value
