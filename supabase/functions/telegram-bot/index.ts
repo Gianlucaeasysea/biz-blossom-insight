@@ -1,41 +1,61 @@
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers":
-    "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-const FRANK_AI_URL = Deno.env.get("SUPABASE_URL") + "/functions/v1/frank-ai";
-
-serve(async (req) => {
+Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
+
+  console.log("telegram-bot: START");
 
   try {
     const TELEGRAM_BOT_TOKEN = Deno.env.get("TELEGRAM_BOT_TOKEN");
-    if (!TELEGRAM_BOT_TOKEN) throw new Error("TELEGRAM_BOT_TOKEN not configured");
+    if (!TELEGRAM_BOT_TOKEN) {
+      console.error("TELEGRAM_BOT_TOKEN not found");
+      return new Response(JSON.stringify({ error: "TELEGRAM_BOT_TOKEN not configured" }), {
+        status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
 
     const SUPABASE_ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY") || Deno.env.get("SUPABASE_PUBLISHABLE_KEY");
-    if (!SUPABASE_ANON_KEY) throw new Error("SUPABASE_ANON_KEY not configured");
+    if (!SUPABASE_ANON_KEY) {
+      console.error("SUPABASE_ANON_KEY not found");
+      return new Response(JSON.stringify({ error: "SUPABASE_ANON_KEY not configured" }), {
+        status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
 
-    const { action, chat_id, text } = await req.json();
+    const FRANK_AI_URL = Deno.env.get("SUPABASE_URL") + "/functions/v1/frank-ai";
+    const body = await req.json();
+    const { action, chat_id, text } = body;
+
+    console.log("Action:", action, "chat_id:", chat_id, "text:", text?.slice(0, 50));
 
     if (action === "send") {
-      // Send a message to a Telegram chat
       const resp = await fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ chat_id, text, parse_mode: "HTML" }),
       });
       const data = await resp.json();
+      console.log("Send result:", data.ok);
       return new Response(JSON.stringify(data), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
     if (action === "process_message") {
-      // Process incoming message through Frank AI
+      console.log("Calling Frank AI...");
+      
+      // Send "typing" indicator
+      await fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendChatAction`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ chat_id, action: "typing" }),
+      });
+
       const frankResp = await fetch(FRANK_AI_URL, {
         method: "POST",
         headers: {
@@ -44,13 +64,26 @@ serve(async (req) => {
         },
         body: JSON.stringify({
           messages: [{ role: "user", content: text }],
-          dataContext: "Rispondi in modo conciso, adatto a Telegram (max 4000 caratteri). Usa formato testo semplice, non markdown complesso.",
+          dataContext: "Rispondi in modo conciso, adatto a Telegram (max 4000 caratteri). Usa formato testo semplice, non markdown complesso. Non usare tag HTML.",
           fileContents: "",
         }),
       });
 
+      console.log("Frank AI status:", frankResp.status);
+
       if (!frankResp.ok || !frankResp.body) {
-        throw new Error("Frank AI error");
+        const errText = await frankResp.text();
+        console.error("Frank AI error:", errText);
+        
+        await fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ chat_id, text: "⚠️ Errore nell'elaborazione. Riprova." }),
+        });
+        
+        return new Response(JSON.stringify({ error: "Frank AI error" }), {
+          status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
       }
 
       // Read streamed response
@@ -79,28 +112,28 @@ serve(async (req) => {
         }
       }
 
-      // Send response back to Telegram (truncate if too long)
+      console.log("Frank response length:", fullResponse.length);
+
+      if (fullResponse.length === 0) {
+        fullResponse = "Non ho ricevuto dati sufficienti per rispondere. Riprova con una domanda più specifica.";
+      }
+
+      // Truncate if needed
       if (fullResponse.length > 4000) {
         fullResponse = fullResponse.slice(0, 3997) + "...";
       }
 
+      // Send response to Telegram (plain text, no parse_mode to avoid HTML issues)
       const sendResp = await fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ chat_id, text: fullResponse, parse_mode: "HTML" }),
+        body: JSON.stringify({ chat_id, text: fullResponse }),
       });
 
-      // If HTML parse fails, retry without parse_mode
       const sendData = await sendResp.json();
-      if (!sendData.ok && sendData.description?.includes("parse")) {
-        await fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ chat_id, text: fullResponse }),
-        });
-      }
+      console.log("Telegram send result:", sendData.ok);
 
-      return new Response(JSON.stringify({ ok: true, response: fullResponse.slice(0, 200) }), {
+      return new Response(JSON.stringify({ ok: true }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
@@ -109,8 +142,8 @@ serve(async (req) => {
       status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (e) {
-    console.error("telegram-bot error:", e);
-    return new Response(JSON.stringify({ error: e instanceof Error ? e.message : "Unknown error" }), {
+    console.error("telegram-bot FATAL:", e);
+    return new Response(JSON.stringify({ error: e instanceof Error ? e.message : "Unknown" }), {
       status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   }
