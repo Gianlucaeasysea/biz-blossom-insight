@@ -479,10 +479,11 @@ serve(async (req) => {
       let orderStatus: 'pending' | 'completed' | 'cancelled' | 'refunded' = 'pending';
       if (order.cancelled_at) {
         orderStatus = 'cancelled';
+      } else if (order.fulfillment_status === 'fulfilled') {
+        // Fulfilled = merce evasa, anche se con rimborsi parziali
+        orderStatus = 'completed';
       } else if (order.refunds && order.refunds.length > 0) {
         orderStatus = 'refunded';
-      } else if (order.financial_status === 'paid' && order.fulfillment_status === 'fulfilled') {
-        orderStatus = 'completed';
       }
 
       const grossSales = roundMoney(parseMoney(order.total_line_items_price || order.subtotal_price));
