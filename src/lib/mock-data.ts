@@ -123,17 +123,18 @@ export function getTop3ProductsByQty(orders: Order[]): Array<{ sku: string; name
     .slice(0, 3);
 }
 
-// B2C SKU breakdown: qty sold, net sales total, net sales fulfilled
-export function getB2CSkuBreakdown(orders: Order[]): Array<{
+// B2C SKU breakdown: qty sold, net sales total, net sales fulfilled (by fulfilledAt date range)
+export function getB2CSkuBreakdown(
+  orders: Order[],
+  allOrders?: Order[],
+  dateRange?: { start: Date; end: Date },
+): Array<{
   sku: string; name: string; qtySold: number; netSalesTotal: number; netSalesFulfilled: number;
 }> {
   const skuMap: Record<string, { name: string; qtySold: number; netSalesTotal: number; netSalesFulfilled: number }> = {};
   const b2cOrders = orders.filter(o => o.customerType === 'B2C');
 
   b2cOrders.forEach(order => {
-    // Use order.netAmount (current_subtotal_price from Shopify) as the canonical net figure,
-    // distributed proportionally across line items based on their totalPrice share.
-    // This ensures sum(skuNetSales) === sum(order.netAmount) which aligns with Shopify reporting.
     const orderNet = order.netAmount ?? order.totalAmount;
     const itemsGross = order.products.reduce((s, p) => s + p.totalPrice, 0);
 
@@ -144,9 +145,29 @@ export function getB2CSkuBreakdown(orders: Order[]): Array<{
       skuMap[product.sku].qtySold += product.quantity;
       const itemNet = itemsGross > 0 ? orderNet * (product.totalPrice / itemsGross) : 0;
       skuMap[product.sku].netSalesTotal += itemNet;
-      if (order.status === 'completed') {
-        skuMap[product.sku].netSalesFulfilled += itemNet;
+    });
+  });
+
+  // Fulfilled net sales: use fulfilledAt date to filter within range
+  const sourceOrders = allOrders ?? orders;
+  const fulfilledB2C = sourceOrders.filter(o => {
+    if (o.customerType !== 'B2C' || o.status !== 'completed' || !o.fulfilledAt) return false;
+    if (!dateRange) return true;
+    const fd = o.fulfilledAt instanceof Date ? o.fulfilledAt : new Date(o.fulfilledAt as string);
+    const endOfDay = new Date(dateRange.end);
+    endOfDay.setHours(23, 59, 59, 999);
+    return fd >= dateRange.start && fd <= endOfDay;
+  });
+
+  fulfilledB2C.forEach(order => {
+    const orderNet = order.netAmount ?? order.totalAmount;
+    const itemsGross = order.products.reduce((s, p) => s + p.totalPrice, 0);
+    order.products.forEach(product => {
+      if (!skuMap[product.sku]) {
+        skuMap[product.sku] = { name: product.name, qtySold: 0, netSalesTotal: 0, netSalesFulfilled: 0 };
       }
+      const itemNet = itemsGross > 0 ? orderNet * (product.totalPrice / itemsGross) : 0;
+      skuMap[product.sku].netSalesFulfilled += itemNet;
     });
   });
 
