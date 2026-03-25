@@ -472,12 +472,28 @@ export default function MetaAds() {
             };
             const countryName = (cc: string) => COUNTRY_NAMES[cc] || cc;
 
+            // Shopify returns English names — map to Italian for join
+            const EN_TO_IT: Record<string, string> = {
+              'Italy': 'Italia', 'Germany': 'Germania', 'France': 'Francia', 'Spain': 'Spagna',
+              'United Kingdom': 'Regno Unito', 'United States': 'Stati Uniti', 'Netherlands': 'Paesi Bassi',
+              'Austria': 'Austria', 'Switzerland': 'Svizzera', 'Belgium': 'Belgio', 'Portugal': 'Portogallo',
+              'Sweden': 'Svezia', 'Denmark': 'Danimarca', 'Norway': 'Norvegia', 'Finland': 'Finlandia',
+              'Poland': 'Polonia', 'Greece': 'Grecia', 'Ireland': 'Irlanda', 'Czech Republic': 'Rep. Ceca',
+              'Czechia': 'Rep. Ceca', 'Croatia': 'Croazia', 'Romania': 'Romania', 'Hungary': 'Ungheria',
+              'Slovenia': 'Slovenia', 'Slovakia': 'Slovacchia', 'Bulgaria': 'Bulgaria',
+              'Lithuania': 'Lituania', 'Latvia': 'Lettonia', 'Estonia': 'Estonia', 'Malta': 'Malta',
+              'Cyprus': 'Cipro', 'Luxembourg': 'Lussemburgo', 'Turkey': 'Turchia', 'Türkiye': 'Turchia',
+              'Australia': 'Australia', 'Canada': 'Canada', 'Brazil': 'Brasile',
+              'Japan': 'Giappone', 'Mexico': 'Messico', 'Monaco': 'Monaco', 'Andorra': 'Andorra', 'San Marino': 'San Marino',
+            };
+            const normalizeCountry = (name: string) => EN_TO_IT[name] || name;
+
             const countrySpend = data.countries
               .map(c => ({ country: countryName(c.country), spend: parseFloat(c.spend || '0') }))
               .sort((a, b) => b.spend - a.spend)
               .slice(0, 15);
 
-            // Country MER: match B2C Shopify sales by shipping country with Meta spend by country
+            // Country MER: match B2C Shopify sales by country name with Meta spend by country
             const b2cSalesByCountry: Record<string, number> = {};
             const filteredB2C = shopifyOrders.filter(o => {
               if (o.customerType !== 'B2C') return false;
@@ -485,21 +501,24 @@ export default function MetaAds() {
               return d >= dateRange.start && d <= dateRange.end;
             });
             for (const order of filteredB2C) {
-              const cc = (order as any).shippingCountryCode || (order as any).countryCode || '??';
+              const rawCountry = (order as any).destinationCountry || (order as any).country || 'Sconosciuto';
+              const name = normalizeCountry(rawCountry.trim());
               const netAmt = (order as any).netAmount ?? order.totalAmount;
-              b2cSalesByCountry[cc] = (b2cSalesByCountry[cc] || 0) + netAmt;
+              b2cSalesByCountry[name] = (b2cSalesByCountry[name] || 0) + netAmt;
             }
+            // Convert Meta ISO codes to full names
             const metaSpendByCountry: Record<string, number> = {};
             for (const c of data.countries) {
-              metaSpendByCountry[c.country] = (metaSpendByCountry[c.country] || 0) + parseFloat(c.spend || '0');
+              const name = countryName(c.country); // ISO → full name
+              metaSpendByCountry[name] = (metaSpendByCountry[name] || 0) + parseFloat(c.spend || '0');
             }
-            const allCountryCodes = [...new Set([...Object.keys(metaSpendByCountry), ...Object.keys(b2cSalesByCountry)])];
-            const countryMer = allCountryCodes
-              .map(cc => {
-                const spend = metaSpendByCountry[cc] || 0;
-                const revenue = b2cSalesByCountry[cc] || 0;
+            const allCountryNames = [...new Set([...Object.keys(metaSpendByCountry), ...Object.keys(b2cSalesByCountry)])];
+            const countryMer = allCountryNames
+              .map(name => {
+                const spend = metaSpendByCountry[name] || 0;
+                const revenue = b2cSalesByCountry[name] || 0;
                 const mer = spend > 0 ? revenue / spend : 0;
-                return { country: countryName(cc), spend, revenue, mer };
+                return { country: name, spend, revenue, mer };
               })
               .filter(c => c.spend > 0)
               .sort((a, b) => b.mer - a.mer)
