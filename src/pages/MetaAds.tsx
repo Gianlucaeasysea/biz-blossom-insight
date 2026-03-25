@@ -61,6 +61,9 @@ export default function MetaAds() {
   const [adsetCategoryOverrides, setAdsetCategoryOverrides] = useState<Record<string, string>>({});
   const [showCreatives, setShowCreatives] = useState(false);
   const [showUtmMatch, setShowUtmMatch] = useState(false);
+  const [countrySpendPage, setCountrySpendPage] = useState(0);
+  const [countryMerPage, setCountryMerPage] = useState(0);
+  const COUNTRIES_PER_PAGE = 10;
 
   const { data, isLoading, isError, error, refetch, isFetching } = useMetaAds(dateRange);
   const { data: creativesData, isLoading: isLoadingCreatives } = useMetaCreatives(dateRange, showCreatives || showUtmMatch);
