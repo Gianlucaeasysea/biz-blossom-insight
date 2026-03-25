@@ -477,7 +477,8 @@ export default function MetaAds() {
               .sort((a, b) => b.spend - a.spend)
               .slice(0, 15);
 
-            // Country MER: match B2C Shopify sales by shipping country with Meta spend by country
+            // Country MER: match B2C Shopify sales by country name with Meta spend by country
+            // Meta returns ISO codes, Shopify returns full names — normalize both to full name
             const b2cSalesByCountry: Record<string, number> = {};
             const filteredB2C = shopifyOrders.filter(o => {
               if (o.customerType !== 'B2C') return false;
@@ -485,15 +486,18 @@ export default function MetaAds() {
               return d >= dateRange.start && d <= dateRange.end;
             });
             for (const order of filteredB2C) {
-              const cc = (order as any).shippingCountryCode || (order as any).countryCode || '??';
+              const rawCountry = (order as any).destinationCountry || (order as any).country || 'Sconosciuto';
+              const name = rawCountry.trim();
               const netAmt = (order as any).netAmount ?? order.totalAmount;
-              b2cSalesByCountry[cc] = (b2cSalesByCountry[cc] || 0) + netAmt;
+              b2cSalesByCountry[name] = (b2cSalesByCountry[name] || 0) + netAmt;
             }
+            // Convert Meta ISO codes to full names
             const metaSpendByCountry: Record<string, number> = {};
             for (const c of data.countries) {
-              metaSpendByCountry[c.country] = (metaSpendByCountry[c.country] || 0) + parseFloat(c.spend || '0');
+              const name = countryName(c.country); // ISO → full name
+              metaSpendByCountry[name] = (metaSpendByCountry[name] || 0) + parseFloat(c.spend || '0');
             }
-            const allCountryCodes = [...new Set([...Object.keys(metaSpendByCountry), ...Object.keys(b2cSalesByCountry)])];
+            const allCountryNames = [...new Set([...Object.keys(metaSpendByCountry), ...Object.keys(b2cSalesByCountry)])];
             const countryMer = allCountryCodes
               .map(cc => {
                 const spend = metaSpendByCountry[cc] || 0;
