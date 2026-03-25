@@ -14,6 +14,27 @@ export type Database = {
   }
   public: {
     Tables: {
+      debug_proposals: {
+        Row: {
+          author: string
+          created_at: string
+          id: string
+          note: string
+        }
+        Insert: {
+          author: string
+          created_at?: string
+          id?: string
+          note: string
+        }
+        Update: {
+          author?: string
+          created_at?: string
+          id?: string
+          note?: string
+        }
+        Relationships: []
+      }
       frank_chat_messages: {
         Row: {
           content: string

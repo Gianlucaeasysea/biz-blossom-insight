@@ -15,6 +15,7 @@ import B2CAnalysis from "./pages/B2CAnalysis";
 import SalesCallAnalysis from "./pages/SalesCallAnalysis";
 import Stock from "./pages/Stock";
 import Frank from "./pages/Frank";
+import Debug from "./pages/Debug";
 import Login from "./pages/Login";
 import ResetPassword from "./pages/ResetPassword";
 import NotFound from "./pages/NotFound";
@@ -43,6 +44,7 @@ const App = () => (
           <Route path="/sales-call" element={<ProtectedRoute><SalesCallAnalysis /></ProtectedRoute>} />
           <Route path="/stock" element={<ProtectedRoute><Stock /></ProtectedRoute>} />
           <Route path="/frank" element={<ProtectedRoute><Frank /></ProtectedRoute>} />
+          <Route path="/debug" element={<ProtectedRoute><Debug /></ProtectedRoute>} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
