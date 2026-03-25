@@ -472,13 +472,28 @@ export default function MetaAds() {
             };
             const countryName = (cc: string) => COUNTRY_NAMES[cc] || cc;
 
+            // Shopify returns English names — map to Italian for join
+            const EN_TO_IT: Record<string, string> = {
+              'Italy': 'Italia', 'Germany': 'Germania', 'France': 'Francia', 'Spain': 'Spagna',
+              'United Kingdom': 'Regno Unito', 'United States': 'Stati Uniti', 'Netherlands': 'Paesi Bassi',
+              'Austria': 'Austria', 'Switzerland': 'Svizzera', 'Belgium': 'Belgio', 'Portugal': 'Portogallo',
+              'Sweden': 'Svezia', 'Denmark': 'Danimarca', 'Norway': 'Norvegia', 'Finland': 'Finlandia',
+              'Poland': 'Polonia', 'Greece': 'Grecia', 'Ireland': 'Irlanda', 'Czech Republic': 'Rep. Ceca',
+              'Czechia': 'Rep. Ceca', 'Croatia': 'Croazia', 'Romania': 'Romania', 'Hungary': 'Ungheria',
+              'Slovenia': 'Slovenia', 'Slovakia': 'Slovacchia', 'Bulgaria': 'Bulgaria',
+              'Lithuania': 'Lituania', 'Latvia': 'Lettonia', 'Estonia': 'Estonia', 'Malta': 'Malta',
+              'Cyprus': 'Cipro', 'Luxembourg': 'Lussemburgo', 'Turkey': 'Turchia', 'Türkiye': 'Turchia',
+              'Australia': 'Australia', 'Canada': 'Canada', 'Brazil': 'Brasile',
+              'Japan': 'Giappone', 'Mexico': 'Messico', 'Monaco': 'Monaco', 'Andorra': 'Andorra', 'San Marino': 'San Marino',
+            };
+            const normalizeCountry = (name: string) => EN_TO_IT[name] || name;
+
             const countrySpend = data.countries
               .map(c => ({ country: countryName(c.country), spend: parseFloat(c.spend || '0') }))
               .sort((a, b) => b.spend - a.spend)
               .slice(0, 15);
 
             // Country MER: match B2C Shopify sales by country name with Meta spend by country
-            // Meta returns ISO codes, Shopify returns full names — normalize both to full name
             const b2cSalesByCountry: Record<string, number> = {};
             const filteredB2C = shopifyOrders.filter(o => {
               if (o.customerType !== 'B2C') return false;
@@ -487,7 +502,7 @@ export default function MetaAds() {
             });
             for (const order of filteredB2C) {
               const rawCountry = (order as any).destinationCountry || (order as any).country || 'Sconosciuto';
-              const name = rawCountry.trim();
+              const name = normalizeCountry(rawCountry.trim());
               const netAmt = (order as any).netAmount ?? order.totalAmount;
               b2cSalesByCountry[name] = (b2cSalesByCountry[name] || 0) + netAmt;
             }
