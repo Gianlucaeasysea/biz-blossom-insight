@@ -498,7 +498,7 @@ export default function MetaAds() {
               metaSpendByCountry[name] = (metaSpendByCountry[name] || 0) + parseFloat(c.spend || '0');
             }
             const allCountryNames = [...new Set([...Object.keys(metaSpendByCountry), ...Object.keys(b2cSalesByCountry)])];
-            const countryMer = allCountryCodes
+            const countryMer = allCountryNames
               .map(cc => {
                 const spend = metaSpendByCountry[cc] || 0;
                 const revenue = b2cSalesByCountry[cc] || 0;
