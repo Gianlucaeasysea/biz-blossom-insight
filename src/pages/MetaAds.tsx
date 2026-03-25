@@ -460,8 +460,20 @@ export default function MetaAds() {
 
           {/* Country Charts */}
           {data?.countries && data.countries.length > 0 && (() => {
+            const COUNTRY_NAMES: Record<string, string> = {
+              IT: 'Italia', DE: 'Germania', FR: 'Francia', ES: 'Spagna', GB: 'Regno Unito',
+              US: 'Stati Uniti', NL: 'Paesi Bassi', AT: 'Austria', CH: 'Svizzera', BE: 'Belgio',
+              PT: 'Portogallo', SE: 'Svezia', DK: 'Danimarca', NO: 'Norvegia', FI: 'Finlandia',
+              PL: 'Polonia', GR: 'Grecia', IE: 'Irlanda', CZ: 'Rep. Ceca', HR: 'Croazia',
+              RO: 'Romania', HU: 'Ungheria', SI: 'Slovenia', SK: 'Slovacchia', BG: 'Bulgaria',
+              LT: 'Lituania', LV: 'Lettonia', EE: 'Estonia', MT: 'Malta', CY: 'Cipro',
+              LU: 'Lussemburgo', TR: 'Turchia', AU: 'Australia', CA: 'Canada', BR: 'Brasile',
+              JP: 'Giappone', MX: 'Messico', MC: 'Monaco', AD: 'Andorra', SM: 'San Marino',
+            };
+            const countryName = (cc: string) => COUNTRY_NAMES[cc] || cc;
+
             const countrySpend = data.countries
-              .map(c => ({ country: c.country, spend: parseFloat(c.spend || '0') }))
+              .map(c => ({ country: countryName(c.country), spend: parseFloat(c.spend || '0') }))
               .sort((a, b) => b.spend - a.spend)
               .slice(0, 15);
 
@@ -486,7 +498,7 @@ export default function MetaAds() {
               .map(cc => {
                 const spend = metaSpendByCountry[cc] || 0;
                 const revenue = b2cSalesByCountry[cc] || 0;
-                return { country: cc, spend, revenue, mer: spend > 0 ? revenue / spend : 0 };
+                return { country: countryName(cc), spend, revenue, mer: spend > 0 ? revenue / spend : 0 };
               })
               .filter(c => c.spend > 0 || c.revenue > 0)
               .sort((a, b) => b.spend - a.spend)
@@ -501,7 +513,7 @@ export default function MetaAds() {
                       <BarChart data={countrySpend} layout="vertical">
                         <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
                         <XAxis type="number" tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 11 }} />
-                        <YAxis type="category" dataKey="country" tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 11 }} width={40} />
+                        <YAxis type="category" dataKey="country" tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 11 }} width={100} />
                         <Tooltip contentStyle={{ background: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRadius: 8, color: 'hsl(var(--foreground))' }} formatter={(v: number) => [`€${v.toFixed(2)}`, 'Spesa']} />
                         <Bar dataKey="spend" fill="hsl(var(--primary))" radius={[0, 4, 4, 0]} name="Spesa €" />
                       </BarChart>
@@ -515,7 +527,7 @@ export default function MetaAds() {
                       <BarChart data={countryMer} layout="vertical">
                         <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
                         <XAxis type="number" tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 11 }} />
-                        <YAxis type="category" dataKey="country" tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 11 }} width={40} />
+                        <YAxis type="category" dataKey="country" tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 11 }} width={100} />
                         <Tooltip contentStyle={{ background: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRadius: 8, color: 'hsl(var(--foreground))' }} formatter={(v: number, name: string) => [name === 'mer' ? `${v.toFixed(2)}x` : `€${v.toFixed(2)}`, name === 'mer' ? 'MER' : name === 'spend' ? 'Spesa' : 'Net Sales']} />
                         <Legend />
                         <Bar dataKey="spend" fill="hsl(var(--primary))" radius={[0, 4, 4, 0]} name="Spesa €" />
