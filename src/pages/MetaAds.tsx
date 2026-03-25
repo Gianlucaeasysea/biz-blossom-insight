@@ -498,10 +498,11 @@ export default function MetaAds() {
               .map(cc => {
                 const spend = metaSpendByCountry[cc] || 0;
                 const revenue = b2cSalesByCountry[cc] || 0;
-                return { country: countryName(cc), spend, revenue, mer: spend > 0 ? revenue / spend : 0 };
+                const mer = spend > 0 ? revenue / spend : 0;
+                return { country: countryName(cc), spend, revenue, mer };
               })
-              .filter(c => c.spend > 0 || c.revenue > 0)
-              .sort((a, b) => b.spend - a.spend)
+              .filter(c => c.spend > 0)
+              .sort((a, b) => b.mer - a.mer)
               .slice(0, 15);
 
             return (
@@ -521,17 +522,19 @@ export default function MetaAds() {
                   </CardContent>
                 </Card>
                 <Card>
-                  <CardHeader className="pb-2"><CardTitle className="text-sm font-medium">MER per Paese (B2C Net)</CardTitle></CardHeader>
+                  <CardHeader className="pb-2"><CardTitle className="text-sm font-medium">MER per Paese (Net Sales B2C / Spesa Meta)</CardTitle></CardHeader>
                   <CardContent>
                     <ResponsiveContainer width="100%" height={300}>
                       <BarChart data={countryMer} layout="vertical">
                         <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
                         <XAxis type="number" tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 11 }} />
                         <YAxis type="category" dataKey="country" tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 11 }} width={100} />
-                        <Tooltip contentStyle={{ background: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRadius: 8, color: 'hsl(var(--foreground))' }} formatter={(v: number, name: string) => [name === 'mer' ? `${v.toFixed(2)}x` : `€${v.toFixed(2)}`, name === 'mer' ? 'MER' : name === 'spend' ? 'Spesa' : 'Net Sales']} />
+                        <Tooltip contentStyle={{ background: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRadius: 8, color: 'hsl(var(--foreground))' }} formatter={(v: number, name: string) => {
+                          if (name === 'MER') return [`${v.toFixed(2)}x`, 'MER'];
+                          return [`€${v.toFixed(2)}`, name];
+                        }} />
                         <Legend />
-                        <Bar dataKey="spend" fill="hsl(var(--primary))" radius={[0, 4, 4, 0]} name="Spesa €" />
-                        <Bar dataKey="revenue" fill="hsl(var(--accent))" radius={[0, 4, 4, 0]} name="Net Sales B2C" />
+                        <Bar dataKey="mer" fill="hsl(var(--primary))" radius={[0, 4, 4, 0]} name="MER" />
                       </BarChart>
                     </ResponsiveContainer>
                   </CardContent>
