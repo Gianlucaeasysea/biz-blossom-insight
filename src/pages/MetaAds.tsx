@@ -458,6 +458,75 @@ export default function MetaAds() {
             </Card>
           </div>
 
+          {/* Country Charts */}
+          {data?.countries && data.countries.length > 0 && (() => {
+            const countrySpend = data.countries
+              .map(c => ({ country: c.country, spend: parseFloat(c.spend || '0') }))
+              .sort((a, b) => b.spend - a.spend)
+              .slice(0, 15);
+
+            // Country MER: match B2C Shopify sales by shipping country with Meta spend by country
+            const b2cSalesByCountry: Record<string, number> = {};
+            const filteredB2C = shopifyOrders.filter(o => {
+              if (o.customerType !== 'B2C') return false;
+              const d = o.date instanceof Date ? o.date : new Date(o.date);
+              return d >= dateRange.start && d <= dateRange.end;
+            });
+            for (const order of filteredB2C) {
+              const cc = (order as any).shippingCountryCode || (order as any).countryCode || '??';
+              const netAmt = (order as any).netAmount ?? order.totalAmount;
+              b2cSalesByCountry[cc] = (b2cSalesByCountry[cc] || 0) + netAmt;
+            }
+            const metaSpendByCountry: Record<string, number> = {};
+            for (const c of data.countries) {
+              metaSpendByCountry[c.country] = (metaSpendByCountry[c.country] || 0) + parseFloat(c.spend || '0');
+            }
+            const allCountryCodes = [...new Set([...Object.keys(metaSpendByCountry), ...Object.keys(b2cSalesByCountry)])];
+            const countryMer = allCountryCodes
+              .map(cc => {
+                const spend = metaSpendByCountry[cc] || 0;
+                const revenue = b2cSalesByCountry[cc] || 0;
+                return { country: cc, spend, revenue, mer: spend > 0 ? revenue / spend : 0 };
+              })
+              .filter(c => c.spend > 0 || c.revenue > 0)
+              .sort((a, b) => b.spend - a.spend)
+              .slice(0, 15);
+
+            return (
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+                <Card>
+                  <CardHeader className="pb-2"><CardTitle className="text-sm font-medium">Spesa Ads per Paese</CardTitle></CardHeader>
+                  <CardContent>
+                    <ResponsiveContainer width="100%" height={300}>
+                      <BarChart data={countrySpend} layout="vertical">
+                        <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                        <XAxis type="number" tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 11 }} />
+                        <YAxis type="category" dataKey="country" tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 11 }} width={40} />
+                        <Tooltip contentStyle={{ background: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRadius: 8, color: 'hsl(var(--foreground))' }} formatter={(v: number) => [`€${v.toFixed(2)}`, 'Spesa']} />
+                        <Bar dataKey="spend" fill="hsl(var(--primary))" radius={[0, 4, 4, 0]} name="Spesa €" />
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </CardContent>
+                </Card>
+                <Card>
+                  <CardHeader className="pb-2"><CardTitle className="text-sm font-medium">MER per Paese (B2C Net)</CardTitle></CardHeader>
+                  <CardContent>
+                    <ResponsiveContainer width="100%" height={300}>
+                      <BarChart data={countryMer} layout="vertical">
+                        <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                        <XAxis type="number" tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 11 }} />
+                        <YAxis type="category" dataKey="country" tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 11 }} width={40} />
+                        <Tooltip contentStyle={{ background: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRadius: 8, color: 'hsl(var(--foreground))' }} formatter={(v: number, name: string) => [name === 'mer' ? `${v.toFixed(2)}x` : `€${v.toFixed(2)}`, name === 'mer' ? 'MER' : name === 'spend' ? 'Spesa' : 'Net Sales']} />
+                        <Legend />
+                        <Bar dataKey="spend" fill="hsl(var(--primary))" radius={[0, 4, 4, 0]} name="Spesa €" />
+                        <Bar dataKey="revenue" fill="hsl(var(--accent))" radius={[0, 4, 4, 0]} name="Net Sales B2C" />
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </CardContent>
+                </Card>
+              </div>
+            );
+          })()}
           {/* Creatives - Lazy */}
           <Card className="mb-6">
             <CardHeader className="pb-2">

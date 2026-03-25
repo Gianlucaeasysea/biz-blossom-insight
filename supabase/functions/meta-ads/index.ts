@@ -67,27 +67,31 @@ serve(async (req) => {
       });
     }
 
-    // DEFAULT: core data - daily insights + campaign + adset breakdown
-    const [insightsRes, campaignsRes, adsetsRes] = await Promise.all([
+    // DEFAULT: core data - daily insights + campaign + adset + country breakdown
+    const [insightsRes, campaignsRes, adsetsRes, countryRes] = await Promise.all([
       fetch(`${META_API_BASE}/${AD_ACCOUNT_ID}/insights?fields=spend,impressions,clicks,ctr,cpc,cpm,reach,frequency,actions,cost_per_action_type,action_values&time_range=${encodeURIComponent(timeRange)}&time_increment=1&limit=100&access_token=${accessToken}`),
       fetch(`${META_API_BASE}/${AD_ACCOUNT_ID}/insights?fields=campaign_name,campaign_id,spend,impressions,clicks,ctr,cpc,actions,cost_per_action_type,action_values&time_range=${encodeURIComponent(timeRange)}&level=campaign&limit=100&access_token=${accessToken}`),
       fetch(`${META_API_BASE}/${AD_ACCOUNT_ID}/insights?fields=adset_name,adset_id,campaign_name,campaign_id,spend,impressions,clicks,ctr,cpc,actions,action_values&time_range=${encodeURIComponent(timeRange)}&level=adset&limit=100&access_token=${accessToken}`),
+      fetch(`${META_API_BASE}/${AD_ACCOUNT_ID}/insights?fields=spend,impressions,clicks,ctr,cpc,actions,action_values&time_range=${encodeURIComponent(timeRange)}&breakdowns=country&limit=100&access_token=${accessToken}`),
     ]);
 
     if (!insightsRes.ok) throw new Error(`Meta insights failed [${insightsRes.status}]: ${await insightsRes.text()}`);
     if (!campaignsRes.ok) throw new Error(`Meta campaigns failed [${campaignsRes.status}]: ${await campaignsRes.text()}`);
     if (!adsetsRes.ok) throw new Error(`Meta adsets failed [${adsetsRes.status}]: ${await adsetsRes.text()}`);
+    if (!countryRes.ok) throw new Error(`Meta country failed [${countryRes.status}]: ${await countryRes.text()}`);
 
-    const [insightsData, campaignsData, adsetsData] = await Promise.all([
+    const [insightsData, campaignsData, adsetsData, countryData] = await Promise.all([
       insightsRes.json(),
       campaignsRes.json(),
       adsetsRes.json(),
+      countryRes.json(),
     ]);
 
     return new Response(JSON.stringify({
       daily: insightsData.data || [],
       campaigns: campaignsData.data || [],
       adsets: adsetsData.data || [],
+      countries: countryData.data || [],
     }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
