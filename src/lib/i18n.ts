@@ -14,6 +14,7 @@ const it: Dict = {
   'nav.sales_call': 'Analisi Call Sales',
   'nav.stock': 'Stock',
   'nav.frank': 'Frank AI',
+  'nav.debug': 'Debug',
 
   // ── Header ────────────────────────────────────────────────────────────
   'header.subtitle': 'Dashboard B2C + B2B',
@@ -190,6 +191,7 @@ const en: Dict = {
   'nav.sales_call': 'Sales Call Analysis',
   'nav.stock': 'Stock',
   'nav.frank': 'Frank AI',
+  'nav.debug': 'Debug',
 
   'header.subtitle': 'B2C + B2B Dashboard',
 
@@ -356,6 +358,7 @@ const de: Dict = {
   'nav.sales_call': 'Vertriebsanruf-Analyse',
   'nav.stock': 'Bestand',
   'nav.frank': 'Frank AI',
+  'nav.debug': 'Debug',
 
   'header.subtitle': 'B2C + B2B Dashboard',
 
