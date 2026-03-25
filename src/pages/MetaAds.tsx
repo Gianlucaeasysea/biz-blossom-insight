@@ -513,7 +513,7 @@ export default function MetaAds() {
                       <BarChart data={countrySpend} layout="vertical">
                         <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
                         <XAxis type="number" tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 11 }} />
-                        <YAxis type="category" dataKey="country" tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 11 }} width={40} />
+                        <YAxis type="category" dataKey="country" tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 11 }} width={100} />
                         <Tooltip contentStyle={{ background: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRadius: 8, color: 'hsl(var(--foreground))' }} formatter={(v: number) => [`€${v.toFixed(2)}`, 'Spesa']} />
                         <Bar dataKey="spend" fill="hsl(var(--primary))" radius={[0, 4, 4, 0]} name="Spesa €" />
                       </BarChart>
@@ -527,7 +527,7 @@ export default function MetaAds() {
                       <BarChart data={countryMer} layout="vertical">
                         <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
                         <XAxis type="number" tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 11 }} />
-                        <YAxis type="category" dataKey="country" tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 11 }} width={40} />
+                        <YAxis type="category" dataKey="country" tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 11 }} width={100} />
                         <Tooltip contentStyle={{ background: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRadius: 8, color: 'hsl(var(--foreground))' }} formatter={(v: number, name: string) => [name === 'mer' ? `${v.toFixed(2)}x` : `€${v.toFixed(2)}`, name === 'mer' ? 'MER' : name === 'spend' ? 'Spesa' : 'Net Sales']} />
                         <Legend />
                         <Bar dataKey="spend" fill="hsl(var(--primary))" radius={[0, 4, 4, 0]} name="Spesa €" />
