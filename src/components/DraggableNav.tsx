@@ -22,6 +22,7 @@ const DEFAULT_ITEMS: NavItem[] = [
   { to: '/sales-call', labelKey: 'nav.sales_call' },
   { to: '/stock', labelKey: 'nav.stock' },
   { to: '/frank', labelKey: 'nav.frank' },
+  { to: '/debug', labelKey: 'nav.debug' },
 ];
 
 function loadOrder(): NavItem[] {
