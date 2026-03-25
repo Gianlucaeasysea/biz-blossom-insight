@@ -499,11 +499,11 @@ export default function MetaAds() {
             }
             const allCountryNames = [...new Set([...Object.keys(metaSpendByCountry), ...Object.keys(b2cSalesByCountry)])];
             const countryMer = allCountryNames
-              .map(cc => {
-                const spend = metaSpendByCountry[cc] || 0;
-                const revenue = b2cSalesByCountry[cc] || 0;
+              .map(name => {
+                const spend = metaSpendByCountry[name] || 0;
+                const revenue = b2cSalesByCountry[name] || 0;
                 const mer = spend > 0 ? revenue / spend : 0;
-                return { country: countryName(cc), spend, revenue, mer };
+                return { country: name, spend, revenue, mer };
               })
               .filter(c => c.spend > 0)
               .sort((a, b) => b.mer - a.mer)
