@@ -64,10 +64,22 @@ export interface MetaAdCreative {
   action_values?: { action_type: string; value: string }[];
 }
 
+export interface MetaCountryInsight {
+  country: string;
+  spend: string;
+  impressions: string;
+  clicks: string;
+  ctr: string;
+  cpc: string;
+  actions?: { action_type: string; value: string }[];
+  action_values?: { action_type: string; value: string }[];
+}
+
 export interface MetaCoreData {
   daily: MetaDailyInsight[];
   campaigns: MetaCampaignInsight[];
   adsets: MetaAdsetInsight[];
+  countries: MetaCountryInsight[];
 }
 
 export interface MetaCreativesData {
