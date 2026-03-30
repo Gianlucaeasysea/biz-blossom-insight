@@ -214,29 +214,29 @@ function SalesTable({
       <div className="flex flex-wrap gap-3 px-5 py-4 border-b border-border/15 bg-card/50">
         {headerRow && (
           <SummaryCard
-            label="Ordini Raccolti"
-            value={sumArr(headerRow.currMonthly)}
-            prevValue={sumArr(headerRow.prevMonthly)}
+            label={`Ordini Raccolti (YTD ${MONTHS[ytdLimit]})`}
+            value={sumYtd(headerRow.currMonthly)}
+            prevValue={sumYtd(headerRow.prevMonthly)}
             color={color}
-            tooltip={color === 'blue' ? 'Net Sales totale per data ordine' : 'Somma prezzo prodotti per data ordine'}
+            tooltip={color === 'blue' ? 'Net Sales totale per data ordine (YTD)' : 'Somma prezzo prodotti per data ordine (YTD)'}
           />
         )}
         {revenueRow && (
           <SummaryCard
-            label="Fatturato"
-            value={sumArr(revenueRow.currMonthly)}
-            prevValue={sumArr(revenueRow.prevMonthly)}
+            label={`Fatturato (YTD ${MONTHS[ytdLimit]})`}
+            value={sumYtd(revenueRow.currMonthly)}
+            prevValue={sumYtd(revenueRow.prevMonthly)}
             color={color}
-            tooltip={color === 'blue' ? 'Net Sales solo ordini evasi (fulfilled)' : 'Somma prezzo ordini consegnati (per delivery date)'}
+            tooltip={color === 'blue' ? 'Net Sales solo ordini evasi (YTD)' : 'Somma prezzo ordini consegnati (YTD)'}
           />
         )}
         {portfolioRow && (
           <SummaryCard
-            label="Portafoglio Ordini"
-            value={sumArr(portfolioRow.currMonthly)}
-            prevValue={sumArr(portfolioRow.prevMonthly)}
+            label={`Portafoglio Ordini (YTD ${MONTHS[ytdLimit]})`}
+            value={sumYtd(portfolioRow.currMonthly)}
+            prevValue={sumYtd(portfolioRow.prevMonthly)}
             color={color}
-            tooltip="Differenza tra raccolti e fatturato"
+            tooltip="Differenza tra raccolti e fatturato (YTD)"
           />
         )}
       </div>
