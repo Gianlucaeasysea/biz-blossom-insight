@@ -111,6 +111,7 @@ serve(async (req) => {
     // SKU mapping for B2B products
     const skuMap: Record<string, string> = {
       'Flipper™ - Standard Foldable Winch Handle': 'FS-101-1',
+      'Flipper™ - Foldable Winch Handle': 'FS-101-1',
       'Flipper MAX™ - Foldable Winch Handle': 'FM-101-1',
       'Flipper™ - Max Foldable Winch Handle': 'FM-101-1',
       'Flipper™ Max Carbon': 'FCM-101-1',
