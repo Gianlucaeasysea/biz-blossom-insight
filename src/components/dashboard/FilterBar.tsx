@@ -68,8 +68,8 @@ export function FilterBar({
       <div className="flex rounded-md bg-muted p-0.5">
         {presets.map(p => (
           <button
-            key={p.days}
-            onClick={() => onDateRangeChange({ start: subDays(new Date(), p.days), end: new Date() })}
+            key={p.label}
+            onClick={() => onDateRangeChange(p.getRange())}
             className="px-2 sm:px-2.5 py-1.5 text-[11px] sm:text-xs text-muted-foreground hover:text-foreground rounded transition-colors"
           >
             {p.label}
