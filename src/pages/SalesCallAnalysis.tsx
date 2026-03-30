@@ -278,8 +278,8 @@ function SalesTable({
 
           <tbody>
             {rows.map((row, ri) => {
-              const currTot = sumArr(row.currMonthly);
-              const prevTot = sumArr(row.prevMonthly);
+              const currTot = sumYtd(row.currMonthly);
+              const prevTot = sumYtd(row.prevMonthly);
               const canEdit = !row.isDerived;
 
               return (
