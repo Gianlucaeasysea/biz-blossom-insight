@@ -256,10 +256,10 @@ function SalesTable({
                 Voce
               </th>
               <th className={`px-3 py-2.5 text-right font-bold ${accentCls} border-r border-border/20 min-w-[90px]`}>
-                TOT {selectedYear}
+                YTD {selectedYear}
               </th>
               <th className="px-3 py-2.5 text-right font-medium text-muted-foreground border-r border-border/20 min-w-[80px]">
-                TOT {prevYear}
+                YTD {prevYear}
               </th>
               <th className="px-3 py-2.5 text-center font-medium text-muted-foreground border-r border-border/30 min-w-[55px]">
                 YoY
