@@ -153,7 +153,7 @@ function SummaryCard({ label, value, prevValue, color, tooltip }: {
       </div>
       <div className={`text-lg font-bold tabular-nums ${accent}`}>{fmtEur(value)}</div>
       <div className="flex items-center gap-2 mt-0.5">
-        <span className="text-[10px] text-muted-foreground tabular-nums">{fmtEur(prevValue)} anno prec.</span>
+        <span className="text-[10px] text-muted-foreground tabular-nums">{fmtEur(prevValue)} YTD anno prec.</span>
         {(value > 0 || prevValue > 0) && (
           <span className={`text-[10px] tabular-nums ${pctCls(value, prevValue)}`}>{pctStr(value, prevValue)}</span>
         )}
@@ -187,7 +187,12 @@ function SalesTable({
 
   const nowMonth = new Date().getMonth();
   const nowYear = new Date().getFullYear();
+  // For YTD comparison: only sum months 0..currentMonth when viewing current year
+  const ytdLimit = nowYear === selectedYear ? nowMonth : 11;
   const productRows = rows.filter((r) => r.isProduct);
+
+  // YTD sums (only up to ytdLimit for fair comparison)
+  const sumYtd = (arr: number[]) => arr.slice(0, ytdLimit + 1).reduce((a, b) => a + b, 0);
 
   // Summary cards data
   const headerRow = rows.find(r => r.isHeader);
@@ -209,29 +214,29 @@ function SalesTable({
       <div className="flex flex-wrap gap-3 px-5 py-4 border-b border-border/15 bg-card/50">
         {headerRow && (
           <SummaryCard
-            label="Ordini Raccolti"
-            value={sumArr(headerRow.currMonthly)}
-            prevValue={sumArr(headerRow.prevMonthly)}
+            label={`Ordini Raccolti (YTD ${MONTHS[ytdLimit]})`}
+            value={sumYtd(headerRow.currMonthly)}
+            prevValue={sumYtd(headerRow.prevMonthly)}
             color={color}
-            tooltip={color === 'blue' ? 'Net Sales totale per data ordine' : 'Somma prezzo prodotti per data ordine'}
+            tooltip={color === 'blue' ? 'Net Sales totale per data ordine (YTD)' : 'Somma prezzo prodotti per data ordine (YTD)'}
           />
         )}
         {revenueRow && (
           <SummaryCard
-            label="Fatturato"
-            value={sumArr(revenueRow.currMonthly)}
-            prevValue={sumArr(revenueRow.prevMonthly)}
+            label={`Fatturato (YTD ${MONTHS[ytdLimit]})`}
+            value={sumYtd(revenueRow.currMonthly)}
+            prevValue={sumYtd(revenueRow.prevMonthly)}
             color={color}
-            tooltip={color === 'blue' ? 'Net Sales solo ordini evasi (fulfilled)' : 'Somma prezzo ordini consegnati (per delivery date)'}
+            tooltip={color === 'blue' ? 'Net Sales solo ordini evasi (YTD)' : 'Somma prezzo ordini consegnati (YTD)'}
           />
         )}
         {portfolioRow && (
           <SummaryCard
-            label="Portafoglio Ordini"
-            value={sumArr(portfolioRow.currMonthly)}
-            prevValue={sumArr(portfolioRow.prevMonthly)}
+            label={`Portafoglio Ordini (YTD ${MONTHS[ytdLimit]})`}
+            value={sumYtd(portfolioRow.currMonthly)}
+            prevValue={sumYtd(portfolioRow.prevMonthly)}
             color={color}
-            tooltip="Differenza tra raccolti e fatturato"
+            tooltip="Differenza tra raccolti e fatturato (YTD)"
           />
         )}
       </div>
@@ -251,10 +256,10 @@ function SalesTable({
                 Voce
               </th>
               <th className={`px-3 py-2.5 text-right font-bold ${accentCls} border-r border-border/20 min-w-[90px]`}>
-                TOT {selectedYear}
+                YTD {selectedYear}
               </th>
               <th className="px-3 py-2.5 text-right font-medium text-muted-foreground border-r border-border/20 min-w-[80px]">
-                TOT {prevYear}
+                YTD {prevYear}
               </th>
               <th className="px-3 py-2.5 text-center font-medium text-muted-foreground border-r border-border/30 min-w-[55px]">
                 YoY
@@ -273,8 +278,8 @@ function SalesTable({
 
           <tbody>
             {rows.map((row, ri) => {
-              const currTot = sumArr(row.currMonthly);
-              const prevTot = sumArr(row.prevMonthly);
+              const currTot = sumYtd(row.currMonthly);
+              const prevTot = sumYtd(row.prevMonthly);
               const canEdit = !row.isDerived;
 
               return (
@@ -351,8 +356,8 @@ function SalesTable({
                   <div className="text-[10px] font-normal text-muted-foreground">somma ordini raccolti</div>
                 </td>
                 {(() => {
-                  const cTot = sumArr(productRows.map((r) => sumArr(r.currMonthly)));
-                  const pTot = sumArr(productRows.map((r) => sumArr(r.prevMonthly)));
+                  const cTot = productRows.reduce((s, r) => s + sumYtd(r.currMonthly), 0);
+                  const pTot = productRows.reduce((s, r) => s + sumYtd(r.prevMonthly), 0);
                   return (
                     <>
                       <td className={`px-3 py-2.5 text-right border-r border-border/20 tabular-nums font-bold ${accentCls}`}>{fmt(cTot)}</td>
