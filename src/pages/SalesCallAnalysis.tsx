@@ -356,8 +356,8 @@ function SalesTable({
                   <div className="text-[10px] font-normal text-muted-foreground">somma ordini raccolti</div>
                 </td>
                 {(() => {
-                  const cTot = sumArr(productRows.map((r) => sumArr(r.currMonthly)));
-                  const pTot = sumArr(productRows.map((r) => sumArr(r.prevMonthly)));
+                  const cTot = sumYtd(productRows.map((r) => sumYtd(r.currMonthly)));
+                  const pTot = sumYtd(productRows.map((r) => sumYtd(r.prevMonthly)));
                   return (
                     <>
                       <td className={`px-3 py-2.5 text-right border-r border-border/20 tabular-nums font-bold ${accentCls}`}>{fmt(cTot)}</td>
