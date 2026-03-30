@@ -23,10 +23,12 @@ export function FilterBar({
   const [calendarOpen, setCalendarOpen] = useState(false);
 
   const presets = [
-    { label: '7g', days: 7 },
-    { label: '30g', days: 30 },
-    { label: '90g', days: 90 },
-    { label: '1a', days: 365 },
+    { label: 'YTD', getRange: () => ({ start: startOfYear(new Date()), end: new Date() }) },
+    { label: 'MTD', getRange: () => ({ start: startOfMonth(new Date()), end: new Date() }) },
+    { label: '7g', getRange: () => ({ start: subDays(new Date(), 7), end: new Date() }) },
+    { label: '30g', getRange: () => ({ start: subDays(new Date(), 30), end: new Date() }) },
+    { label: '90g', getRange: () => ({ start: subDays(new Date(), 90), end: new Date() }) },
+    { label: '1a', getRange: () => ({ start: subDays(new Date(), 365), end: new Date() }) },
   ];
 
   return (
