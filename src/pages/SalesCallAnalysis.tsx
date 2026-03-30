@@ -187,7 +187,12 @@ function SalesTable({
 
   const nowMonth = new Date().getMonth();
   const nowYear = new Date().getFullYear();
+  // For YTD comparison: only sum months 0..currentMonth when viewing current year
+  const ytdLimit = nowYear === selectedYear ? nowMonth : 11;
   const productRows = rows.filter((r) => r.isProduct);
+
+  // YTD sums (only up to ytdLimit for fair comparison)
+  const sumYtd = (arr: number[]) => arr.slice(0, ytdLimit + 1).reduce((a, b) => a + b, 0);
 
   // Summary cards data
   const headerRow = rows.find(r => r.isHeader);
