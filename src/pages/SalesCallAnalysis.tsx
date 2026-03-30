@@ -153,7 +153,7 @@ function SummaryCard({ label, value, prevValue, color, tooltip }: {
       </div>
       <div className={`text-lg font-bold tabular-nums ${accent}`}>{fmtEur(value)}</div>
       <div className="flex items-center gap-2 mt-0.5">
-        <span className="text-[10px] text-muted-foreground tabular-nums">{fmtEur(prevValue)} anno prec.</span>
+        <span className="text-[10px] text-muted-foreground tabular-nums">{fmtEur(prevValue)} YTD anno prec.</span>
         {(value > 0 || prevValue > 0) && (
           <span className={`text-[10px] tabular-nums ${pctCls(value, prevValue)}`}>{pctStr(value, prevValue)}</span>
         )}
