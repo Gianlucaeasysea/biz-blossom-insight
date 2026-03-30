@@ -3,7 +3,7 @@ import { Calendar, ChevronDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar as CalendarComponent } from '@/components/ui/calendar';
-import { format, subDays } from 'date-fns';
+import { format, subDays, startOfYear, startOfMonth } from 'date-fns';
 import { enUS } from 'date-fns/locale';
 import { CustomerType } from '@/types/analytics';
 
