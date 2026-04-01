@@ -112,8 +112,26 @@ export default function MetaAds() {
       clicks: parseInt(d.clicks || '0'),
       ctr: parseFloat(d.ctr || '0'),
       cpc: parseFloat(d.cpc || '0'),
+      cpm: parseFloat(d.cpm || '0'),
       reach: parseInt(d.reach || '0'),
       purchases: getActionValue(d.actions, 'purchase'),
+    }));
+  }, [data]);
+
+  // Monthly CPM aggregation for month-over-month trend
+  const monthlyCpmData = useMemo(() => {
+    if (!data?.daily) return [];
+    const monthMap = new Map<string, { spend: number; impressions: number }>();
+    for (const d of data.daily) {
+      const monthKey = format(new Date(d.date_start), 'MMM yyyy', { locale: it });
+      const existing = monthMap.get(monthKey) || { spend: 0, impressions: 0 };
+      existing.spend += parseFloat(d.spend || '0');
+      existing.impressions += parseInt(d.impressions || '0');
+      monthMap.set(monthKey, existing);
+    }
+    return Array.from(monthMap.entries()).map(([month, { spend, impressions }]) => ({
+      month,
+      cpm: impressions > 0 ? (spend / impressions) * 1000 : 0,
     }));
   }, [data]);
 
@@ -460,6 +478,29 @@ export default function MetaAds() {
               </CardContent>
             </Card>
           </div>
+
+          {/* CPM Month-over-Month Trend */}
+          {monthlyCpmData.length > 0 && (
+            <Card className="mb-6">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm font-medium">CPM — Andamento Mese su Mese</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <ResponsiveContainer width="100%" height={300}>
+                  <LineChart data={monthlyCpmData}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                    <XAxis dataKey="month" tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 11 }} />
+                    <YAxis tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 11 }} tickFormatter={(v) => `€${v.toFixed(1)}`} />
+                    <Tooltip
+                      contentStyle={{ background: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRadius: 8, color: 'hsl(var(--foreground))' }}
+                      formatter={(value: number) => [`€${value.toFixed(2)}`, 'CPM']}
+                    />
+                    <Line type="monotone" dataKey="cpm" stroke="hsl(var(--primary))" strokeWidth={2.5} dot={{ fill: 'hsl(var(--primary))', r: 4 }} name="CPM €" />
+                  </LineChart>
+                </ResponsiveContainer>
+              </CardContent>
+            </Card>
+          )}
 
           {/* Country Charts */}
           {data?.countries && data.countries.length > 0 && (() => {
