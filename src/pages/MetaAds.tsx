@@ -479,6 +479,29 @@ export default function MetaAds() {
             </Card>
           </div>
 
+          {/* CPM Month-over-Month Trend */}
+          {monthlyCpmData.length > 0 && (
+            <Card className="mb-6">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm font-medium">CPM — Andamento Mese su Mese</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <ResponsiveContainer width="100%" height={300}>
+                  <LineChart data={monthlyCpmData}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                    <XAxis dataKey="month" tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 11 }} />
+                    <YAxis tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 11 }} tickFormatter={(v) => `€${v.toFixed(1)}`} />
+                    <Tooltip
+                      contentStyle={{ background: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRadius: 8, color: 'hsl(var(--foreground))' }}
+                      formatter={(value: number) => [`€${value.toFixed(2)}`, 'CPM']}
+                    />
+                    <Line type="monotone" dataKey="cpm" stroke="hsl(var(--primary))" strokeWidth={2.5} dot={{ fill: 'hsl(var(--primary))', r: 4 }} name="CPM €" />
+                  </LineChart>
+                </ResponsiveContainer>
+              </CardContent>
+            </Card>
+          )}
+
           {/* Country Charts */}
           {data?.countries && data.countries.length > 0 && (() => {
             const COUNTRY_NAMES: Record<string, string> = {
