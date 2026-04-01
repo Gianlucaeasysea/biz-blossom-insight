@@ -112,8 +112,26 @@ export default function MetaAds() {
       clicks: parseInt(d.clicks || '0'),
       ctr: parseFloat(d.ctr || '0'),
       cpc: parseFloat(d.cpc || '0'),
+      cpm: parseFloat(d.cpm || '0'),
       reach: parseInt(d.reach || '0'),
       purchases: getActionValue(d.actions, 'purchase'),
+    }));
+  }, [data]);
+
+  // Monthly CPM aggregation for month-over-month trend
+  const monthlyCpmData = useMemo(() => {
+    if (!data?.daily) return [];
+    const monthMap = new Map<string, { spend: number; impressions: number }>();
+    for (const d of data.daily) {
+      const monthKey = format(new Date(d.date_start), 'MMM yyyy', { locale: it });
+      const existing = monthMap.get(monthKey) || { spend: 0, impressions: 0 };
+      existing.spend += parseFloat(d.spend || '0');
+      existing.impressions += parseInt(d.impressions || '0');
+      monthMap.set(monthKey, existing);
+    }
+    return Array.from(monthMap.entries()).map(([month, { spend, impressions }]) => ({
+      month,
+      cpm: impressions > 0 ? (spend / impressions) * 1000 : 0,
     }));
   }, [data]);
 
