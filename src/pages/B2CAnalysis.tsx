@@ -1,5 +1,5 @@
 import { useState, useMemo, useCallback } from 'react';
-import { subDays, format, differenceInDays, eachMonthOfInterval, startOfMonth, getDaysInMonth } from 'date-fns';
+import { subDays, format, differenceInDays, eachMonthOfInterval, startOfMonth, startOfYear, getDaysInMonth } from 'date-fns';
 import { BUDGET_PRODUCTS } from '@/lib/budget-targets';
 import { DashboardHeader } from '@/components/dashboard/DashboardHeader';
 import { NavLink } from '@/components/NavLink';
@@ -63,6 +63,8 @@ const SectionHeader = ({ label }: { label: string }) => (
 );
 
 const DATE_PRESETS = [
+  { label: 'YTD', days: 'ytd' as const },
+  { label: 'MTD', days: 'mtd' as const },
   { label: '30g', days: 30 },
   { label: '90g', days: 90 },
   { label: '6m', days: 180 },
@@ -451,7 +453,11 @@ export default function B2CAnalysis() {
 
           <div className="flex items-center gap-2">
             {DATE_PRESETS.map(p => (
-              <button key={p.label} onClick={() => setDateRange({ start: p.days ? subDays(new Date(), p.days) : new Date('2023-01-01'), end: new Date() })}
+              <button key={p.label} onClick={() => {
+                const now = new Date();
+                const start = p.days === 'ytd' ? startOfYear(now) : p.days === 'mtd' ? startOfMonth(now) : p.days ? subDays(now, p.days) : new Date('2023-01-01');
+                setDateRange({ start, end: now });
+              }}
                 className="px-2 py-1 text-[10px] font-bold rounded transition-colors bg-muted text-muted-foreground hover:text-foreground">
                 {p.label}
               </button>
