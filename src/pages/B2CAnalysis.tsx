@@ -272,7 +272,56 @@ export default function B2CAnalysis() {
       .sort((a, b) => b.revenue - a.revenue);
   }, [productRows]);
 
-  // ── RFM segments ────────────────────────────────────────────────────────
+  // ── Budget vs Actual per collection (current month) ──────────────────────
+  const COLLECTION_TO_BUDGET: Record<string, string> = {
+    'Winch Handle': 'FLIPPER',
+    'Blocks': 'OLLI BLOCK',
+    'Low Friction & Solid Rings': 'OLLI RING',
+    'JAKE': 'JAKE',
+    'Inflatable': 'WAY2',
+    'Side products': 'SIDE PRODUCTS',
+  };
+
+  const budgetVsActual = useMemo(() => {
+    const now = new Date();
+    const currentMonth = now.getMonth();
+    const dayOfMonth = now.getDate();
+    const daysInMonth = getDaysInMonth(now);
+
+    // Actual: filter orders for current month only, group by collection
+    const currentMonthOrders = shopifyOrders.filter(o => {
+      if (o.customerType !== 'B2C') return false;
+      const d = o.date instanceof Date ? o.date : new Date(o.date);
+      return d.getMonth() === currentMonth && d.getFullYear() === now.getFullYear();
+    });
+
+    const actualByCollection: Record<string, number> = {};
+    currentMonthOrders.forEach(o => {
+      const orderNet = o.netAmount ?? o.totalAmount;
+      const totalProductGross = o.products.reduce((s, p) => s + p.totalPrice, 0);
+      o.products.forEach(p => {
+        const collection = getSkuCollection(p.sku);
+        const weight = totalProductGross > 0 ? p.totalPrice / totalProductGross : 0;
+        actualByCollection[collection] = (actualByCollection[collection] || 0) + orderNet * weight;
+      });
+    });
+
+    return BUDGET_PRODUCTS.map(bp => {
+      const collectionName = Object.entries(COLLECTION_TO_BUDGET).find(([, v]) => v === bp.name)?.[0] || bp.name;
+      const budgetMonth = bp.monthlyTargets[currentMonth];
+      const budgetToday = Math.round((budgetMonth / daysInMonth) * dayOfMonth);
+      const actual = Math.round(actualByCollection[collectionName] || 0);
+      return {
+        product: bp.name,
+        budgetMonth,
+        budgetToday,
+        actual,
+        pctVsBudgetToday: budgetToday > 0 ? (actual / budgetToday) * 100 : 0,
+      };
+    });
+  }, [shopifyOrders]);
+
+
   const rfmData = useMemo(() => {
     const segments: Record<RFMSegment, { count: number; revenue: number }> = {
       Champions: { count: 0, revenue: 0 }, Loyal: { count: 0, revenue: 0 },
