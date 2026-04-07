@@ -123,6 +123,8 @@ export default function B2CAnalysis() {
   const [sortField, setSortField] = useState<'totalSpent' | 'orders' | 'name' | 'daysSinceLast' | 'avgOrderValue'>('totalSpent');
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc');
   const [expandedOrders, setExpandedOrders] = useState<Set<string>>(new Set());
+  const [budgetViewMode, setBudgetViewMode] = useState<'MTD' | 'YTD'>('MTD');
+  const [expandedOrders, setExpandedOrders] = useState<Set<string>>(new Set());
 
   const toggleOrder = (id: string) => {
     setExpandedOrders(prev => { const n = new Set(prev); n.has(id) ? n.delete(id) : n.add(id); return n; });
