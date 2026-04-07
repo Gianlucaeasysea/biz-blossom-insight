@@ -1,5 +1,6 @@
 import { useState, useMemo, useCallback } from 'react';
-import { subDays, format, differenceInDays, eachMonthOfInterval, startOfMonth } from 'date-fns';
+import { subDays, format, differenceInDays, eachMonthOfInterval, startOfMonth, getDaysInMonth } from 'date-fns';
+import { BUDGET_PRODUCTS } from '@/lib/budget-targets';
 import { DashboardHeader } from '@/components/dashboard/DashboardHeader';
 import { NavLink } from '@/components/NavLink';
 import { DraggableNav } from '@/components/DraggableNav';
@@ -271,7 +272,56 @@ export default function B2CAnalysis() {
       .sort((a, b) => b.revenue - a.revenue);
   }, [productRows]);
 
-  // ── RFM segments ────────────────────────────────────────────────────────
+  // ── Budget vs Actual per collection (current month) ──────────────────────
+  const COLLECTION_TO_BUDGET: Record<string, string> = {
+    'Winch Handle': 'FLIPPER',
+    'Blocks': 'OLLI BLOCK',
+    'Low Friction & Solid Rings': 'OLLI RING',
+    'JAKE': 'JAKE',
+    'Inflatable': 'WAY2',
+    'Side products': 'SIDE PRODUCTS',
+  };
+
+  const budgetVsActual = useMemo(() => {
+    const now = new Date();
+    const currentMonth = now.getMonth();
+    const dayOfMonth = now.getDate();
+    const daysInMonth = getDaysInMonth(now);
+
+    // Actual: filter orders for current month only, group by collection
+    const currentMonthOrders = shopifyOrders.filter(o => {
+      if (o.customerType !== 'B2C') return false;
+      const d = o.date instanceof Date ? o.date : new Date(o.date);
+      return d.getMonth() === currentMonth && d.getFullYear() === now.getFullYear();
+    });
+
+    const actualByCollection: Record<string, number> = {};
+    currentMonthOrders.forEach(o => {
+      const orderNet = o.netAmount ?? o.totalAmount;
+      const totalProductGross = o.products.reduce((s, p) => s + p.totalPrice, 0);
+      o.products.forEach(p => {
+        const collection = getSkuCollection(p.sku);
+        const weight = totalProductGross > 0 ? p.totalPrice / totalProductGross : 0;
+        actualByCollection[collection] = (actualByCollection[collection] || 0) + orderNet * weight;
+      });
+    });
+
+    return BUDGET_PRODUCTS.map(bp => {
+      const collectionName = Object.entries(COLLECTION_TO_BUDGET).find(([, v]) => v === bp.name)?.[0] || bp.name;
+      const budgetMonth = bp.monthlyTargets[currentMonth];
+      const budgetToday = Math.round((budgetMonth / daysInMonth) * dayOfMonth);
+      const actual = Math.round(actualByCollection[collectionName] || 0);
+      return {
+        product: bp.name,
+        budgetMonth,
+        budgetToday,
+        actual,
+        pctVsBudgetToday: budgetToday > 0 ? (actual / budgetToday) * 100 : 0,
+      };
+    });
+  }, [shopifyOrders]);
+
+
   const rfmData = useMemo(() => {
     const segments: Record<RFMSegment, { count: number; revenue: number }> = {
       Champions: { count: 0, revenue: 0 }, Loyal: { count: 0, revenue: 0 },
@@ -435,6 +485,59 @@ export default function B2CAnalysis() {
               <KPI icon={Package} label="Sconti" value={fmt(kpis.discounts)} sub={kpis.grossSales > 0 ? fmtPct((kpis.discounts / kpis.grossSales) * 100) + ' del gross' : ''} color="hsl(320,60%,50%)" />
               <KPI icon={Clock} label="Resi" value={fmt(kpis.returns)} sub={kpis.grossSales > 0 ? fmtPct((kpis.returns / kpis.grossSales) * 100) + ' del gross' : ''} color="hsl(0,65%,52%)" />
               <KPI icon={Package} label="SKU Attivi" value={String(productRows.length)} color="hsl(140,50%,45%)" />
+            </div>
+
+            {/* ── Budget vs Actual mese corrente ─────────────────── */}
+            <div className="dashboard-card p-4">
+              <SectionHeader label={`Budget vs Actual B2C — ${format(new Date(), 'MMMM yyyy')}`} />
+              <div className="overflow-x-auto">
+                <table className="w-full text-xs">
+                  <thead>
+                    <tr className="border-b border-border/30 text-left text-[10px] text-muted-foreground uppercase tracking-wider">
+                      <th className="py-2 px-2">Prodotto</th>
+                      <th className="py-2 px-2 text-right">BDG Mese</th>
+                      <th className="py-2 px-2 text-right">BDG a Oggi</th>
+                      <th className="py-2 px-2 text-right">Actual</th>
+                      <th className="py-2 px-2 text-right">% vs BDG Oggi</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {budgetVsActual.map(row => (
+                      <tr key={row.product} className="border-b border-border/10 hover:bg-muted/30 transition-colors">
+                        <td className="py-1.5 px-2 font-semibold">{row.product}</td>
+                        <td className="py-1.5 px-2 text-right font-mono text-muted-foreground">{fmt(row.budgetMonth)}</td>
+                        <td className="py-1.5 px-2 text-right font-mono text-muted-foreground">{fmt(row.budgetToday)}</td>
+                        <td className="py-1.5 px-2 text-right font-mono font-semibold">{fmt(row.actual)}</td>
+                        <td className="py-1.5 px-2 text-right font-mono font-bold" style={{
+                          color: row.pctVsBudgetToday >= 100 ? 'hsl(168,70%,42%)' : row.pctVsBudgetToday >= 70 ? 'hsl(42,96%,48%)' : 'hsl(0,65%,52%)'
+                        }}>
+                          {row.budgetToday > 0 ? `${row.pctVsBudgetToday.toFixed(0)}%` : '—'}
+                        </td>
+                      </tr>
+                    ))}
+                    {/* Totale */}
+                    {(() => {
+                      const totBdg = budgetVsActual.reduce((s, r) => s + r.budgetMonth, 0);
+                      const totBdgToday = budgetVsActual.reduce((s, r) => s + r.budgetToday, 0);
+                      const totActual = budgetVsActual.reduce((s, r) => s + r.actual, 0);
+                      const totPct = totBdgToday > 0 ? (totActual / totBdgToday) * 100 : 0;
+                      return (
+                        <tr className="border-t-2 border-border/40 font-bold">
+                          <td className="py-2 px-2">TOTALE</td>
+                          <td className="py-2 px-2 text-right font-mono">{fmt(totBdg)}</td>
+                          <td className="py-2 px-2 text-right font-mono">{fmt(totBdgToday)}</td>
+                          <td className="py-2 px-2 text-right font-mono">{fmt(totActual)}</td>
+                          <td className="py-2 px-2 text-right font-mono" style={{
+                            color: totPct >= 100 ? 'hsl(168,70%,42%)' : totPct >= 70 ? 'hsl(42,96%,48%)' : 'hsl(0,65%,52%)'
+                          }}>
+                            {totBdgToday > 0 ? `${totPct.toFixed(0)}%` : '—'}
+                          </td>
+                        </tr>
+                      );
+                    })()}
+                  </tbody>
+                </table>
+              </div>
             </div>
 
             {/* ── Trend + Collections + DOW ─────────────────────── */}
