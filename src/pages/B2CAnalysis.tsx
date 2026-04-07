@@ -273,7 +273,7 @@ export default function B2CAnalysis() {
       .sort((a, b) => b.revenue - a.revenue);
   }, [productRows]);
 
-  // ── Budget vs Actual per collection (current month) ──────────────────────
+  // ── Budget vs Actual per collection (MTD / YTD) ──────────────────────
   const COLLECTION_TO_BUDGET: Record<string, string> = {
     'Winch Handle': 'FLIPPER',
     'Blocks': 'OLLI BLOCK',
@@ -288,16 +288,20 @@ export default function B2CAnalysis() {
     const currentMonth = now.getMonth();
     const dayOfMonth = now.getDate();
     const daysInMonth = getDaysInMonth(now);
+    const isYTD = budgetViewMode === 'YTD';
 
-    // Actual: filter orders for current month only, group by collection
-    const currentMonthOrders = shopifyOrders.filter(o => {
+    // Filter orders for the relevant period
+    const periodOrders = shopifyOrders.filter(o => {
       if (o.customerType !== 'B2C') return false;
       const d = o.date instanceof Date ? o.date : new Date(o.date);
+      if (isYTD) {
+        return d.getFullYear() === now.getFullYear() && d <= now;
+      }
       return d.getMonth() === currentMonth && d.getFullYear() === now.getFullYear();
     });
 
     const actualByCollection: Record<string, number> = {};
-    currentMonthOrders.forEach(o => {
+    periodOrders.forEach(o => {
       const orderNet = o.netAmount ?? o.totalAmount;
       const totalProductGross = o.products.reduce((s, p) => s + p.totalPrice, 0);
       o.products.forEach(p => {
@@ -309,18 +313,28 @@ export default function B2CAnalysis() {
 
     return BUDGET_PRODUCTS.map(bp => {
       const collectionName = Object.entries(COLLECTION_TO_BUDGET).find(([, v]) => v === bp.name)?.[0] || bp.name;
-      const budgetMonth = bp.monthlyTargets[currentMonth];
-      const budgetToday = Math.round((budgetMonth / daysInMonth) * dayOfMonth);
+      let budgetFull: number;
+      let budgetProrated: number;
+      if (isYTD) {
+        // Full months budget + prorated current month
+        const fullMonths = bp.monthlyTargets.slice(0, currentMonth).reduce((s, v) => s + v, 0);
+        const currentMonthBdg = bp.monthlyTargets[currentMonth];
+        budgetFull = bp.monthlyTargets.slice(0, currentMonth + 1).reduce((s, v) => s + v, 0);
+        budgetProrated = Math.round(fullMonths + (currentMonthBdg / daysInMonth) * dayOfMonth);
+      } else {
+        budgetFull = bp.monthlyTargets[currentMonth];
+        budgetProrated = Math.round((budgetFull / daysInMonth) * dayOfMonth);
+      }
       const actual = Math.round(actualByCollection[collectionName] || 0);
       return {
         product: bp.name,
-        budgetMonth,
-        budgetToday,
+        budgetFull,
+        budgetProrated,
         actual,
-        pctVsBudgetToday: budgetToday > 0 ? (actual / budgetToday) * 100 : 0,
+        pctVsBudgetProrated: budgetProrated > 0 ? (actual / budgetProrated) * 100 : 0,
       };
     });
-  }, [shopifyOrders]);
+  }, [shopifyOrders, budgetViewMode]);
 
 
   const rfmData = useMemo(() => {
