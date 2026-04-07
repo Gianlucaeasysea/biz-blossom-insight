@@ -123,6 +123,7 @@ export default function B2CAnalysis() {
   const [sortField, setSortField] = useState<'totalSpent' | 'orders' | 'name' | 'daysSinceLast' | 'avgOrderValue'>('totalSpent');
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc');
   const [expandedOrders, setExpandedOrders] = useState<Set<string>>(new Set());
+  const [budgetViewMode, setBudgetViewMode] = useState<'MTD' | 'YTD'>('MTD');
 
   const toggleOrder = (id: string) => {
     setExpandedOrders(prev => { const n = new Set(prev); n.has(id) ? n.delete(id) : n.add(id); return n; });
@@ -272,7 +273,7 @@ export default function B2CAnalysis() {
       .sort((a, b) => b.revenue - a.revenue);
   }, [productRows]);
 
-  // ── Budget vs Actual per collection (current month) ──────────────────────
+  // ── Budget vs Actual per collection (MTD / YTD) ──────────────────────
   const COLLECTION_TO_BUDGET: Record<string, string> = {
     'Winch Handle': 'FLIPPER',
     'Blocks': 'OLLI BLOCK',
@@ -287,16 +288,20 @@ export default function B2CAnalysis() {
     const currentMonth = now.getMonth();
     const dayOfMonth = now.getDate();
     const daysInMonth = getDaysInMonth(now);
+    const isYTD = budgetViewMode === 'YTD';
 
-    // Actual: filter orders for current month only, group by collection
-    const currentMonthOrders = shopifyOrders.filter(o => {
+    // Filter orders for the relevant period
+    const periodOrders = shopifyOrders.filter(o => {
       if (o.customerType !== 'B2C') return false;
       const d = o.date instanceof Date ? o.date : new Date(o.date);
+      if (isYTD) {
+        return d.getFullYear() === now.getFullYear() && d <= now;
+      }
       return d.getMonth() === currentMonth && d.getFullYear() === now.getFullYear();
     });
 
     const actualByCollection: Record<string, number> = {};
-    currentMonthOrders.forEach(o => {
+    periodOrders.forEach(o => {
       const orderNet = o.netAmount ?? o.totalAmount;
       const totalProductGross = o.products.reduce((s, p) => s + p.totalPrice, 0);
       o.products.forEach(p => {
@@ -308,18 +313,28 @@ export default function B2CAnalysis() {
 
     return BUDGET_PRODUCTS.map(bp => {
       const collectionName = Object.entries(COLLECTION_TO_BUDGET).find(([, v]) => v === bp.name)?.[0] || bp.name;
-      const budgetMonth = bp.monthlyTargets[currentMonth];
-      const budgetToday = Math.round((budgetMonth / daysInMonth) * dayOfMonth);
+      let budgetFull: number;
+      let budgetProrated: number;
+      if (isYTD) {
+        // Full months budget + prorated current month
+        const fullMonths = bp.monthlyTargets.slice(0, currentMonth).reduce((s, v) => s + v, 0);
+        const currentMonthBdg = bp.monthlyTargets[currentMonth];
+        budgetFull = bp.monthlyTargets.slice(0, currentMonth + 1).reduce((s, v) => s + v, 0);
+        budgetProrated = Math.round(fullMonths + (currentMonthBdg / daysInMonth) * dayOfMonth);
+      } else {
+        budgetFull = bp.monthlyTargets[currentMonth];
+        budgetProrated = Math.round((budgetFull / daysInMonth) * dayOfMonth);
+      }
       const actual = Math.round(actualByCollection[collectionName] || 0);
       return {
         product: bp.name,
-        budgetMonth,
-        budgetToday,
+        budgetFull,
+        budgetProrated,
         actual,
-        pctVsBudgetToday: budgetToday > 0 ? (actual / budgetToday) * 100 : 0,
+        pctVsBudgetProrated: budgetProrated > 0 ? (actual / budgetProrated) * 100 : 0,
       };
     });
-  }, [shopifyOrders]);
+  }, [shopifyOrders, budgetViewMode]);
 
 
   const rfmData = useMemo(() => {
@@ -487,56 +502,82 @@ export default function B2CAnalysis() {
               <KPI icon={Package} label="SKU Attivi" value={String(productRows.length)} color="hsl(140,50%,45%)" />
             </div>
 
-            {/* ── Budget vs Actual mese corrente ─────────────────── */}
+            {/* ── Budget vs Actual B2C ─────────────────────────── */}
             <div className="dashboard-card p-4">
-              <SectionHeader label={`Budget vs Actual B2C — ${format(new Date(), 'MMMM yyyy')}`} />
-              <div className="overflow-x-auto">
-                <table className="w-full text-xs">
-                  <thead>
-                    <tr className="border-b border-border/30 text-left text-[10px] text-muted-foreground uppercase tracking-wider">
-                      <th className="py-2 px-2">Prodotto</th>
-                      <th className="py-2 px-2 text-right">BDG Mese</th>
-                      <th className="py-2 px-2 text-right">BDG a Oggi</th>
-                      <th className="py-2 px-2 text-right">Actual</th>
-                      <th className="py-2 px-2 text-right">% vs BDG Oggi</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {budgetVsActual.map(row => (
-                      <tr key={row.product} className="border-b border-border/10 hover:bg-muted/30 transition-colors">
-                        <td className="py-1.5 px-2 font-semibold">{row.product}</td>
-                        <td className="py-1.5 px-2 text-right font-mono text-muted-foreground">{fmt(row.budgetMonth)}</td>
-                        <td className="py-1.5 px-2 text-right font-mono text-muted-foreground">{fmt(row.budgetToday)}</td>
-                        <td className="py-1.5 px-2 text-right font-mono font-semibold">{fmt(row.actual)}</td>
-                        <td className="py-1.5 px-2 text-right font-mono font-bold" style={{
-                          color: row.pctVsBudgetToday >= 100 ? 'hsl(168,70%,42%)' : row.pctVsBudgetToday >= 70 ? 'hsl(42,96%,48%)' : 'hsl(0,65%,52%)'
-                        }}>
-                          {row.budgetToday > 0 ? `${row.pctVsBudgetToday.toFixed(0)}%` : '—'}
-                        </td>
+              <div className="flex items-center justify-between mb-3">
+                <SectionHeader label={`Budget vs Actual B2C — ${budgetViewMode === 'YTD' ? 'YTD ' + new Date().getFullYear() : format(new Date(), 'MMMM yyyy')}`} />
+                <div className="flex gap-1">
+                  {(['MTD', 'YTD'] as const).map(mode => (
+                    <button key={mode} onClick={() => setBudgetViewMode(mode)}
+                      className={`px-2.5 py-1 text-[10px] font-bold rounded transition-colors ${budgetViewMode === mode ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground hover:text-foreground'}`}>
+                      {mode}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                {/* Table */}
+                <div className="overflow-x-auto">
+                  <table className="w-full text-xs">
+                    <thead>
+                      <tr className="border-b border-border/30 text-left text-[10px] text-muted-foreground uppercase tracking-wider">
+                        <th className="py-2 px-2">Prodotto</th>
+                        <th className="py-2 px-2 text-right">BDG {budgetViewMode === 'YTD' ? 'YTD' : 'Mese'}</th>
+                        <th className="py-2 px-2 text-right">BDG a Oggi</th>
+                        <th className="py-2 px-2 text-right">Actual</th>
+                        <th className="py-2 px-2 text-right">%</th>
                       </tr>
-                    ))}
-                    {/* Totale */}
-                    {(() => {
-                      const totBdg = budgetVsActual.reduce((s, r) => s + r.budgetMonth, 0);
-                      const totBdgToday = budgetVsActual.reduce((s, r) => s + r.budgetToday, 0);
-                      const totActual = budgetVsActual.reduce((s, r) => s + r.actual, 0);
-                      const totPct = totBdgToday > 0 ? (totActual / totBdgToday) * 100 : 0;
-                      return (
-                        <tr className="border-t-2 border-border/40 font-bold">
-                          <td className="py-2 px-2">TOTALE</td>
-                          <td className="py-2 px-2 text-right font-mono">{fmt(totBdg)}</td>
-                          <td className="py-2 px-2 text-right font-mono">{fmt(totBdgToday)}</td>
-                          <td className="py-2 px-2 text-right font-mono">{fmt(totActual)}</td>
-                          <td className="py-2 px-2 text-right font-mono" style={{
-                            color: totPct >= 100 ? 'hsl(168,70%,42%)' : totPct >= 70 ? 'hsl(42,96%,48%)' : 'hsl(0,65%,52%)'
+                    </thead>
+                    <tbody>
+                      {budgetVsActual.map(row => (
+                        <tr key={row.product} className="border-b border-border/10 hover:bg-muted/30 transition-colors">
+                          <td className="py-1.5 px-2 font-semibold">{row.product}</td>
+                          <td className="py-1.5 px-2 text-right font-mono text-muted-foreground">{fmt(row.budgetFull)}</td>
+                          <td className="py-1.5 px-2 text-right font-mono text-muted-foreground">{fmt(row.budgetProrated)}</td>
+                          <td className="py-1.5 px-2 text-right font-mono font-semibold">{fmt(row.actual)}</td>
+                          <td className="py-1.5 px-2 text-right font-mono font-bold" style={{
+                            color: row.pctVsBudgetProrated >= 100 ? 'hsl(168,70%,42%)' : row.pctVsBudgetProrated >= 70 ? 'hsl(42,96%,48%)' : 'hsl(0,65%,52%)'
                           }}>
-                            {totBdgToday > 0 ? `${totPct.toFixed(0)}%` : '—'}
+                            {row.budgetProrated > 0 ? `${row.pctVsBudgetProrated.toFixed(0)}%` : '—'}
                           </td>
                         </tr>
-                      );
-                    })()}
-                  </tbody>
-                </table>
+                      ))}
+                      {(() => {
+                        const totBdg = budgetVsActual.reduce((s, r) => s + r.budgetFull, 0);
+                        const totPro = budgetVsActual.reduce((s, r) => s + r.budgetProrated, 0);
+                        const totAct = budgetVsActual.reduce((s, r) => s + r.actual, 0);
+                        const totPct = totPro > 0 ? (totAct / totPro) * 100 : 0;
+                        return (
+                          <tr className="border-t-2 border-border/40 font-bold">
+                            <td className="py-2 px-2">TOTALE</td>
+                            <td className="py-2 px-2 text-right font-mono">{fmt(totBdg)}</td>
+                            <td className="py-2 px-2 text-right font-mono">{fmt(totPro)}</td>
+                            <td className="py-2 px-2 text-right font-mono">{fmt(totAct)}</td>
+                            <td className="py-2 px-2 text-right font-mono" style={{
+                              color: totPct >= 100 ? 'hsl(168,70%,42%)' : totPct >= 70 ? 'hsl(42,96%,48%)' : 'hsl(0,65%,52%)'
+                            }}>
+                              {totPro > 0 ? `${totPct.toFixed(0)}%` : '—'}
+                            </td>
+                          </tr>
+                        );
+                      })()}
+                    </tbody>
+                  </table>
+                </div>
+
+                {/* Bar chart */}
+                <ResponsiveContainer width="100%" height={Math.max(200, budgetVsActual.length * 40)}>
+                  <BarChart data={budgetVsActual} layout="vertical" margin={{ left: 90, right: 10 }}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" opacity={0.3} />
+                    <XAxis type="number" tick={{ fontSize: 10 }} tickFormatter={v => `€${(v / 1000).toFixed(0)}k`} />
+                    <YAxis type="category" dataKey="product" tick={{ fontSize: 10 }} width={85} />
+                    <Tooltip formatter={(v: number) => fmt(v)} />
+                    <Legend wrapperStyle={{ fontSize: 10 }} />
+                    <Bar dataKey="budgetProrated" name="BDG a Oggi" fill="hsl(var(--muted-foreground))" opacity={0.35} radius={[0, 2, 2, 0]} />
+                    <Bar dataKey="actual" name="Actual" fill="hsl(168,70%,42%)" radius={[0, 3, 3, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
               </div>
             </div>
 
