@@ -487,6 +487,59 @@ export default function B2CAnalysis() {
               <KPI icon={Package} label="SKU Attivi" value={String(productRows.length)} color="hsl(140,50%,45%)" />
             </div>
 
+            {/* ── Budget vs Actual mese corrente ─────────────────── */}
+            <div className="dashboard-card p-4">
+              <SectionHeader label={`Budget vs Actual B2C — ${format(new Date(), 'MMMM yyyy')}`} />
+              <div className="overflow-x-auto">
+                <table className="w-full text-xs">
+                  <thead>
+                    <tr className="border-b border-border/30 text-left text-[10px] text-muted-foreground uppercase tracking-wider">
+                      <th className="py-2 px-2">Prodotto</th>
+                      <th className="py-2 px-2 text-right">BDG Mese</th>
+                      <th className="py-2 px-2 text-right">BDG a Oggi</th>
+                      <th className="py-2 px-2 text-right">Actual</th>
+                      <th className="py-2 px-2 text-right">% vs BDG Oggi</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {budgetVsActual.map(row => (
+                      <tr key={row.product} className="border-b border-border/10 hover:bg-muted/30 transition-colors">
+                        <td className="py-1.5 px-2 font-semibold">{row.product}</td>
+                        <td className="py-1.5 px-2 text-right font-mono text-muted-foreground">{fmt(row.budgetMonth)}</td>
+                        <td className="py-1.5 px-2 text-right font-mono text-muted-foreground">{fmt(row.budgetToday)}</td>
+                        <td className="py-1.5 px-2 text-right font-mono font-semibold">{fmt(row.actual)}</td>
+                        <td className="py-1.5 px-2 text-right font-mono font-bold" style={{
+                          color: row.pctVsBudgetToday >= 100 ? 'hsl(168,70%,42%)' : row.pctVsBudgetToday >= 70 ? 'hsl(42,96%,48%)' : 'hsl(0,65%,52%)'
+                        }}>
+                          {row.budgetToday > 0 ? `${row.pctVsBudgetToday.toFixed(0)}%` : '—'}
+                        </td>
+                      </tr>
+                    ))}
+                    {/* Totale */}
+                    {(() => {
+                      const totBdg = budgetVsActual.reduce((s, r) => s + r.budgetMonth, 0);
+                      const totBdgToday = budgetVsActual.reduce((s, r) => s + r.budgetToday, 0);
+                      const totActual = budgetVsActual.reduce((s, r) => s + r.actual, 0);
+                      const totPct = totBdgToday > 0 ? (totActual / totBdgToday) * 100 : 0;
+                      return (
+                        <tr className="border-t-2 border-border/40 font-bold">
+                          <td className="py-2 px-2">TOTALE</td>
+                          <td className="py-2 px-2 text-right font-mono">{fmt(totBdg)}</td>
+                          <td className="py-2 px-2 text-right font-mono">{fmt(totBdgToday)}</td>
+                          <td className="py-2 px-2 text-right font-mono">{fmt(totActual)}</td>
+                          <td className="py-2 px-2 text-right font-mono" style={{
+                            color: totPct >= 100 ? 'hsl(168,70%,42%)' : totPct >= 70 ? 'hsl(42,96%,48%)' : 'hsl(0,65%,52%)'
+                          }}>
+                            {totBdgToday > 0 ? `${totPct.toFixed(0)}%` : '—'}
+                          </td>
+                        </tr>
+                      );
+                    })()}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
             {/* ── Trend + Collections + DOW ─────────────────────── */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
               <div className="lg:col-span-2 dashboard-card p-4">
