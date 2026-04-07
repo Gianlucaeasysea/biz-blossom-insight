@@ -1,5 +1,6 @@
 import { useState, useMemo, useCallback } from 'react';
-import { subDays, format, differenceInDays, eachMonthOfInterval, startOfMonth } from 'date-fns';
+import { subDays, format, differenceInDays, eachMonthOfInterval, startOfMonth, getDaysInMonth } from 'date-fns';
+import { BUDGET_PRODUCTS } from '@/lib/budget-targets';
 import { DashboardHeader } from '@/components/dashboard/DashboardHeader';
 import { NavLink } from '@/components/NavLink';
 import { DraggableNav } from '@/components/DraggableNav';
