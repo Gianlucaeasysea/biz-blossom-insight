@@ -146,7 +146,7 @@ export default function ProductAnalysis() {
     const monthTotal: number[] = new Array(12).fill(0);
 
     // Aggregate orders
-    allOrders.forEach(order => {
+    filteredOrders.forEach(order => {
       const d = order.date instanceof Date ? order.date : new Date(order.date);
       if (d.getFullYear() !== selectedYear) return;
       const mo = d.getMonth();
