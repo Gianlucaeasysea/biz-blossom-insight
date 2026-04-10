@@ -13,6 +13,37 @@ import { getSkuCollection } from '@/lib/mock-data';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { Loader2 } from 'lucide-react';
 
+// ── Country normalizer ──
+const COUNTRY_MAP: Record<string, string> = {
+  'IT':'Italia','FR':'Francia','DE':'Germania','ES':'Spagna','GB':'Regno Unito',
+  'UK':'Regno Unito','US':'Stati Uniti','USA':'Stati Uniti',
+  'CH':'Svizzera','NL':'Paesi Bassi','BE':'Belgio','AT':'Austria',
+  'PT':'Portogallo','SE':'Svezia','NO':'Norvegia','DK':'Danimarca',
+  'FI':'Finlandia','PL':'Polonia','CZ':'Rep. Ceca','HU':'Ungheria',
+  'GR':'Grecia','HR':'Croazia','SI':'Slovenia','TR':'Turchia',
+  'IE':'Irlanda','MT':'Malta','CY':'Cipro','LU':'Lussemburgo',
+  'EE':'Estonia','LV':'Lettonia','LT':'Lituania',
+  'Italia':'Italia','Italy':'Italia','France':'Francia','Germany':'Germania',
+  'Deutschland':'Germania','Spain':'Spagna','España':'Spagna',
+  'United Kingdom':'Regno Unito','Switzerland':'Svizzera','Suisse':'Svizzera',
+  'Netherlands':'Paesi Bassi','Belgium':'Belgio','Austria':'Austria',
+  'Portugal':'Portogallo','Sweden':'Svezia','Norway':'Norvegia',
+  'Denmark':'Danimarca','Finland':'Finlandia','Poland':'Polonia',
+  'Greece':'Grecia','Croatia':'Croazia','Slovenia':'Slovenia',
+  'Turkey':'Turchia','Ireland':'Irlanda','Malta':'Malta','Cyprus':'Cipro',
+  'Australia':'Australia','AU':'Australia','Canada':'Canada','CA':'Canada',
+  'New Zealand':'Nuova Zelanda','NZ':'Nuova Zelanda',
+  'United Arab Emirates':'Emirati Arabi','AE':'Emirati Arabi',
+  'RO':'Romania','Romania':'Romania','BG':'Bulgaria','Bulgaria':'Bulgaria',
+  'SK':'Slovacchia','Slovakia':'Slovacchia','RS':'Serbia','Serbia':'Serbia',
+  'JP':'Giappone','Japan':'Giappone','MC':'Monaco','Monaco':'Monaco',
+};
+function normalizeCountry(raw: string): string {
+  if (!raw?.trim()) return 'Unknown';
+  const t = raw.trim();
+  return COUNTRY_MAP[t] || COUNTRY_MAP[t.toUpperCase()] || t;
+}
+
 // Collection → display product name
 const COLLECTION_TO_PRODUCT: Record<string, string> = {
   'Winch Handle':               'FLIPPER',
@@ -103,22 +134,23 @@ export default function ProductAnalysis() {
   const isLoading = isLoadingShopify || isLoadingGS;
   const isFetching = isFetchingShopify || isFetchingGS;
 
-  // Extract unique countries
+  // Extract unique countries (normalized)
   const availableCountries = useMemo(() => {
     const set = new Set<string>();
     allOrders.forEach(o => {
-      const c = o.customerType === 'B2C' ? (o.destinationCountry || o.country) : o.country;
-      if (c) set.add(c);
+      const raw = o.customerType === 'B2C' ? (o.destinationCountry || o.country) : o.country;
+      const c = normalizeCountry(raw || '');
+      if (c && c !== 'Unknown') set.add(c);
     });
     return [...set].sort();
   }, [allOrders]);
 
-  // Filtered orders by country
+  // Filtered orders by country (normalized)
   const filteredOrders = useMemo(() => {
     if (selectedCountry === 'all') return allOrders;
     return allOrders.filter(o => {
-      const c = o.customerType === 'B2C' ? (o.destinationCountry || o.country) : o.country;
-      return c === selectedCountry;
+      const raw = o.customerType === 'B2C' ? (o.destinationCountry || o.country) : o.country;
+      return normalizeCountry(raw || '') === selectedCountry;
     });
   }, [allOrders, selectedCountry]);
 
