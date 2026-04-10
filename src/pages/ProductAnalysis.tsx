@@ -194,7 +194,7 @@ export default function ProductAnalysis() {
     });
 
     return { productData, grandTotals };
-  }, [allOrders, selectedYear, months, b2cNetScaleFactor]);
+  }, [filteredOrders, selectedYear, months, b2cNetScaleFactor]);
 
   const overallTotal = PRODUCTS.reduce((s, p) => s + grandTotals[p].total, 0);
   const overallB2C   = PRODUCTS.reduce((s, p) => s + grandTotals[p].b2c, 0);
