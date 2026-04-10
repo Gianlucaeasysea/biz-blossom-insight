@@ -219,20 +219,37 @@ export default function ProductAnalysis() {
             <h1 className="text-2xl font-bold text-foreground">{t('products.title')}</h1>
             <p className="text-sm text-muted-foreground mt-0.5">{t('products.subtitle')}</p>
           </div>
-          <div className="flex items-center gap-2">
-            <span className="text-xs text-muted-foreground uppercase tracking-widest">{t('products.year')}</span>
-            <div className="flex gap-1">
-              {availableYears.map(y => (
-                <button
-                  key={y}
-                  onClick={() => setSelectedYear(y)}
-                  className={`px-3 py-1 rounded text-xs font-bold transition-colors ${
-                    selectedYear === y
-                      ? 'bg-primary text-primary-foreground'
-                      : 'bg-muted text-muted-foreground hover:text-foreground'
-                  }`}
-                >{y}</button>
-              ))}
+          <div className="flex items-center gap-4">
+            {/* Country filter */}
+            <div className="flex items-center gap-1.5">
+              <span className="text-xs text-muted-foreground uppercase tracking-widest">Paese</span>
+              <select
+                value={selectedCountry}
+                onChange={e => setSelectedCountry(e.target.value)}
+                className="h-7 text-xs rounded border border-border/50 bg-muted/50 px-2 text-foreground max-w-[160px]"
+              >
+                <option value="all">Tutti</option>
+                {availableCountries.map(c => (
+                  <option key={c} value={c}>{c}</option>
+                ))}
+              </select>
+            </div>
+            {/* Year selector */}
+            <div className="flex items-center gap-1.5">
+              <span className="text-xs text-muted-foreground uppercase tracking-widest">{t('products.year')}</span>
+              <div className="flex gap-1">
+                {availableYears.map(y => (
+                  <button
+                    key={y}
+                    onClick={() => setSelectedYear(y)}
+                    className={`px-3 py-1 rounded text-xs font-bold transition-colors ${
+                      selectedYear === y
+                        ? 'bg-primary text-primary-foreground'
+                        : 'bg-muted text-muted-foreground hover:text-foreground'
+                    }`}
+                  >{y}</button>
+                ))}
+              </div>
             </div>
           </div>
         </div>
