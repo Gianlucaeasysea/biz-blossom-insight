@@ -21,6 +21,7 @@ export interface MetaDailyInsight {
 export interface MetaCampaignInsight {
   campaign_name: string;
   campaign_id?: string;
+  objective?: string;
   spend: string;
   impressions: string;
   clicks: string;
@@ -29,6 +30,16 @@ export interface MetaCampaignInsight {
   actions?: { action_type: string; value: string }[];
   cost_per_action_type?: { action_type: string; value: string }[];
   action_values?: { action_type: string; value: string }[];
+}
+
+export interface MetaCampaignMonthly {
+  campaign_name: string;
+  campaign_id?: string;
+  objective?: string;
+  date_start: string;
+  date_stop: string;
+  spend: string;
+  impressions: string;
 }
 
 export interface MetaAdsetInsight {
@@ -80,6 +91,7 @@ export interface MetaCoreData {
   campaigns: MetaCampaignInsight[];
   adsets: MetaAdsetInsight[];
   countries: MetaCountryInsight[];
+  campaignMonthly?: MetaCampaignMonthly[];
 }
 
 export interface MetaCreativesData {

@@ -118,7 +118,7 @@ export default function MetaAds() {
     }));
   }, [data]);
 
-  // Monthly CPM aggregation for month-over-month trend
+  // Monthly CPM aggregation for month-over-month trend (ALL campaigns)
   const monthlyCpmData = useMemo(() => {
     if (!data?.daily) return [];
     const monthMap = new Map<string, { spend: number; impressions: number }>();
@@ -127,6 +127,27 @@ export default function MetaAds() {
       const existing = monthMap.get(monthKey) || { spend: 0, impressions: 0 };
       existing.spend += parseFloat(d.spend || '0');
       existing.impressions += parseInt(d.impressions || '0');
+      monthMap.set(monthKey, existing);
+    }
+    return Array.from(monthMap.entries()).map(([month, { spend, impressions }]) => ({
+      month,
+      cpm: impressions > 0 ? (spend / impressions) * 1000 : 0,
+    }));
+  }, [data]);
+
+  // Monthly CPM — only purchase-objective campaigns (exclude traffic)
+  const monthlyCpmPurchaseData = useMemo(() => {
+    if (!data?.campaignMonthly) return [];
+    const PURCHASE_OBJECTIVES = ['OUTCOME_SALES', 'CONVERSIONS', 'PRODUCT_CATALOG_SALES'];
+    const filtered = data.campaignMonthly.filter(c => 
+      c.objective && PURCHASE_OBJECTIVES.includes(c.objective)
+    );
+    const monthMap = new Map<string, { spend: number; impressions: number }>();
+    for (const c of filtered) {
+      const monthKey = format(new Date(c.date_start), 'MMM yyyy', { locale: it });
+      const existing = monthMap.get(monthKey) || { spend: 0, impressions: 0 };
+      existing.spend += parseFloat(c.spend || '0');
+      existing.impressions += parseInt(c.impressions || '0');
       monthMap.set(monthKey, existing);
     }
     return Array.from(monthMap.entries()).map(([month, { spend, impressions }]) => ({
@@ -479,15 +500,15 @@ export default function MetaAds() {
             </Card>
           </div>
 
-          {/* CPM Month-over-Month Trend */}
-          {monthlyCpmData.length > 0 && (
+          {/* CPM Month-over-Month Trend — Purchase Only */}
+          {monthlyCpmPurchaseData.length > 0 && (
             <Card className="mb-6">
               <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium">CPM — Andamento Mese su Mese</CardTitle>
+                <CardTitle className="text-sm font-medium">CPM — Andamento Mese su Mese (solo campagne Acquisto)</CardTitle>
               </CardHeader>
               <CardContent>
                 <ResponsiveContainer width="100%" height={300}>
-                  <LineChart data={monthlyCpmData}>
+                  <LineChart data={monthlyCpmPurchaseData}>
                     <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
                     <XAxis dataKey="month" tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 11 }} />
                     <YAxis tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 11 }} tickFormatter={(v) => `€${v.toFixed(1)}`} />
