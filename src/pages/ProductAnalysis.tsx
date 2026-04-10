@@ -76,6 +76,7 @@ export default function ProductAnalysis() {
   const { t, months } = useLanguage();
 
   const [selectedYear, setSelectedYear] = useState(() => new Date().getFullYear());
+  const [selectedCountry, setSelectedCountry] = useState<string>('all');
   const [shopifyMinDate] = useState(() => new Date('2025-01-01T00:00:00Z'));
 
   const { data: shopifyOrders = [], isLoading: isLoadingShopify, isFetching: isFetchingShopify, refetch: refetchShopify } = useShopifyOrders({
