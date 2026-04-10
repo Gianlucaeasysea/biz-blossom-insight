@@ -76,6 +76,7 @@ export default function ProductAnalysis() {
   const { t, months } = useLanguage();
 
   const [selectedYear, setSelectedYear] = useState(() => new Date().getFullYear());
+  const [selectedCountry, setSelectedCountry] = useState<string>('all');
   const [shopifyMinDate] = useState(() => new Date('2025-01-01T00:00:00Z'));
 
   const { data: shopifyOrders = [], isLoading: isLoadingShopify, isFetching: isFetchingShopify, refetch: refetchShopify } = useShopifyOrders({
@@ -102,17 +103,36 @@ export default function ProductAnalysis() {
   const isLoading = isLoadingShopify || isLoadingGS;
   const isFetching = isFetchingShopify || isFetchingGS;
 
+  // Extract unique countries
+  const availableCountries = useMemo(() => {
+    const set = new Set<string>();
+    allOrders.forEach(o => {
+      const c = o.customerType === 'B2C' ? (o.destinationCountry || o.country) : o.country;
+      if (c) set.add(c);
+    });
+    return [...set].sort();
+  }, [allOrders]);
+
+  // Filtered orders by country
+  const filteredOrders = useMemo(() => {
+    if (selectedCountry === 'all') return allOrders;
+    return allOrders.filter(o => {
+      const c = o.customerType === 'B2C' ? (o.destinationCountry || o.country) : o.country;
+      return c === selectedCountry;
+    });
+  }, [allOrders, selectedCountry]);
+
   // Scale factor: aligns sum(order.netAmount) to Shopify Analytics netSales (same logic as Index.tsx)
   const b2cNetScaleFactor = useMemo(() => {
-    if (!yearSalesSummary?.netSales) return 1;
-    const rawB2CNet = allOrders
+    if (!yearSalesSummary?.netSales || selectedCountry !== 'all') return 1;
+    const rawB2CNet = filteredOrders
       .filter(o => {
         const d = o.date instanceof Date ? o.date : new Date(o.date);
         return o.customerType === 'B2C' && d.getFullYear() === selectedYear;
       })
       .reduce((s, o) => s + (o.netAmount ?? o.totalAmount), 0);
     return rawB2CNet > 0 ? yearSalesSummary.netSales / rawB2CNet : 1;
-  }, [allOrders, yearSalesSummary, selectedYear]);
+  }, [filteredOrders, yearSalesSummary, selectedYear, selectedCountry]);
 
   const handleRefresh = () => { refetchShopify(); refetchGS(); };
 
@@ -126,7 +146,7 @@ export default function ProductAnalysis() {
     const monthTotal: number[] = new Array(12).fill(0);
 
     // Aggregate orders
-    allOrders.forEach(order => {
+    filteredOrders.forEach(order => {
       const d = order.date instanceof Date ? order.date : new Date(order.date);
       if (d.getFullYear() !== selectedYear) return;
       const mo = d.getMonth();
@@ -174,7 +194,7 @@ export default function ProductAnalysis() {
     });
 
     return { productData, grandTotals };
-  }, [allOrders, selectedYear, months, b2cNetScaleFactor]);
+  }, [filteredOrders, selectedYear, months, b2cNetScaleFactor]);
 
   const overallTotal = PRODUCTS.reduce((s, p) => s + grandTotals[p].total, 0);
   const overallB2C   = PRODUCTS.reduce((s, p) => s + grandTotals[p].b2c, 0);
@@ -199,20 +219,37 @@ export default function ProductAnalysis() {
             <h1 className="text-2xl font-bold text-foreground">{t('products.title')}</h1>
             <p className="text-sm text-muted-foreground mt-0.5">{t('products.subtitle')}</p>
           </div>
-          <div className="flex items-center gap-2">
-            <span className="text-xs text-muted-foreground uppercase tracking-widest">{t('products.year')}</span>
-            <div className="flex gap-1">
-              {availableYears.map(y => (
-                <button
-                  key={y}
-                  onClick={() => setSelectedYear(y)}
-                  className={`px-3 py-1 rounded text-xs font-bold transition-colors ${
-                    selectedYear === y
-                      ? 'bg-primary text-primary-foreground'
-                      : 'bg-muted text-muted-foreground hover:text-foreground'
-                  }`}
-                >{y}</button>
-              ))}
+          <div className="flex items-center gap-4">
+            {/* Country filter */}
+            <div className="flex items-center gap-1.5">
+              <span className="text-xs text-muted-foreground uppercase tracking-widest">Paese</span>
+              <select
+                value={selectedCountry}
+                onChange={e => setSelectedCountry(e.target.value)}
+                className="h-7 text-xs rounded border border-border/50 bg-muted/50 px-2 text-foreground max-w-[160px]"
+              >
+                <option value="all">Tutti</option>
+                {availableCountries.map(c => (
+                  <option key={c} value={c}>{c}</option>
+                ))}
+              </select>
+            </div>
+            {/* Year selector */}
+            <div className="flex items-center gap-1.5">
+              <span className="text-xs text-muted-foreground uppercase tracking-widest">{t('products.year')}</span>
+              <div className="flex gap-1">
+                {availableYears.map(y => (
+                  <button
+                    key={y}
+                    onClick={() => setSelectedYear(y)}
+                    className={`px-3 py-1 rounded text-xs font-bold transition-colors ${
+                      selectedYear === y
+                        ? 'bg-primary text-primary-foreground'
+                        : 'bg-muted text-muted-foreground hover:text-foreground'
+                    }`}
+                  >{y}</button>
+                ))}
+              </div>
             </div>
           </div>
         </div>
