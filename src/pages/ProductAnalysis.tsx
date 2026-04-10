@@ -134,22 +134,23 @@ export default function ProductAnalysis() {
   const isLoading = isLoadingShopify || isLoadingGS;
   const isFetching = isFetchingShopify || isFetchingGS;
 
-  // Extract unique countries
+  // Extract unique countries (normalized)
   const availableCountries = useMemo(() => {
     const set = new Set<string>();
     allOrders.forEach(o => {
-      const c = o.customerType === 'B2C' ? (o.destinationCountry || o.country) : o.country;
-      if (c) set.add(c);
+      const raw = o.customerType === 'B2C' ? (o.destinationCountry || o.country) : o.country;
+      const c = normalizeCountry(raw || '');
+      if (c && c !== 'Unknown') set.add(c);
     });
     return [...set].sort();
   }, [allOrders]);
 
-  // Filtered orders by country
+  // Filtered orders by country (normalized)
   const filteredOrders = useMemo(() => {
     if (selectedCountry === 'all') return allOrders;
     return allOrders.filter(o => {
-      const c = o.customerType === 'B2C' ? (o.destinationCountry || o.country) : o.country;
-      return c === selectedCountry;
+      const raw = o.customerType === 'B2C' ? (o.destinationCountry || o.country) : o.country;
+      return normalizeCountry(raw || '') === selectedCountry;
     });
   }, [allOrders, selectedCountry]);
 
