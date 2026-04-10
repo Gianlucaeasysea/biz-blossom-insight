@@ -132,7 +132,7 @@ export default function ProductAnalysis() {
       })
       .reduce((s, o) => s + (o.netAmount ?? o.totalAmount), 0);
     return rawB2CNet > 0 ? yearSalesSummary.netSales / rawB2CNet : 1;
-  }, [allOrders, yearSalesSummary, selectedYear]);
+  }, [filteredOrders, yearSalesSummary, selectedYear, selectedCountry]);
 
   const handleRefresh = () => { refetchShopify(); refetchGS(); };
 
