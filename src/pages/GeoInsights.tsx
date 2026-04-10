@@ -673,7 +673,7 @@ export default function GeoInsights() {
               </div>
 
               {aiInsight ? (
-                <div className="prose prose-sm prose-invert max-w-none text-sm leading-relaxed">
+                <div className="prose prose-sm prose-invert max-w-none text-sm leading-relaxed [&>h2]:text-base [&>h2]:font-bold [&>h2]:mt-6 [&>h2]:mb-3 [&>h2]:pb-2 [&>h2]:border-b [&>h2]:border-border/40 [&>h2:first-child]:mt-0 [&>h3]:text-xs [&>h3]:font-semibold [&>h3]:uppercase [&>h3]:tracking-wider [&>h3]:text-muted-foreground [&>h3]:mt-3 [&>h3]:mb-1.5 [&>hr]:my-5 [&>hr]:border-border/30 [&>table]:text-xs [&>p>strong]:text-foreground/90">
                   <ReactMarkdown>{aiInsight}</ReactMarkdown>
                 </div>
               ) : (
