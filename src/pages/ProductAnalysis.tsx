@@ -103,6 +103,25 @@ export default function ProductAnalysis() {
   const isLoading = isLoadingShopify || isLoadingGS;
   const isFetching = isFetchingShopify || isFetchingGS;
 
+  // Extract unique countries
+  const availableCountries = useMemo(() => {
+    const set = new Set<string>();
+    allOrders.forEach(o => {
+      const c = o.customerType === 'B2C' ? (o.destinationCountry || o.country) : o.country;
+      if (c) set.add(c);
+    });
+    return [...set].sort();
+  }, [allOrders]);
+
+  // Filtered orders by country
+  const filteredOrders = useMemo(() => {
+    if (selectedCountry === 'all') return allOrders;
+    return allOrders.filter(o => {
+      const c = o.customerType === 'B2C' ? (o.destinationCountry || o.country) : o.country;
+      return c === selectedCountry;
+    });
+  }, [allOrders, selectedCountry]);
+
   // Scale factor: aligns sum(order.netAmount) to Shopify Analytics netSales (same logic as Index.tsx)
   const b2cNetScaleFactor = useMemo(() => {
     if (!yearSalesSummary?.netSales) return 1;
