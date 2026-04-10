@@ -124,8 +124,8 @@ export default function ProductAnalysis() {
 
   // Scale factor: aligns sum(order.netAmount) to Shopify Analytics netSales (same logic as Index.tsx)
   const b2cNetScaleFactor = useMemo(() => {
-    if (!yearSalesSummary?.netSales) return 1;
-    const rawB2CNet = allOrders
+    if (!yearSalesSummary?.netSales || selectedCountry !== 'all') return 1;
+    const rawB2CNet = filteredOrders
       .filter(o => {
         const d = o.date instanceof Date ? o.date : new Date(o.date);
         return o.customerType === 'B2C' && d.getFullYear() === selectedYear;
