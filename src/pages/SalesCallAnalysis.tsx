@@ -4,6 +4,7 @@ import { DashboardHeader } from '@/components/dashboard/DashboardHeader';
 import { useShopifyOrders } from '@/hooks/useShopifyOrders';
 import { useGoogleSheetsOrders } from '@/hooks/useGoogleSheetsOrders';
 import { useShopifySalesSummary } from '@/hooks/useShopifySalesSummary';
+import { useMetaAds } from '@/hooks/useMetaAds';
 import { getSkuCollection } from '@/lib/mock-data';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { Loader2, Pencil, Check, X, Info } from 'lucide-react';
@@ -414,6 +415,13 @@ export default function SalesCallAnalysis() {
   const { data: currYearSummary } = useShopifySalesSummary({ start: currYearRange.start, end: currYearRange.end, enabled: true });
   const { data: prevYearSummary } = useShopifySalesSummary({ start: prevYearRange.start, end: prevYearRange.end, enabled: true });
 
+  // Meta Ads data for the selected year (full year range)
+  const metaDateRange = useMemo(() => ({
+    start: new Date(`${selectedYear}-01-01`),
+    end: new Date().getFullYear() === selectedYear ? new Date() : new Date(`${selectedYear}-12-31`),
+  }), [selectedYear]);
+  const { data: metaData } = useMetaAds(metaDateRange);
+
   const allOrders = useMemo(() => [...shopifyOrders, ...gsOrders], [shopifyOrders, gsOrders]);
   const isLoading = isLoadingShopify || isLoadingGS;
   const isFetching = isFetchingShopify || isFetchingGS;
@@ -542,6 +550,26 @@ export default function SalesCallAnalysis() {
   }, []);
 
   // ── Build table rows ────────────────────────────────────────────────────────
+  // ── B2C Portfolio: global value of unfulfilled orders ─────────────────────
+  const b2cPortfolio = useMemo(() => {
+    return allOrders
+      .filter(o => o.customerType === 'B2C' && o.status !== 'completed')
+      .reduce((acc, o) => acc + (o.netAmount ?? o.totalAmount) * currScaleFactor, 0);
+  }, [allOrders, currScaleFactor]);
+
+  // ── Meta Ads monthly spending ───────────────────────────────────────────────
+  const monthlyMetaSpend = useMemo(() => {
+    const monthly = Array(12).fill(0);
+    if (!metaData?.daily) return monthly;
+    for (const day of metaData.daily) {
+      const d = new Date(day.date_start);
+      if (d.getFullYear() === selectedYear) {
+        monthly[d.getMonth()] += parseFloat(day.spend || '0');
+      }
+    }
+    return monthly;
+  }, [metaData, selectedYear]);
+
   const b2cRows: TableRow[] = useMemo(() => {
     const curr = b2cData[selectedYear] ?? [];
     const prev = b2cData[prevYear] ?? [];
@@ -578,6 +606,15 @@ export default function SalesCallAnalysis() {
         dimmed: true,
         isDerived: true,
       },
+      {
+        id: 'meta-spend',
+        label: '💰 Spending Meta Ads',
+        sub: 'spesa pubblicitaria mensile',
+        tooltip: 'Spesa Meta Ads aggregata per mese — utile per confrontare costi ads vs vendite',
+        currMonthly: monthlyMetaSpend,
+        prevMonthly: Array(12).fill(0),
+        isDerived: true,
+      },
       ...PRODUCTS.map((product) => ({
         id: `prod-${product}`,
         label: product,
@@ -588,7 +625,7 @@ export default function SalesCallAnalysis() {
       })),
     ];
     return rows;
-  }, [b2cData, selectedYear, prevYear, applyOverrides]);
+  }, [b2cData, selectedYear, prevYear, applyOverrides, monthlyMetaSpend]);
 
   const b2bRows: TableRow[] = useMemo(() => {
     const curr = b2bData[selectedYear] ?? [];
@@ -684,6 +721,17 @@ export default function SalesCallAnalysis() {
         </div>
       ) : (
         <div className="space-y-8">
+          {/* B2C Portfolio Card */}
+          <div className="flex flex-wrap gap-3 mb-2">
+            <SummaryCard
+              label="📦 Portafoglio Clienti B2C"
+              value={b2cPortfolio}
+              prevValue={0}
+              color="blue"
+              tooltip="Valore totale degli ordini B2C ancora da evadere (status ≠ completed). Si aggiorna automaticamente quando la merce viene spedita."
+            />
+          </div>
+
           <SalesTable
             title="B2C — Shopify"
             subtitle={`Net Sales · ${selectedYear} vs ${prevYear}`}
