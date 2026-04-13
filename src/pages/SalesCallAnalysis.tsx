@@ -810,7 +810,7 @@ export default function SalesCallAnalysis() {
                             </span>
                           </td>
                           <td className="px-2 py-1.5 text-right tabular-nums font-medium text-foreground">{fmtEur(o.netValue)}</td>
-                          <td className="px-2 py-1.5 text-muted-foreground max-w-[200px] truncate">{o.products}</td>
+                          <td className="px-2 py-1.5 text-muted-foreground max-w-[200px] truncate">{o.productsLabel}</td>
                         </tr>
                       ))}
                     </tbody>
