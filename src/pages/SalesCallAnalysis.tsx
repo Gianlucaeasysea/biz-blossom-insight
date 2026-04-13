@@ -551,23 +551,45 @@ export default function SalesCallAnalysis() {
   }, []);
 
   // ── Build table rows ────────────────────────────────────────────────────────
-  // ── B2C Portfolio: global value of unfulfilled orders ─────────────────────
+  // ── B2C Portfolio: only PENDING orders (not cancelled/refunded) ────────────
   const b2cUnfulfilledOrders = useMemo(() => {
     return allOrders
-      .filter(o => o.customerType === 'B2C' && o.status !== 'completed')
+      .filter(o => o.customerType === 'B2C' && o.status === 'pending')
       .map(o => ({
         orderNumber: o.orderNumber,
         customerName: o.customerName,
         date: o.date instanceof Date ? o.date : new Date(o.date),
         status: o.status,
         netValue: (o.netAmount ?? o.totalAmount) * currScaleFactor,
-        products: o.products.map(p => p.name).join(', '),
+        productsLabel: o.products.map(p => p.name).join(', '),
+        rawProducts: o.products,
       }))
       .sort((a, b) => b.date.getTime() - a.date.getTime());
   }, [allOrders, currScaleFactor]);
 
   const b2cPortfolio = useMemo(() => {
     return b2cUnfulfilledOrders.reduce((acc, o) => acc + o.netValue, 0);
+  }, [b2cUnfulfilledOrders]);
+
+  // ── SKU breakdown of unfulfilled orders ─────────────────────────────────────
+  const unfulfilledSkuBreakdown = useMemo(() => {
+    const map = new Map<string, { name: string; sku: string; qty: number; value: number }>();
+    for (const order of b2cUnfulfilledOrders) {
+      const grossSum = order.rawProducts.reduce((s, p) => s + p.totalPrice, 0);
+      for (const p of order.rawProducts) {
+        const share = grossSum > 0 ? p.totalPrice / grossSum : 0;
+        const allocated = order.netValue * share;
+        const key = p.sku || p.name;
+        const existing = map.get(key);
+        if (existing) {
+          existing.qty += p.quantity;
+          existing.value += allocated;
+        } else {
+          map.set(key, { name: p.name, sku: p.sku || '—', qty: p.quantity, value: allocated });
+        }
+      }
+    }
+    return Array.from(map.values()).sort((a, b) => b.value - a.value);
   }, [b2cUnfulfilledOrders]);
 
   // ── Meta Ads monthly spending ───────────────────────────────────────────────
