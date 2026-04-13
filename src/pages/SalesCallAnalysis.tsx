@@ -552,11 +552,23 @@ export default function SalesCallAnalysis() {
 
   // ── Build table rows ────────────────────────────────────────────────────────
   // ── B2C Portfolio: global value of unfulfilled orders ─────────────────────
-  const b2cPortfolio = useMemo(() => {
+  const b2cUnfulfilledOrders = useMemo(() => {
     return allOrders
       .filter(o => o.customerType === 'B2C' && o.status !== 'completed')
-      .reduce((acc, o) => acc + (o.netAmount ?? o.totalAmount) * currScaleFactor, 0);
+      .map(o => ({
+        orderNumber: o.orderNumber,
+        customerName: o.customerName,
+        date: o.date instanceof Date ? o.date : new Date(o.date),
+        status: o.status,
+        netValue: (o.netAmount ?? o.totalAmount) * currScaleFactor,
+        products: o.products.map(p => p.name).join(', '),
+      }))
+      .sort((a, b) => b.date.getTime() - a.date.getTime());
   }, [allOrders, currScaleFactor]);
+
+  const b2cPortfolio = useMemo(() => {
+    return b2cUnfulfilledOrders.reduce((acc, o) => acc + o.netValue, 0);
+  }, [b2cUnfulfilledOrders]);
 
   // ── Meta Ads monthly spending ───────────────────────────────────────────────
   const monthlyMetaSpend = useMemo(() => {
