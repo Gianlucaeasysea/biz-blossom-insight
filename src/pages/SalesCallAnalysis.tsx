@@ -173,6 +173,7 @@ function SalesTable({
   prevYear,
   rows,
   onCellEdit,
+  realPortfolioValue,
 }: {
   title: string;
   subtitle: string;
@@ -181,6 +182,7 @@ function SalesTable({
   prevYear: number;
   rows: TableRow[];
   onCellEdit: (rowId: string, monthIndex: number, value: number) => void;
+  realPortfolioValue?: number;
 }) {
   const borderCls = color === 'blue' ? 'border-blue-500/20' : 'border-orange-500/20';
   const accentCls = color === 'blue' ? 'text-blue-600 dark:text-blue-400' : 'text-orange-600 dark:text-orange-400';
