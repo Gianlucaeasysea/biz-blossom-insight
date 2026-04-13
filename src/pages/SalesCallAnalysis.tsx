@@ -553,7 +553,7 @@ export default function SalesCallAnalysis() {
   // ── B2C Portfolio: global value of unfulfilled orders ─────────────────────
   const b2cPortfolio = useMemo(() => {
     return allOrders
-      .filter(o => o.customerType === 'B2C' && o.status !== 'completed' && o.status !== 'fulfilled')
+      .filter(o => o.customerType === 'B2C' && o.status !== 'completed')
       .reduce((acc, o) => acc + (o.netAmount ?? o.totalAmount) * currScaleFactor, 0);
   }, [allOrders, currScaleFactor]);
 
