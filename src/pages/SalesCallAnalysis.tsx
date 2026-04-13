@@ -7,8 +7,9 @@ import { useShopifySalesSummary } from '@/hooks/useShopifySalesSummary';
 import { useMetaAds } from '@/hooks/useMetaAds';
 import { getSkuCollection } from '@/lib/mock-data';
 import { useLanguage } from '@/contexts/LanguageContext';
-import { Loader2, Pencil, Check, X, Info } from 'lucide-react';
+import { Loader2, Pencil, Check, X, Info, Eye } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 
 // ─── Product mapping ──────────────────────────────────────────────────────────
 const COLLECTION_TO_PRODUCT: Record<string, string> = {
@@ -551,11 +552,23 @@ export default function SalesCallAnalysis() {
 
   // ── Build table rows ────────────────────────────────────────────────────────
   // ── B2C Portfolio: global value of unfulfilled orders ─────────────────────
-  const b2cPortfolio = useMemo(() => {
+  const b2cUnfulfilledOrders = useMemo(() => {
     return allOrders
       .filter(o => o.customerType === 'B2C' && o.status !== 'completed')
-      .reduce((acc, o) => acc + (o.netAmount ?? o.totalAmount) * currScaleFactor, 0);
+      .map(o => ({
+        orderNumber: o.orderNumber,
+        customerName: o.customerName,
+        date: o.date instanceof Date ? o.date : new Date(o.date),
+        status: o.status,
+        netValue: (o.netAmount ?? o.totalAmount) * currScaleFactor,
+        products: o.products.map(p => p.name).join(', '),
+      }))
+      .sort((a, b) => b.date.getTime() - a.date.getTime());
   }, [allOrders, currScaleFactor]);
+
+  const b2cPortfolio = useMemo(() => {
+    return b2cUnfulfilledOrders.reduce((acc, o) => acc + o.netValue, 0);
+  }, [b2cUnfulfilledOrders]);
 
   // ── Meta Ads monthly spending ───────────────────────────────────────────────
   const monthlyMetaSpend = useMemo(() => {
@@ -721,8 +734,8 @@ export default function SalesCallAnalysis() {
         </div>
       ) : (
         <div className="space-y-8">
-          {/* B2C Portfolio Card */}
-          <div className="flex flex-wrap gap-3 mb-2">
+          {/* B2C Portfolio Card + Detail Dialog */}
+          <div className="flex flex-wrap gap-3 mb-2 items-end">
             <SummaryCard
               label="📦 Portafoglio Clienti B2C"
               value={b2cPortfolio}
@@ -730,6 +743,66 @@ export default function SalesCallAnalysis() {
               color="blue"
               tooltip="Valore totale degli ordini B2C ancora da evadere (status ≠ completed). Si aggiorna automaticamente quando la merce viene spedita."
             />
+            <Dialog>
+              <DialogTrigger asChild>
+                <button className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-medium bg-blue-500/10 text-blue-600 dark:text-blue-400 hover:bg-blue-500/20 transition-colors mb-1">
+                  <Eye className="w-3.5 h-3.5" />
+                  Vedi {b2cUnfulfilledOrders.length} ordini non evasi
+                </button>
+              </DialogTrigger>
+              <DialogContent className="max-w-3xl max-h-[80vh] overflow-hidden flex flex-col">
+                <DialogHeader>
+                  <DialogTitle className="text-blue-600 dark:text-blue-400">
+                    📦 Ordini B2C Non Evasi — {fmtEur(b2cPortfolio)}
+                  </DialogTitle>
+                  <p className="text-xs text-muted-foreground">
+                    {b2cUnfulfilledOrders.length} ordini con status ≠ completed · Net Sales scalato
+                  </p>
+                </DialogHeader>
+                <div className="overflow-auto flex-1 -mx-6 px-6">
+                  <table className="w-full text-xs border-collapse">
+                    <thead className="sticky top-0 bg-card z-10">
+                      <tr className="border-b border-border/30">
+                        <th className="text-left px-2 py-2 font-semibold">Ordine</th>
+                        <th className="text-left px-2 py-2 font-semibold">Cliente</th>
+                        <th className="text-left px-2 py-2 font-semibold">Data</th>
+                        <th className="text-left px-2 py-2 font-semibold">Status</th>
+                        <th className="text-right px-2 py-2 font-semibold">Net Sales</th>
+                        <th className="text-left px-2 py-2 font-semibold">Prodotti</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {b2cUnfulfilledOrders.map((o, i) => (
+                        <tr key={i} className="border-b border-border/10 hover:bg-muted/10">
+                          <td className="px-2 py-1.5 font-mono text-foreground">#{o.orderNumber}</td>
+                          <td className="px-2 py-1.5 text-foreground/80 max-w-[120px] truncate">{o.customerName}</td>
+                          <td className="px-2 py-1.5 text-muted-foreground tabular-nums">{o.date.toLocaleDateString('it-IT')}</td>
+                          <td className="px-2 py-1.5">
+                            <span className={`px-1.5 py-0.5 rounded text-[10px] font-medium ${
+                              o.status === 'pending' ? 'bg-yellow-500/15 text-yellow-600 dark:text-yellow-400' :
+                              o.status === 'cancelled' ? 'bg-red-500/15 text-red-500' :
+                              o.status === 'refunded' ? 'bg-purple-500/15 text-purple-500' :
+                              'bg-muted text-muted-foreground'
+                            }`}>
+                              {o.status}
+                            </span>
+                          </td>
+                          <td className="px-2 py-1.5 text-right tabular-nums font-medium text-foreground">{fmtEur(o.netValue)}</td>
+                          <td className="px-2 py-1.5 text-muted-foreground max-w-[200px] truncate">{o.products}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                    <tfoot>
+                      <tr className="border-t-2 border-border/30 font-semibold">
+                        <td colSpan={4} className="px-2 py-2 text-blue-600 dark:text-blue-400">TOTALE</td>
+                        <td className="px-2 py-2 text-right tabular-nums text-blue-600 dark:text-blue-400">{fmtEur(b2cPortfolio)}</td>
+                        <td></td>
+                      </tr>
+                    </tfoot>
+                  </table>
+                </div>
+              </DialogContent>
+            </Dialog>
           </div>
 
           <SalesTable
