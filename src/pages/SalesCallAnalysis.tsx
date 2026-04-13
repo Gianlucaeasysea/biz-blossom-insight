@@ -64,6 +64,7 @@ interface TableRow {
   dimmed?: boolean;
   isProduct?: boolean;
   isDerived?: boolean; // computed row, not directly editable
+  isBudget?: boolean;  // budget target row — special styling
 }
 
 // ─── Editable Cell ────────────────────────────────────────────────────────────
