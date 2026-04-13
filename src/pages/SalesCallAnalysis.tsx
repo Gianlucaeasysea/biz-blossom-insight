@@ -721,6 +721,17 @@ export default function SalesCallAnalysis() {
         </div>
       ) : (
         <div className="space-y-8">
+          {/* B2C Portfolio Card */}
+          <div className="flex flex-wrap gap-3 mb-2">
+            <SummaryCard
+              label="📦 Portafoglio Clienti B2C"
+              value={b2cPortfolio}
+              prevValue={0}
+              color="blue"
+              tooltip="Valore totale degli ordini B2C ancora da evadere (status ≠ completed). Si aggiorna automaticamente quando la merce viene spedita."
+            />
+          </div>
+
           <SalesTable
             title="B2C — Shopify"
             subtitle={`Net Sales · ${selectedYear} vs ${prevYear}`}
