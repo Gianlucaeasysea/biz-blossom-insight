@@ -551,23 +551,45 @@ export default function SalesCallAnalysis() {
   }, []);
 
   // ── Build table rows ────────────────────────────────────────────────────────
-  // ── B2C Portfolio: global value of unfulfilled orders ─────────────────────
+  // ── B2C Portfolio: only PENDING orders (not cancelled/refunded) ────────────
   const b2cUnfulfilledOrders = useMemo(() => {
     return allOrders
-      .filter(o => o.customerType === 'B2C' && o.status !== 'completed')
+      .filter(o => o.customerType === 'B2C' && o.status === 'pending')
       .map(o => ({
         orderNumber: o.orderNumber,
         customerName: o.customerName,
         date: o.date instanceof Date ? o.date : new Date(o.date),
         status: o.status,
         netValue: (o.netAmount ?? o.totalAmount) * currScaleFactor,
-        products: o.products.map(p => p.name).join(', '),
+        productsLabel: o.products.map(p => p.name).join(', '),
+        rawProducts: o.products,
       }))
       .sort((a, b) => b.date.getTime() - a.date.getTime());
   }, [allOrders, currScaleFactor]);
 
   const b2cPortfolio = useMemo(() => {
     return b2cUnfulfilledOrders.reduce((acc, o) => acc + o.netValue, 0);
+  }, [b2cUnfulfilledOrders]);
+
+  // ── SKU breakdown of unfulfilled orders ─────────────────────────────────────
+  const unfulfilledSkuBreakdown = useMemo(() => {
+    const map = new Map<string, { name: string; sku: string; qty: number; value: number }>();
+    for (const order of b2cUnfulfilledOrders) {
+      const grossSum = order.rawProducts.reduce((s, p) => s + p.totalPrice, 0);
+      for (const p of order.rawProducts) {
+        const share = grossSum > 0 ? p.totalPrice / grossSum : 0;
+        const allocated = order.netValue * share;
+        const key = p.sku || p.name;
+        const existing = map.get(key);
+        if (existing) {
+          existing.qty += p.quantity;
+          existing.value += allocated;
+        } else {
+          map.set(key, { name: p.name, sku: p.sku || '—', qty: p.quantity, value: allocated });
+        }
+      }
+    }
+    return Array.from(map.values()).sort((a, b) => b.value - a.value);
   }, [b2cUnfulfilledOrders]);
 
   // ── Meta Ads monthly spending ───────────────────────────────────────────────
@@ -741,7 +763,7 @@ export default function SalesCallAnalysis() {
               value={b2cPortfolio}
               prevValue={0}
               color="blue"
-              tooltip="Valore totale degli ordini B2C ancora da evadere (status ≠ completed). Si aggiorna automaticamente quando la merce viene spedita."
+              tooltip="Valore totale degli ordini B2C pending (esclusi cancelled e refunded). Si aggiorna automaticamente quando la merce viene spedita."
             />
             <Dialog>
               <DialogTrigger asChild>
@@ -753,20 +775,20 @@ export default function SalesCallAnalysis() {
               <DialogContent className="max-w-3xl max-h-[80vh] overflow-hidden flex flex-col">
                 <DialogHeader>
                   <DialogTitle className="text-blue-600 dark:text-blue-400">
-                    📦 Ordini B2C Non Evasi — {fmtEur(b2cPortfolio)}
+                    📦 Ordini B2C Pending — {fmtEur(b2cPortfolio)}
                   </DialogTitle>
                   <p className="text-xs text-muted-foreground">
-                    {b2cUnfulfilledOrders.length} ordini con status ≠ completed · Net Sales scalato
+                    {b2cUnfulfilledOrders.length} ordini pending (esclusi cancelled/refunded) · Net Sales scalato
                   </p>
                 </DialogHeader>
-                <div className="overflow-auto flex-1 -mx-6 px-6">
+                <div className="overflow-auto flex-1 -mx-6 px-6 space-y-6">
+                  {/* Orders table */}
                   <table className="w-full text-xs border-collapse">
                     <thead className="sticky top-0 bg-card z-10">
                       <tr className="border-b border-border/30">
                         <th className="text-left px-2 py-2 font-semibold">Ordine</th>
                         <th className="text-left px-2 py-2 font-semibold">Cliente</th>
                         <th className="text-left px-2 py-2 font-semibold">Data</th>
-                        <th className="text-left px-2 py-2 font-semibold">Status</th>
                         <th className="text-right px-2 py-2 font-semibold">Net Sales</th>
                         <th className="text-left px-2 py-2 font-semibold">Prodotti</th>
                       </tr>
@@ -777,29 +799,58 @@ export default function SalesCallAnalysis() {
                           <td className="px-2 py-1.5 font-mono text-foreground">#{o.orderNumber}</td>
                           <td className="px-2 py-1.5 text-foreground/80 max-w-[120px] truncate">{o.customerName}</td>
                           <td className="px-2 py-1.5 text-muted-foreground tabular-nums">{o.date.toLocaleDateString('it-IT')}</td>
-                          <td className="px-2 py-1.5">
-                            <span className={`px-1.5 py-0.5 rounded text-[10px] font-medium ${
-                              o.status === 'pending' ? 'bg-yellow-500/15 text-yellow-600 dark:text-yellow-400' :
-                              o.status === 'cancelled' ? 'bg-red-500/15 text-red-500' :
-                              o.status === 'refunded' ? 'bg-purple-500/15 text-purple-500' :
-                              'bg-muted text-muted-foreground'
-                            }`}>
-                              {o.status}
-                            </span>
-                          </td>
                           <td className="px-2 py-1.5 text-right tabular-nums font-medium text-foreground">{fmtEur(o.netValue)}</td>
-                          <td className="px-2 py-1.5 text-muted-foreground max-w-[200px] truncate">{o.products}</td>
+                          <td className="px-2 py-1.5 text-muted-foreground max-w-[200px] truncate">{o.productsLabel}</td>
                         </tr>
                       ))}
                     </tbody>
                     <tfoot>
                       <tr className="border-t-2 border-border/30 font-semibold">
-                        <td colSpan={4} className="px-2 py-2 text-blue-600 dark:text-blue-400">TOTALE</td>
+                        <td colSpan={3} className="px-2 py-2 text-blue-600 dark:text-blue-400">TOTALE ({b2cUnfulfilledOrders.length} ordini)</td>
                         <td className="px-2 py-2 text-right tabular-nums text-blue-600 dark:text-blue-400">{fmtEur(b2cPortfolio)}</td>
                         <td></td>
                       </tr>
                     </tfoot>
                   </table>
+
+                  {/* SKU Breakdown */}
+                  <div>
+                    <h4 className="text-sm font-semibold text-foreground mb-2">📋 Spaccato per Prodotto / SKU</h4>
+                    <table className="w-full text-xs border-collapse">
+                      <thead>
+                        <tr className="border-b border-border/30 bg-muted/20">
+                          <th className="text-left px-2 py-2 font-semibold">Prodotto</th>
+                          <th className="text-left px-2 py-2 font-semibold">SKU</th>
+                          <th className="text-right px-2 py-2 font-semibold">Qtà</th>
+                          <th className="text-right px-2 py-2 font-semibold">Valore</th>
+                          <th className="text-right px-2 py-2 font-semibold">%</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {unfulfilledSkuBreakdown.map((item, i) => (
+                          <tr key={i} className="border-b border-border/10 hover:bg-muted/10">
+                            <td className="px-2 py-1.5 text-foreground max-w-[200px] truncate">{item.name}</td>
+                            <td className="px-2 py-1.5 font-mono text-muted-foreground text-[10px]">{item.sku}</td>
+                            <td className="px-2 py-1.5 text-right tabular-nums text-foreground">{item.qty}</td>
+                            <td className="px-2 py-1.5 text-right tabular-nums font-medium text-foreground">{fmtEur(item.value)}</td>
+                            <td className="px-2 py-1.5 text-right tabular-nums text-muted-foreground">
+                              {b2cPortfolio > 0 ? ((item.value / b2cPortfolio) * 100).toFixed(1) + '%' : '—'}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                      <tfoot>
+                        <tr className="border-t-2 border-border/30 font-semibold">
+                          <td colSpan={2} className="px-2 py-2 text-blue-600 dark:text-blue-400">TOTALE</td>
+                          <td className="px-2 py-2 text-right tabular-nums text-blue-600 dark:text-blue-400">
+                            {unfulfilledSkuBreakdown.reduce((s, i) => s + i.qty, 0)}
+                          </td>
+                          <td className="px-2 py-2 text-right tabular-nums text-blue-600 dark:text-blue-400">{fmtEur(b2cPortfolio)}</td>
+                          <td className="px-2 py-2 text-right tabular-nums text-blue-600 dark:text-blue-400">100%</td>
+                        </tr>
+                      </tfoot>
+                    </table>
+                  </div>
                 </div>
               </DialogContent>
             </Dialog>
