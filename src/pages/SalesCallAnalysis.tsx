@@ -236,11 +236,13 @@ function SalesTable({
         )}
         {portfolioRow && (
           <SummaryCard
-            label={`Portafoglio Ordini (YTD ${MONTHS[ytdLimit]})`}
-            value={sumYtd(portfolioRow.currMonthly)}
-            prevValue={sumYtd(portfolioRow.prevMonthly)}
+            label={realPortfolioValue !== undefined ? 'Portafoglio Clienti (attuale)' : `Portafoglio Ordini (YTD ${MONTHS[ytdLimit]})`}
+            value={realPortfolioValue !== undefined ? realPortfolioValue : sumYtd(portfolioRow.currMonthly)}
+            prevValue={realPortfolioValue !== undefined ? 0 : sumYtd(portfolioRow.prevMonthly)}
             color={color}
-            tooltip="Differenza tra raccolti e fatturato (YTD)"
+            tooltip={realPortfolioValue !== undefined
+              ? 'Valore reale degli ordini pending ancora da evadere — si aggiorna quando la merce viene spedita'
+              : 'Differenza tra raccolti e fatturato (YTD)'}
           />
         )}
       </div>
