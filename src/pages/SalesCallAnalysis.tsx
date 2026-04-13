@@ -7,8 +7,9 @@ import { useShopifySalesSummary } from '@/hooks/useShopifySalesSummary';
 import { useMetaAds } from '@/hooks/useMetaAds';
 import { getSkuCollection } from '@/lib/mock-data';
 import { useLanguage } from '@/contexts/LanguageContext';
-import { Loader2, Pencil, Check, X, Info } from 'lucide-react';
+import { Loader2, Pencil, Check, X, Info, Eye } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 
 // ─── Product mapping ──────────────────────────────────────────────────────────
 const COLLECTION_TO_PRODUCT: Record<string, string> = {
