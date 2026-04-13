@@ -674,6 +674,16 @@ export default function SalesCallAnalysis() {
         prevMonthly: Array(12).fill(0),
         isDerived: true,
       },
+      {
+        id: 'budget-adv',
+        label: '🎯 Budget ADV 2026',
+        sub: 'spending adv pianificato per mese',
+        tooltip: 'Budget advertising 2026 mensile da BDG MKT_V2 — totale €234.440',
+        currMonthly: [3932, 6133, 18716, 23148, 34477, 29040, 19794, 32026, 10601, 8081, 40523, 7969],
+        prevMonthly: new Array(12).fill(0),
+        isDerived: true,
+        isBudget: true,
+      },
       ...PRODUCTS.map((product) => ({
         id: `prod-${product}`,
         label: product,
