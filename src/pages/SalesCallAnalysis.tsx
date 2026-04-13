@@ -201,7 +201,7 @@ function SalesTable({
   // Summary cards data
   const headerRow = rows.find(r => r.isHeader);
   const revenueRow = rows.find(r => r.label.includes('fatturato'));
-  const portfolioRow = rows.find(r => r.label.includes('portafoglio'));
+  const portfolioRow = rows.find(r => r.id === 'portafoglio');
 
   return (
     <div className={`rounded-2xl border ${borderCls} overflow-hidden shadow-sm`}>
@@ -555,21 +555,27 @@ export default function SalesCallAnalysis() {
   }, []);
 
   // ── Build table rows ────────────────────────────────────────────────────────
-  // ── B2C Portfolio: only PENDING orders (not cancelled/refunded) ────────────
+  // ── B2C Portfolio: ALL pending orders across ALL years ──────────────────────
   const b2cUnfulfilledOrders = useMemo(() => {
     return allOrders
       .filter(o => o.customerType === 'B2C' && o.status === 'pending')
-      .map(o => ({
-        orderNumber: o.orderNumber,
-        customerName: o.customerName,
-        date: o.date instanceof Date ? o.date : new Date(o.date),
-        status: o.status,
-        netValue: (o.netAmount ?? o.totalAmount) * currScaleFactor,
-        productsLabel: o.products.map(p => p.name).join(', '),
-        rawProducts: o.products,
-      }))
+      .map(o => {
+        const d = o.date instanceof Date ? o.date : new Date(o.date);
+        const year = d.getFullYear();
+        // Use correct scale factor based on order year
+        const scale = year === selectedYear ? currScaleFactor : year === prevYear ? prevScaleFactor : currScaleFactor;
+        return {
+          orderNumber: o.orderNumber,
+          customerName: o.customerName,
+          date: d,
+          status: o.status,
+          netValue: (o.netAmount ?? o.totalAmount) * scale,
+          productsLabel: o.products.map(p => p.name).join(', '),
+          rawProducts: o.products,
+        };
+      })
       .sort((a, b) => b.date.getTime() - a.date.getTime());
-  }, [allOrders, currScaleFactor]);
+  }, [allOrders, currScaleFactor, prevScaleFactor, selectedYear, prevYear]);
 
   const b2cPortfolio = useMemo(() => {
     return b2cUnfulfilledOrders.reduce((acc, o) => acc + o.netValue, 0);
@@ -638,10 +644,11 @@ export default function SalesCallAnalysis() {
       },
       {
         id: 'portafoglio',
-        label: 'portafoglio ordini',
-        sub: 'raccolti − fatturato',
-        currMonthly: raccoltiCurr.map((v, i) => Math.max(0, v - evasiCurr[i])),
-        prevMonthly: raccoltiPrev.map((v, i) => Math.max(0, v - evasiPrev[i])),
+        label: 'delta mensile',
+        sub: 'raccolti − fatturato (per mese)',
+        tooltip: 'Differenza mensile tra ordini raccolti e merce evasa. Può essere negativo quando si evade merce di mesi precedenti.',
+        currMonthly: raccoltiCurr.map((v, i) => v - evasiCurr[i]),
+        prevMonthly: raccoltiPrev.map((v, i) => v - evasiPrev[i]),
         dimmed: true,
         isDerived: true,
       },
@@ -695,10 +702,11 @@ export default function SalesCallAnalysis() {
       },
       {
         id: 'portafoglio',
-        label: 'portafoglio ordini',
-        sub: 'raccolti − consegnati',
-        currMonthly: raccoltiCurr.map((v, i) => Math.max(0, v - consegnatiCurr[i])),
-        prevMonthly: raccoltiPrev.map((v, i) => Math.max(0, v - consegnatiPrev[i])),
+        label: 'delta mensile',
+        sub: 'raccolti − consegnati (per mese)',
+        tooltip: 'Differenza mensile tra ordini raccolti e merce consegnata.',
+        currMonthly: raccoltiCurr.map((v, i) => v - consegnatiCurr[i]),
+        prevMonthly: raccoltiPrev.map((v, i) => v - consegnatiPrev[i]),
         dimmed: true,
         isDerived: true,
       },
