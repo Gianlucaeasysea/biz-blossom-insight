@@ -550,6 +550,26 @@ export default function SalesCallAnalysis() {
   }, []);
 
   // ── Build table rows ────────────────────────────────────────────────────────
+  // ── B2C Portfolio: global value of unfulfilled orders ─────────────────────
+  const b2cPortfolio = useMemo(() => {
+    return allOrders
+      .filter(o => o.customerType === 'B2C' && o.status !== 'completed' && o.status !== 'fulfilled')
+      .reduce((acc, o) => acc + (o.netAmount ?? o.totalAmount) * currScaleFactor, 0);
+  }, [allOrders, currScaleFactor]);
+
+  // ── Meta Ads monthly spending ───────────────────────────────────────────────
+  const monthlyMetaSpend = useMemo(() => {
+    const monthly = Array(12).fill(0);
+    if (!metaData?.daily) return monthly;
+    for (const day of metaData.daily) {
+      const d = new Date(day.date_start);
+      if (d.getFullYear() === selectedYear) {
+        monthly[d.getMonth()] += parseFloat(day.spend || '0');
+      }
+    }
+    return monthly;
+  }, [metaData, selectedYear]);
+
   const b2cRows: TableRow[] = useMemo(() => {
     const curr = b2cData[selectedYear] ?? [];
     const prev = b2cData[prevYear] ?? [];
@@ -586,6 +606,15 @@ export default function SalesCallAnalysis() {
         dimmed: true,
         isDerived: true,
       },
+      {
+        id: 'meta-spend',
+        label: '💰 Spending Meta Ads',
+        sub: 'spesa pubblicitaria mensile',
+        tooltip: 'Spesa Meta Ads aggregata per mese — utile per confrontare costi ads vs vendite',
+        currMonthly: monthlyMetaSpend,
+        prevMonthly: Array(12).fill(0),
+        isDerived: true,
+      },
       ...PRODUCTS.map((product) => ({
         id: `prod-${product}`,
         label: product,
@@ -596,7 +625,7 @@ export default function SalesCallAnalysis() {
       })),
     ];
     return rows;
-  }, [b2cData, selectedYear, prevYear, applyOverrides]);
+  }, [b2cData, selectedYear, prevYear, applyOverrides, monthlyMetaSpend]);
 
   const b2bRows: TableRow[] = useMemo(() => {
     const curr = b2bData[selectedYear] ?? [];
