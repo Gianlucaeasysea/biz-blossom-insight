@@ -14,10 +14,28 @@ export const BUDGET_PRODUCTS = [
   { name: 'EA ELEMENTS',   monthlyTargets: [0, 0, 0, 0, 5586, 4809, 3278, 5303, 1755, 1339, 6610, 1320],                  target: 30000,  startMonth: 4 },
 ] as const;
 
-/** Total annual target across all products */
+/** B2B Budget 2026 — from BDG MKT_V2 sheet */
+export const BUDGET_B2B = [
+  { name: 'Distributor', monthlyTargets: [28028, 11724, 24551, 14326, 15534, 0, 11307, 24259, 14160, 20053, 34317, 9974],     target: 208233 },
+  { name: 'Reseller',    monthlyTargets: [4991, 16500, 20035, 12343, 4568, 17710, 10593, 2278, 9665, 3864, 5637, 9254],       target: 117439 },
+] as const;
+
+/** B2B annual target */
+export const BUDGET_B2B_ANNUAL_TARGET = BUDGET_B2B.reduce((s, p) => s + p.target, 0); // 325672
+
+/** B2B monthly target totals — length 12 */
+export const BUDGET_B2B_MONTHLY_TARGETS: number[] = (() => {
+  const months = new Array(12).fill(0);
+  BUDGET_B2B.forEach(p => {
+    p.monthlyTargets.forEach((v, i) => { months[i] += v; });
+  });
+  return months;
+})();
+
+/** B2C annual target */
 export const BUDGET_ANNUAL_TARGET = BUDGET_PRODUCTS.reduce((s, p) => s + p.target, 0);
 
-/** Monthly target totals (all products summed) — length 12 */
+/** B2C monthly target totals (all products summed) — length 12 */
 export const BUDGET_MONTHLY_TARGETS: number[] = (() => {
   const months = new Array(12).fill(0);
   BUDGET_PRODUCTS.forEach(p => {
@@ -25,6 +43,13 @@ export const BUDGET_MONTHLY_TARGETS: number[] = (() => {
   });
   return months;
 })();
+
+/** Combined B2C + B2B annual target */
+export const BUDGET_COMBINED_ANNUAL_TARGET = BUDGET_ANNUAL_TARGET + BUDGET_B2B_ANNUAL_TARGET; // 952585
+
+/** Combined B2C + B2B monthly targets — length 12 */
+export const BUDGET_COMBINED_MONTHLY_TARGETS: number[] =
+  BUDGET_MONTHLY_TARGETS.map((v, i) => v + BUDGET_B2B_MONTHLY_TARGETS[i]);
 
 /** Per-product monthly targets (for Budget2026 page) */
 export function getProductMonthlyTargets(productName: string): number[] {

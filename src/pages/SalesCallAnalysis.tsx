@@ -6,6 +6,7 @@ import { useGoogleSheetsOrders } from '@/hooks/useGoogleSheetsOrders';
 import { useShopifySalesSummary } from '@/hooks/useShopifySalesSummary';
 import { useMetaAds } from '@/hooks/useMetaAds';
 import { getSkuCollection } from '@/lib/mock-data';
+import { BUDGET_B2B_MONTHLY_TARGETS } from '@/lib/budget-targets';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { Loader2, Pencil, Check, X, Info, Eye } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
@@ -718,6 +719,16 @@ export default function SalesCallAnalysis() {
         prevMonthly: prev.map(m => m.products[product] ?? 0),
         isProduct: true,
       })),
+      {
+        id: 'budget-b2b',
+        label: 'Budget B2B 2026',
+        sub: 'target mensile (Distributor + Reseller)',
+        tooltip: 'Budget B2B 2026 totale mensile da BDG MKT_V2',
+        currMonthly: [...BUDGET_B2B_MONTHLY_TARGETS],
+        prevMonthly: new Array(12).fill(0),
+        isDerived: true,
+        dimmed: true,
+      },
     ];
   }, [b2bData, selectedYear, prevYear, applyOverrides]);
 
