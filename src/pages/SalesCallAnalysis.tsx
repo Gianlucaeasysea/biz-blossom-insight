@@ -173,6 +173,7 @@ function SalesTable({
   prevYear,
   rows,
   onCellEdit,
+  realPortfolioValue,
 }: {
   title: string;
   subtitle: string;
@@ -181,6 +182,7 @@ function SalesTable({
   prevYear: number;
   rows: TableRow[];
   onCellEdit: (rowId: string, monthIndex: number, value: number) => void;
+  realPortfolioValue?: number;
 }) {
   const borderCls = color === 'blue' ? 'border-blue-500/20' : 'border-orange-500/20';
   const accentCls = color === 'blue' ? 'text-blue-600 dark:text-blue-400' : 'text-orange-600 dark:text-orange-400';
@@ -234,11 +236,13 @@ function SalesTable({
         )}
         {portfolioRow && (
           <SummaryCard
-            label={`Portafoglio Ordini (YTD ${MONTHS[ytdLimit]})`}
-            value={sumYtd(portfolioRow.currMonthly)}
-            prevValue={sumYtd(portfolioRow.prevMonthly)}
+            label={realPortfolioValue !== undefined ? 'Portafoglio Clienti (attuale)' : `Portafoglio Ordini (YTD ${MONTHS[ytdLimit]})`}
+            value={realPortfolioValue !== undefined ? realPortfolioValue : sumYtd(portfolioRow.currMonthly)}
+            prevValue={realPortfolioValue !== undefined ? 0 : sumYtd(portfolioRow.prevMonthly)}
             color={color}
-            tooltip="Differenza tra raccolti e fatturato (YTD)"
+            tooltip={realPortfolioValue !== undefined
+              ? 'Valore reale degli ordini pending ancora da evadere — si aggiorna quando la merce viene spedita'
+              : 'Differenza tra raccolti e fatturato (YTD)'}
           />
         )}
       </div>
@@ -756,20 +760,13 @@ export default function SalesCallAnalysis() {
         </div>
       ) : (
         <div className="space-y-8">
-          {/* B2C Portfolio Card + Detail Dialog */}
-          <div className="flex flex-wrap gap-3 mb-2 items-end">
-            <SummaryCard
-              label="📦 Portafoglio Clienti B2C"
-              value={b2cPortfolio}
-              prevValue={0}
-              color="blue"
-              tooltip="Valore totale degli ordini B2C pending (esclusi cancelled e refunded). Si aggiorna automaticamente quando la merce viene spedita."
-            />
+          {/* B2C Unfulfilled Orders Detail Dialog */}
+          <div className="flex items-center gap-3 mb-2">
             <Dialog>
               <DialogTrigger asChild>
-                <button className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-medium bg-blue-500/10 text-blue-600 dark:text-blue-400 hover:bg-blue-500/20 transition-colors mb-1">
+                <button className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-medium bg-blue-500/10 text-blue-600 dark:text-blue-400 hover:bg-blue-500/20 transition-colors">
                   <Eye className="w-3.5 h-3.5" />
-                  Vedi {b2cUnfulfilledOrders.length} ordini non evasi
+                  📦 Vedi {b2cUnfulfilledOrders.length} ordini pending — {fmtEur(b2cPortfolio)}
                 </button>
               </DialogTrigger>
               <DialogContent className="max-w-3xl max-h-[80vh] overflow-hidden flex flex-col">
@@ -782,7 +779,6 @@ export default function SalesCallAnalysis() {
                   </p>
                 </DialogHeader>
                 <div className="overflow-auto flex-1 -mx-6 px-6 space-y-6">
-                  {/* Orders table */}
                   <table className="w-full text-xs border-collapse">
                     <thead className="sticky top-0 bg-card z-10">
                       <tr className="border-b border-border/30">
@@ -812,8 +808,6 @@ export default function SalesCallAnalysis() {
                       </tr>
                     </tfoot>
                   </table>
-
-                  {/* SKU Breakdown */}
                   <div>
                     <h4 className="text-sm font-semibold text-foreground mb-2">📋 Spaccato per Prodotto / SKU</h4>
                     <table className="w-full text-xs border-collapse">
@@ -864,6 +858,7 @@ export default function SalesCallAnalysis() {
             prevYear={prevYear}
             rows={b2cRows}
             onCellEdit={handleB2CCellEdit}
+            realPortfolioValue={b2cPortfolio}
           />
           <SalesTable
             title="B2B — Google Sheets"
