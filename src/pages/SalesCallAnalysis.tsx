@@ -415,6 +415,13 @@ export default function SalesCallAnalysis() {
   const { data: currYearSummary } = useShopifySalesSummary({ start: currYearRange.start, end: currYearRange.end, enabled: true });
   const { data: prevYearSummary } = useShopifySalesSummary({ start: prevYearRange.start, end: prevYearRange.end, enabled: true });
 
+  // Meta Ads data for the selected year (full year range)
+  const metaDateRange = useMemo(() => ({
+    start: new Date(`${selectedYear}-01-01`),
+    end: new Date().getFullYear() === selectedYear ? new Date() : new Date(`${selectedYear}-12-31`),
+  }), [selectedYear]);
+  const { data: metaData } = useMetaAds(metaDateRange);
+
   const allOrders = useMemo(() => [...shopifyOrders, ...gsOrders], [shopifyOrders, gsOrders]);
   const isLoading = isLoadingShopify || isLoadingGS;
   const isFetching = isFetchingShopify || isFetchingGS;
