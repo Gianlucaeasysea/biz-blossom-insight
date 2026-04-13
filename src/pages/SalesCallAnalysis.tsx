@@ -870,7 +870,6 @@ export default function SalesCallAnalysis() {
             onCellEdit={handleB2CCellEdit}
             realPortfolioValue={b2cPortfolio}
           />
-          />
           <SalesTable
             title="B2B — Google Sheets"
             subtitle={`Price · ${selectedYear} vs ${prevYear}`}
