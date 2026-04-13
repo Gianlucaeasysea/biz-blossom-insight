@@ -662,7 +662,7 @@ export default function SalesCallAnalysis() {
         currMonthly: [...BUDGET_MONTHLY_TARGETS],
         prevMonthly: new Array(12).fill(0),
         isDerived: true,
-        dimmed: true,
+        isBudget: true,
       },
       {
         id: 'meta-spend',
