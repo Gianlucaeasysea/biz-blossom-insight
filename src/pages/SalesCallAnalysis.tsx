@@ -64,6 +64,7 @@ interface TableRow {
   dimmed?: boolean;
   isProduct?: boolean;
   isDerived?: boolean; // computed row, not directly editable
+  isBudget?: boolean;  // budget target row — special styling
 }
 
 // ─── Editable Cell ────────────────────────────────────────────────────────────
@@ -295,6 +296,7 @@ function SalesTable({
                   className={`border-b border-border/10 transition-colors hover:bg-muted/15
                     ${row.isHeader ? `font-semibold ${headerBg}` : ''}
                     ${row.dimmed ? 'opacity-50' : ''}
+                    ${row.isBudget ? 'bg-accent/10 border-l-2 border-l-accent' : ''}
                   `}
                 >
                   <td className={`sticky left-0 z-10 bg-card/97 backdrop-blur-sm px-4 py-2 border-r border-border/20 ${row.isProduct ? 'pl-7' : ''}`}>
@@ -661,7 +663,7 @@ export default function SalesCallAnalysis() {
         currMonthly: [...BUDGET_MONTHLY_TARGETS],
         prevMonthly: new Array(12).fill(0),
         isDerived: true,
-        dimmed: true,
+        isBudget: true,
       },
       {
         id: 'meta-spend',
@@ -731,13 +733,13 @@ export default function SalesCallAnalysis() {
       })),
       {
         id: 'budget-b2b',
-        label: 'Budget B2B 2026',
+        label: '🎯 Budget B2B 2026',
         sub: 'target mensile (Distributor + Reseller)',
         tooltip: 'Budget B2B 2026 totale mensile da BDG MKT_V2',
         currMonthly: [...BUDGET_B2B_MONTHLY_TARGETS],
         prevMonthly: new Array(12).fill(0),
         isDerived: true,
-        dimmed: true,
+        isBudget: true,
       },
     ];
   }, [b2bData, selectedYear, prevYear, applyOverrides]);
