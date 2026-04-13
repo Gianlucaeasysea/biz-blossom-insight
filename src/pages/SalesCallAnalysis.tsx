@@ -763,7 +763,7 @@ export default function SalesCallAnalysis() {
               value={b2cPortfolio}
               prevValue={0}
               color="blue"
-              tooltip="Valore totale degli ordini B2C ancora da evadere (status ≠ completed). Si aggiorna automaticamente quando la merce viene spedita."
+              tooltip="Valore totale degli ordini B2C pending (esclusi cancelled e refunded). Si aggiorna automaticamente quando la merce viene spedita."
             />
             <Dialog>
               <DialogTrigger asChild>
