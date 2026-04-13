@@ -555,21 +555,27 @@ export default function SalesCallAnalysis() {
   }, []);
 
   // ── Build table rows ────────────────────────────────────────────────────────
-  // ── B2C Portfolio: only PENDING orders (not cancelled/refunded) ────────────
+  // ── B2C Portfolio: ALL pending orders across ALL years ──────────────────────
   const b2cUnfulfilledOrders = useMemo(() => {
     return allOrders
       .filter(o => o.customerType === 'B2C' && o.status === 'pending')
-      .map(o => ({
-        orderNumber: o.orderNumber,
-        customerName: o.customerName,
-        date: o.date instanceof Date ? o.date : new Date(o.date),
-        status: o.status,
-        netValue: (o.netAmount ?? o.totalAmount) * currScaleFactor,
-        productsLabel: o.products.map(p => p.name).join(', '),
-        rawProducts: o.products,
-      }))
+      .map(o => {
+        const d = o.date instanceof Date ? o.date : new Date(o.date);
+        const year = d.getFullYear();
+        // Use correct scale factor based on order year
+        const scale = year === selectedYear ? currScaleFactor : year === prevYear ? prevScaleFactor : currScaleFactor;
+        return {
+          orderNumber: o.orderNumber,
+          customerName: o.customerName,
+          date: d,
+          status: o.status,
+          netValue: (o.netAmount ?? o.totalAmount) * scale,
+          productsLabel: o.products.map(p => p.name).join(', '),
+          rawProducts: o.products,
+        };
+      })
       .sort((a, b) => b.date.getTime() - a.date.getTime());
-  }, [allOrders, currScaleFactor]);
+  }, [allOrders, currScaleFactor, prevScaleFactor, selectedYear, prevYear]);
 
   const b2cPortfolio = useMemo(() => {
     return b2cUnfulfilledOrders.reduce((acc, o) => acc + o.netValue, 0);
