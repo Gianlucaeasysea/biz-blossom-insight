@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { Target, Pencil, Check, X } from 'lucide-react';
 import { format, getDaysInMonth } from 'date-fns';
 import { it as itLocale, enUS, de as deLocale } from 'date-fns/locale';
-import { BUDGET_ANNUAL_TARGET, BUDGET_MONTHLY_TARGETS } from '@/lib/budget-targets';
+import { BUDGET_COMBINED_ANNUAL_TARGET, BUDGET_COMBINED_MONTHLY_TARGETS } from '@/lib/budget-targets';
 import { useLanguage } from '@/contexts/LanguageContext';
 
 interface RevenueTargetProps {
@@ -22,7 +22,7 @@ export function RevenueTarget({ currentRevenue, monthlyRevenues }: RevenueTarget
   const dateLocale = lang === 'de' ? deLocale : lang === 'en' ? enUS : itLocale;
   const [target, setTarget] = useState(() => {
     const saved = localStorage.getItem(STORAGE_KEY);
-    return saved ? parseFloat(saved) : BUDGET_ANNUAL_TARGET;
+    return saved ? parseFloat(saved) : BUDGET_COMBINED_ANNUAL_TARGET;
   });
   const [editing, setEditing]   = useState(false);
   const [inputValue, setInputValue] = useState('');
@@ -36,8 +36,8 @@ export function RevenueTarget({ currentRevenue, monthlyRevenues }: RevenueTarget
   const pctTotal     = target > 0 ? Math.min((currentRevenue / target) * 100, 100) : 0;
 
   // Use Budget 2026 monthly distribution (scaled to current target if user changed it)
-  const budgetScale  = target / BUDGET_ANNUAL_TARGET;
-  const monthlyTgts  = BUDGET_MONTHLY_TARGETS.map(v => Math.round(v * budgetScale));
+  const budgetScale  = target / BUDGET_COMBINED_ANNUAL_TARGET;
+  const monthlyTgts  = BUDGET_COMBINED_MONTHLY_TARGETS.map(v => Math.round(v * budgetScale));
   const totalBudget  = monthlyTgts.reduce((s, v) => s + v, 0);
 
   // YTD: budget and actual up to (and including) current month
