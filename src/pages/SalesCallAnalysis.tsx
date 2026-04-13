@@ -296,6 +296,7 @@ function SalesTable({
                   className={`border-b border-border/10 transition-colors hover:bg-muted/15
                     ${row.isHeader ? `font-semibold ${headerBg}` : ''}
                     ${row.dimmed ? 'opacity-50' : ''}
+                    ${row.isBudget ? 'bg-accent/10 border-l-2 border-l-accent' : ''}
                   `}
                 >
                   <td className={`sticky left-0 z-10 bg-card/97 backdrop-blur-sm px-4 py-2 border-r border-border/20 ${row.isProduct ? 'pl-7' : ''}`}>
