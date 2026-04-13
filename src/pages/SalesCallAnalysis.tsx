@@ -654,6 +654,16 @@ export default function SalesCallAnalysis() {
         isDerived: true,
       },
       {
+        id: 'budget-b2c',
+        label: '🎯 Budget B2C 2026',
+        sub: 'target mensile (tutti i prodotti)',
+        tooltip: 'Budget B2C 2026 totale mensile da BDG MKT_V2',
+        currMonthly: [...BUDGET_MONTHLY_TARGETS],
+        prevMonthly: new Array(12).fill(0),
+        isDerived: true,
+        dimmed: true,
+      },
+      {
         id: 'meta-spend',
         label: '💰 Spending Meta Ads',
         sub: 'spesa pubblicitaria mensile',
