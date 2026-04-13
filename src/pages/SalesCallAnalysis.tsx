@@ -6,7 +6,7 @@ import { useGoogleSheetsOrders } from '@/hooks/useGoogleSheetsOrders';
 import { useShopifySalesSummary } from '@/hooks/useShopifySalesSummary';
 import { useMetaAds } from '@/hooks/useMetaAds';
 import { getSkuCollection } from '@/lib/mock-data';
-import { BUDGET_B2B_MONTHLY_TARGETS } from '@/lib/budget-targets';
+import { BUDGET_B2B_MONTHLY_TARGETS, BUDGET_MONTHLY_TARGETS } from '@/lib/budget-targets';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { Loader2, Pencil, Check, X, Info, Eye } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
