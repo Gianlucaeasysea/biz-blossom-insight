@@ -201,7 +201,7 @@ function SalesTable({
   // Summary cards data
   const headerRow = rows.find(r => r.isHeader);
   const revenueRow = rows.find(r => r.label.includes('fatturato'));
-  const portfolioRow = rows.find(r => r.label.includes('portafoglio'));
+  const portfolioRow = rows.find(r => r.id === 'portafoglio');
 
   return (
     <div className={`rounded-2xl border ${borderCls} overflow-hidden shadow-sm`}>
