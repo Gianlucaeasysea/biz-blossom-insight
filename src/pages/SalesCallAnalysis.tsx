@@ -732,13 +732,13 @@ export default function SalesCallAnalysis() {
       })),
       {
         id: 'budget-b2b',
-        label: 'Budget B2B 2026',
+        label: '🎯 Budget B2B 2026',
         sub: 'target mensile (Distributor + Reseller)',
         tooltip: 'Budget B2B 2026 totale mensile da BDG MKT_V2',
         currMonthly: [...BUDGET_B2B_MONTHLY_TARGETS],
         prevMonthly: new Array(12).fill(0),
         isDerived: true,
-        dimmed: true,
+        isBudget: true,
       },
     ];
   }, [b2bData, selectedYear, prevYear, applyOverrides]);
