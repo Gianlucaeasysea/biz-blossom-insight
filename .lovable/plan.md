@@ -1,34 +1,26 @@
 
 
-## Piano: Portafoglio Clienti B2C + Spending Ads Meta nella Sales Call Analysis
+## Piano: Aggiungere righe Budget mensile per canale nella SalesCallAnalysis
 
 ### Cosa cambia
 
-**1. Portafoglio Clienti B2C (valore dinamico)**
+Aggiungere in entrambe le tabelle (B2C e B2B) una riga **"Budget 2026"** con i target mensili, posizionata subito dopo il "delta mensile", per confronto diretto con il consuntivo del mese. La riga B2B esiste già; va aggiunta quella B2C.
 
-Il "portafoglio ordini" attuale calcola `raccolti - evasi` mese per mese, ma non riflette il valore reale degli ordini ancora da evadere. Il nuovo approccio:
-- Calcola il **totale cumulativo** di tutti gli ordini B2C **non fulfilled** (status ≠ completed/fulfilled) dal Net Sales Shopify, applicando il fattore di scala.
-- Questo valore è **globale** (non per mese) e si aggiorna automaticamente: quando un ordine viene evaso, esce dal conteggio.
-- Verrà mostrato come una **SummaryCard dedicata** nella sezione B2C, con label "Portafoglio Clienti B2C" e tooltip esplicativo.
-- La riga tabellare "portafoglio ordini" mensile resta, ma viene aggiunta la card con il valore complessivo attuale.
+### Modifiche
 
-**2. Spending Ads Meta mese per mese**
+**File: `src/pages/SalesCallAnalysis.tsx`**
 
-- Integra l'hook `useMetaAds` nella pagina Sales Call Analysis.
-- Aggiunge una nuova riga nella tabella B2C con lo spending Meta Ads mensile, così da poter confrontare spesa pubblicitaria e vendite fianco a fianco.
-- La riga sarà derivata (non editabile), con i dati aggregati per mese dai daily insights di Meta.
+1. **Import**: aggiungere `BUDGET_MONTHLY_TARGETS` dall'import di `budget-targets.ts` (attualmente importa solo `BUDGET_B2B_MONTHLY_TARGETS`).
 
-### File modificati
+2. **Tabella B2C (`b2cRows`)**: inserire una nuova riga dopo "delta mensile" e prima di "Spending Meta Ads":
+   - `id: 'budget-b2c'`
+   - `label: 'Budget B2C 2026'`
+   - `sub: 'target mensile (tutti i prodotti)'`
+   - `currMonthly: [...BUDGET_MONTHLY_TARGETS]`
+   - `prevMonthly: Array(12).fill(0)`
+   - `isDerived: true, dimmed: true`
 
-- **`src/pages/SalesCallAnalysis.tsx`**:
-  - Import di `useMetaAds` e `parseMetaKPIs`
-  - Nuovo `useMemo` per calcolare il portafoglio clienti globale (somma net sales ordini non fulfilled)
-  - Nuova `SummaryCard` "Portafoglio Clienti" nella sezione B2C
-  - Nuovo `useMemo` per aggregare lo spending Meta per mese
-  - Nuova riga `isDerived` nella tabella B2C con lo spending ads mensile
+3. **Nessuna modifica alla tabella B2B** — la riga Budget B2B 2026 è già presente (riga 722-731).
 
-### Dettagli tecnici
-
-- **Portafoglio**: filtra `allOrders` dove `customerType === 'B2C'` e `status !== 'completed'`, somma `(netAmount ?? totalAmount) * currScaleFactor`. Per l'anno precedente fa lo stesso con `prevScaleFactor`.
-- **Meta Ads**: usa i `daily` insights da `useMetaAds` con date range dell'anno selezionato, raggruppa per mese e inserisce lo spend come riga tabellare.
+Questo darà visibilità immediata al target di budget mensile accanto ai valori consuntivi per entrambi i canali.
 
