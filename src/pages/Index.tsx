@@ -344,10 +344,17 @@ export default function Index() {
                 {kpiMap['Total Orders B2C'] && <KPICard data={kpiMap['Total Orders B2C']} />}
                 {kpiMap['Total Orders B2B'] && <KPICard data={kpiMap['Total Orders B2B']} />}
               </div>
-              {/* Row 3: AOV + Top3 + Pie */}
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3">
+              {/* Row 3: AOV + Shipping + Top3 + Pie */}
+              <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 sm:gap-3">
                 {kpiMap['AOV B2C'] && <KPICard data={kpiMap['AOV B2C']} />}
                 {kpiMap['AOV B2B'] && <KPICard data={kpiMap['AOV B2B']} />}
+                <KPICard data={{
+                  label: 'Shipping B2C',
+                  value: shopifySalesSummary?.shippingCharges ?? 0,
+                  trend: 'neutral',
+                  format: 'currency',
+                  currency: 'EUR',
+                }} />
 
                 {/* Top 3 Prodotti */}
                 <div className="kpi-card relative overflow-hidden" style={{ borderLeft: '3px solid hsl(215,85%,50%)' }}>
