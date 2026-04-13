@@ -6,7 +6,7 @@ import { useGoogleSheetsOrders } from '@/hooks/useGoogleSheetsOrders';
 import { useShopifySalesSummary } from '@/hooks/useShopifySalesSummary';
 import { useMetaAds } from '@/hooks/useMetaAds';
 import { getSkuCollection } from '@/lib/mock-data';
-import { BUDGET_B2B_MONTHLY_TARGETS } from '@/lib/budget-targets';
+import { BUDGET_B2B_MONTHLY_TARGETS, BUDGET_MONTHLY_TARGETS } from '@/lib/budget-targets';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { Loader2, Pencil, Check, X, Info, Eye } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
@@ -652,6 +652,16 @@ export default function SalesCallAnalysis() {
         prevMonthly: raccoltiPrev.map((v, i) => v - evasiPrev[i]),
         dimmed: true,
         isDerived: true,
+      },
+      {
+        id: 'budget-b2c',
+        label: '🎯 Budget B2C 2026',
+        sub: 'target mensile (tutti i prodotti)',
+        tooltip: 'Budget B2C 2026 totale mensile da BDG MKT_V2',
+        currMonthly: [...BUDGET_MONTHLY_TARGETS],
+        prevMonthly: new Array(12).fill(0),
+        isDerived: true,
+        dimmed: true,
       },
       {
         id: 'meta-spend',
