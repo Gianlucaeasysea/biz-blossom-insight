@@ -11,6 +11,10 @@ interface RevenueTargetProps {
 }
 
 const STORAGE_KEY = 'dashboard-revenue-target';
+const STORAGE_VERSION_KEY = 'dashboard-revenue-target-version';
+// Bump this whenever BUDGET_COMBINED_ANNUAL_TARGET changes upstream so cached
+// values in localStorage are invalidated for existing users.
+const CURRENT_BUDGET_VERSION = 'v2026.1-952584';
 
 const fmt  = (v: number) =>
   new Intl.NumberFormat('it-IT', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 }).format(v);
@@ -21,13 +25,23 @@ export function RevenueTarget({ currentRevenue, monthlyRevenues }: RevenueTarget
   const { t, lang, months } = useLanguage();
   const dateLocale = lang === 'de' ? deLocale : lang === 'en' ? enUS : itLocale;
   const [target, setTarget] = useState(() => {
+    const savedVersion = localStorage.getItem(STORAGE_VERSION_KEY);
     const saved = localStorage.getItem(STORAGE_KEY);
+    // If budget version changed (or never set), reset to current canonical target
+    if (savedVersion !== CURRENT_BUDGET_VERSION) {
+      localStorage.setItem(STORAGE_KEY, String(BUDGET_COMBINED_ANNUAL_TARGET));
+      localStorage.setItem(STORAGE_VERSION_KEY, CURRENT_BUDGET_VERSION);
+      return BUDGET_COMBINED_ANNUAL_TARGET;
+    }
     return saved ? parseFloat(saved) : BUDGET_COMBINED_ANNUAL_TARGET;
   });
   const [editing, setEditing]   = useState(false);
   const [inputValue, setInputValue] = useState('');
 
-  useEffect(() => { localStorage.setItem(STORAGE_KEY, String(target)); }, [target]);
+  useEffect(() => {
+    localStorage.setItem(STORAGE_KEY, String(target));
+    localStorage.setItem(STORAGE_VERSION_KEY, CURRENT_BUDGET_VERSION);
+  }, [target]);
 
   const now          = new Date();
   const currentMo    = now.getMonth();
