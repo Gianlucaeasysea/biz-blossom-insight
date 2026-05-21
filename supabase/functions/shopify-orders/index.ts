@@ -533,6 +533,7 @@ serve(async (req) => {
         customerName: order.customer
           ? `${order.customer.first_name} ${order.customer.last_name}`.trim()
           : 'Ospite',
+        customerEmail: order.customer?.email || null,
         date: order.created_at,
       products: order.line_items.map((item) => {
           const grossPrice = parseMoney(item.price) * item.quantity;
