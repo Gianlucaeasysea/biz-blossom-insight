@@ -14,6 +14,51 @@ export type Database = {
   }
   public: {
     Tables: {
+      b2c_customer_insights: {
+        Row: {
+          boat_size_range: string | null
+          boat_type: string | null
+          confidence: number | null
+          created_at: string
+          cross_sell_suggestions: Json
+          customer_email: string | null
+          customer_id: string
+          customer_name: string | null
+          generated_at: string
+          last_order_count: number
+          owner_profile: string | null
+          updated_at: string
+        }
+        Insert: {
+          boat_size_range?: string | null
+          boat_type?: string | null
+          confidence?: number | null
+          created_at?: string
+          cross_sell_suggestions?: Json
+          customer_email?: string | null
+          customer_id: string
+          customer_name?: string | null
+          generated_at?: string
+          last_order_count?: number
+          owner_profile?: string | null
+          updated_at?: string
+        }
+        Update: {
+          boat_size_range?: string | null
+          boat_type?: string | null
+          confidence?: number | null
+          created_at?: string
+          cross_sell_suggestions?: Json
+          customer_email?: string | null
+          customer_id?: string
+          customer_name?: string | null
+          generated_at?: string
+          last_order_count?: number
+          owner_profile?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       debug_proposals: {
         Row: {
           author: string
