@@ -739,7 +739,6 @@ export default function B2CAnalysis() {
                   className={`px-3 py-1.5 text-xs font-semibold rounded-t-lg transition-colors ${activeTab === tab ? 'bg-card text-foreground border border-b-0 border-border/30' : 'text-muted-foreground hover:text-foreground'}`}>
                   {tab === 'overview' ? '📊 Overview' : tab === 'products' ? '📦 Prodotti' : tab === 'orders' ? '📋 Ordini' : tab === 'customers' ? '👥 Clienti' : tab === 'countries' ? '🌍 Paesi' : '🎟️ Sconti'}
                 </button>
-                </button>
               ))}
             </div>
 
