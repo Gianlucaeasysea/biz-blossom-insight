@@ -1,11 +1,13 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { requireAuth } from "../_shared/auth.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version',
 };
 
-const SPREADSHEET_ID = '1S_Si86x7GdKAuRdRkx5wFK231lGnujChZtFXwo9tMzg';
+const SPREADSHEET_ID = Deno.env.get('GOOGLE_SPREADSHEET_ID') ?? '1S_Si86x7GdKAuRdRkx5wFK231lGnujChZtFXwo9tMzg';
+
 
 async function fetchWithRetry(url: string, opts?: RequestInit, retries = 3): Promise<Response> {
   for (let i = 0; i < retries; i++) {
