@@ -1003,6 +1003,92 @@ export default function B2CAnalysis() {
               </div>
             )}
 
+            {/* ── Discounts tab ─────────────────────────────────── */}
+            {activeTab === 'discounts' && (
+              <div className="space-y-4">
+                <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+                  <KPI icon={Package} label="Codici unici" value={String(discountRows.length)} color="hsl(320,60%,50%)" />
+                  <KPI icon={ShoppingBag} label="Ordini con sconto" value={String(discountTotals.orders)} sub={kpis.totalOrders > 0 ? fmtPct((discountTotals.orders / kpis.totalOrders) * 100) + ' del totale' : ''} color="hsl(280,60%,55%)" />
+                  <KPI icon={DollarSign} label="Net Sales (sconto)" value={fmt(discountTotals.netSales)} sub={kpis.netSales > 0 ? fmtPct((discountTotals.netSales / kpis.netSales) * 100) + ' del totale' : ''} color="hsl(168,70%,42%)" />
+                  <KPI icon={TrendingUp} label="Sconto erogato" value={fmt(discountTotals.discountAmount)} color="hsl(0,65%,52%)" />
+                </div>
+
+                <div className="dashboard-card p-4">
+                  <div className="flex items-center justify-between mb-3">
+                    <SectionHeader label="Codici sconto utilizzati" />
+                    <Button variant="outline" size="sm" className="h-7 text-[10px] gap-1" onClick={() => {
+                      downloadCsv('b2c-discount-codes',
+                        ['Codice', 'Tipo', 'Ordini', 'Clienti', 'Qty', 'Gross Sales', 'Net Sales', 'AOV', 'Sconto erogato', '% Sconto/Gross'],
+                        discountRows.map(d => [d.code, d.type, d.orders, d.customers, d.qty, d.grossSales, d.netSales, d.aov, d.discountAmount, d.discountPct + '%']));
+                    }}><Download className="w-3 h-3" /> CSV</Button>
+                  </div>
+                  {discountRows.length === 0 ? (
+                    <p className="text-sm text-muted-foreground text-center py-8">
+                      Nessun codice sconto utilizzato nel periodo selezionato.
+                    </p>
+                  ) : (
+                    <>
+                      <ResponsiveContainer width="100%" height={Math.max(200, Math.min(discountRows.length, 12) * 32)}>
+                        <BarChart data={discountRows.slice(0, 12)} layout="vertical" margin={{ left: 100 }}>
+                          <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" opacity={0.3} />
+                          <XAxis type="number" tick={{ fontSize: 10 }} tickFormatter={v => `€${(v / 1000).toFixed(0)}k`} />
+                          <YAxis type="category" dataKey="code" tick={{ fontSize: 10 }} width={100} />
+                          <Tooltip formatter={(v: number) => fmtDec(v)} />
+                          <Bar dataKey="netSales" name="Net Sales" fill="hsl(168,70%,42%)" radius={[0, 3, 3, 0]}>
+                            {discountRows.slice(0, 12).map((_, i) => <Cell key={i} fill={COLORS[i % COLORS.length]} />)}
+                          </Bar>
+                        </BarChart>
+                      </ResponsiveContainer>
+                      <div className="overflow-x-auto mt-4">
+                        <table className="w-full text-xs">
+                          <thead>
+                            <tr className="border-b border-border/30 text-left text-[10px] text-muted-foreground uppercase tracking-wider">
+                              <th className="py-2 px-2">Codice</th>
+                              <th className="py-2 px-2">Tipo</th>
+                              <th className="py-2 px-2 text-right">Ordini</th>
+                              <th className="py-2 px-2 text-right">Clienti</th>
+                              <th className="py-2 px-2 text-right">Qty</th>
+                              <th className="py-2 px-2 text-right">Net Sales</th>
+                              <th className="py-2 px-2 text-right">AOV</th>
+                              <th className="py-2 px-2 text-right">Sconto erogato</th>
+                              <th className="py-2 px-2 text-right">% Sconto</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {discountRows.map(d => (
+                              <tr key={d.code} className="border-b border-border/10 hover:bg-muted/30 transition-colors">
+                                <td className="py-1.5 px-2 font-mono font-semibold text-foreground">{d.code}</td>
+                                <td className="py-1.5 px-2 text-muted-foreground">{d.type}</td>
+                                <td className="py-1.5 px-2 text-right font-mono">{d.orders}</td>
+                                <td className="py-1.5 px-2 text-right font-mono">{d.customers}</td>
+                                <td className="py-1.5 px-2 text-right font-mono">{d.qty}</td>
+                                <td className="py-1.5 px-2 text-right font-mono font-semibold">{fmt(d.netSales)}</td>
+                                <td className="py-1.5 px-2 text-right font-mono">{fmt(d.aov)}</td>
+                                <td className="py-1.5 px-2 text-right font-mono text-[hsl(0,65%,52%)]">−{fmt(d.discountAmount)}</td>
+                                <td className="py-1.5 px-2 text-right font-mono">{d.discountPct}%</td>
+                              </tr>
+                            ))}
+                          </tbody>
+                          <tfoot>
+                            <tr className="border-t border-border/30 font-semibold bg-muted/20">
+                              <td className="py-2 px-2" colSpan={2}>Totale</td>
+                              <td className="py-2 px-2 text-right font-mono">{discountTotals.orders}</td>
+                              <td className="py-2 px-2 text-right">—</td>
+                              <td className="py-2 px-2 text-right font-mono">{discountTotals.qty}</td>
+                              <td className="py-2 px-2 text-right font-mono">{fmt(discountTotals.netSales)}</td>
+                              <td className="py-2 px-2 text-right">—</td>
+                              <td className="py-2 px-2 text-right font-mono text-[hsl(0,65%,52%)]">−{fmt(discountTotals.discountAmount)}</td>
+                              <td className="py-2 px-2 text-right">—</td>
+                            </tr>
+                          </tfoot>
+                        </table>
+                      </div>
+                    </>
+                  )}
+                </div>
+              </div>
+            )}
+
             {/* ── AI Assistant ──────────────────────────────────── */}
             <AiAssistant dashboardContext={aiContext} />
           </>
