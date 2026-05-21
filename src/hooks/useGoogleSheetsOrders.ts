@@ -1,5 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { Order } from '@/types/analytics';
+import { getEdgeAuthHeaders } from '@/lib/edge-auth';
+
 
 interface GoogleSheetsResponse {
   success: boolean;
