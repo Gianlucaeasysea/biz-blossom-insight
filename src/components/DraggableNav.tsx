@@ -19,6 +19,7 @@ const DEFAULT_ITEMS: NavItem[] = [
   { to: '/b2c-customers', labelKey: 'nav.b2c_customers' },
   { to: '/b2b-analysis', labelKey: 'nav.b2b_analysis' },
   { to: '/b2c-analysis', labelKey: 'nav.b2c_analysis' },
+  { to: '/b2c-marketing', labelKey: 'nav.b2c_marketing' },
   { to: '/sales-call', labelKey: 'nav.sales_call' },
   { to: '/stock', labelKey: 'nav.stock' },
   { to: '/frank', labelKey: 'nav.frank' },
