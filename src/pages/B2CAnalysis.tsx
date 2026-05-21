@@ -120,7 +120,7 @@ export default function B2CAnalysis() {
     end: new Date(),
   });
   const [calendarOpen, setCalendarOpen] = useState(false);
-  const [activeTab, setActiveTab] = useState<'overview' | 'products' | 'customers' | 'countries' | 'orders'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'products' | 'customers' | 'countries' | 'orders' | 'discounts'>('overview');
   const [search, setSearch] = useState('');
   const [sortField, setSortField] = useState<'totalSpent' | 'orders' | 'name' | 'daysSinceLast' | 'avgOrderValue'>('totalSpent');
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc');
@@ -241,6 +241,59 @@ export default function B2CAnalysis() {
       .map(([name, d]) => ({ name, orders: d.orders, revenue: Math.round(d.revenue), customers: d.customers.size, qty: d.qty, aov: d.orders > 0 ? Math.round(d.revenue / d.orders) : 0 }))
       .sort((a, b) => b.revenue - a.revenue);
   }, [filtered]);
+
+  // ── Discount codes breakdown ────────────────────────────────────────────
+  const discountRows = useMemo(() => {
+    const map: Record<string, {
+      code: string; type: string; orders: Set<string>; customers: Set<string>;
+      qty: number; netSales: number; discountAmount: number; grossSales: number;
+    }> = {};
+    filtered.forEach(o => {
+      const codes = o.discountCodes ?? [];
+      if (codes.length === 0) return;
+      const orderNet = o.netAmount ?? o.totalAmount;
+      const orderGross = o.grossSales ?? o.totalAmount;
+      const orderQty = o.products.reduce((s, p) => s + p.quantity, 0);
+      const totalDiscAmount = codes.reduce((s, c) => s + (c.amount || 0), 0);
+      codes.forEach(c => {
+        const key = (c.code || '').trim().toUpperCase();
+        if (!key) return;
+        if (!map[key]) map[key] = {
+          code: key, type: c.type || 'unknown', orders: new Set(), customers: new Set(),
+          qty: 0, netSales: 0, discountAmount: 0, grossSales: 0,
+        };
+        const m = map[key];
+        // Proportional weight when multiple codes coexist on one order
+        const weight = totalDiscAmount > 0 ? (c.amount || 0) / totalDiscAmount : 1 / codes.length;
+        m.orders.add(o.id);
+        m.customers.add(o.customerId);
+        m.qty += orderQty * weight;
+        m.netSales += orderNet * weight;
+        m.grossSales += orderGross * weight;
+        m.discountAmount += (c.amount || 0);
+      });
+    });
+    return Object.values(map)
+      .map(m => ({
+        code: m.code, type: m.type,
+        orders: m.orders.size,
+        customers: m.customers.size,
+        qty: Math.round(m.qty),
+        netSales: Math.round(m.netSales * 100) / 100,
+        grossSales: Math.round(m.grossSales * 100) / 100,
+        discountAmount: Math.round(m.discountAmount * 100) / 100,
+        aov: m.orders.size > 0 ? Math.round((m.netSales / m.orders.size) * 100) / 100 : 0,
+        discountPct: m.grossSales > 0 ? Math.round((m.discountAmount / m.grossSales) * 1000) / 10 : 0,
+      }))
+      .sort((a, b) => b.netSales - a.netSales);
+  }, [filtered]);
+
+  const discountTotals = useMemo(() => discountRows.reduce((acc, r) => ({
+    orders: acc.orders + r.orders,
+    netSales: acc.netSales + r.netSales,
+    discountAmount: acc.discountAmount + r.discountAmount,
+    qty: acc.qty + r.qty,
+  }), { orders: 0, netSales: 0, discountAmount: 0, qty: 0 }), [discountRows]);
 
   // ── Monthly trend ───────────────────────────────────────────────────────
   const monthlyTrend = useMemo(() => {
@@ -681,10 +734,10 @@ export default function B2CAnalysis() {
 
             {/* ── Tab navigation ───────────────────────────────── */}
             <div className="flex gap-1 border-b border-border/30 pb-0">
-              {(['overview', 'products', 'orders', 'customers', 'countries'] as const).map(tab => (
+              {(['overview', 'products', 'orders', 'customers', 'countries', 'discounts'] as const).map(tab => (
                 <button key={tab} onClick={() => setActiveTab(tab)}
                   className={`px-3 py-1.5 text-xs font-semibold rounded-t-lg transition-colors ${activeTab === tab ? 'bg-card text-foreground border border-b-0 border-border/30' : 'text-muted-foreground hover:text-foreground'}`}>
-                  {tab === 'overview' ? '📊 Overview' : tab === 'products' ? '📦 Prodotti' : tab === 'orders' ? '📋 Ordini' : tab === 'customers' ? '👥 Clienti' : '🌍 Paesi'}
+                  {tab === 'overview' ? '📊 Overview' : tab === 'products' ? '📦 Prodotti' : tab === 'orders' ? '📋 Ordini' : tab === 'customers' ? '👥 Clienti' : tab === 'countries' ? '🌍 Paesi' : '🎟️ Sconti'}
                 </button>
               ))}
             </div>
@@ -946,6 +999,92 @@ export default function B2CAnalysis() {
                       </tbody>
                     </table>
                   </div>
+                </div>
+              </div>
+            )}
+
+            {/* ── Discounts tab ─────────────────────────────────── */}
+            {activeTab === 'discounts' && (
+              <div className="space-y-4">
+                <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+                  <KPI icon={Package} label="Codici unici" value={String(discountRows.length)} color="hsl(320,60%,50%)" />
+                  <KPI icon={ShoppingBag} label="Ordini con sconto" value={String(discountTotals.orders)} sub={kpis.totalOrders > 0 ? fmtPct((discountTotals.orders / kpis.totalOrders) * 100) + ' del totale' : ''} color="hsl(280,60%,55%)" />
+                  <KPI icon={DollarSign} label="Net Sales (sconto)" value={fmt(discountTotals.netSales)} sub={kpis.netSales > 0 ? fmtPct((discountTotals.netSales / kpis.netSales) * 100) + ' del totale' : ''} color="hsl(168,70%,42%)" />
+                  <KPI icon={TrendingUp} label="Sconto erogato" value={fmt(discountTotals.discountAmount)} color="hsl(0,65%,52%)" />
+                </div>
+
+                <div className="dashboard-card p-4">
+                  <div className="flex items-center justify-between mb-3">
+                    <SectionHeader label="Codici sconto utilizzati" />
+                    <Button variant="outline" size="sm" className="h-7 text-[10px] gap-1" onClick={() => {
+                      downloadCsv('b2c-discount-codes',
+                        ['Codice', 'Tipo', 'Ordini', 'Clienti', 'Qty', 'Gross Sales', 'Net Sales', 'AOV', 'Sconto erogato', '% Sconto/Gross'],
+                        discountRows.map(d => [d.code, d.type, d.orders, d.customers, d.qty, d.grossSales, d.netSales, d.aov, d.discountAmount, d.discountPct + '%']));
+                    }}><Download className="w-3 h-3" /> CSV</Button>
+                  </div>
+                  {discountRows.length === 0 ? (
+                    <p className="text-sm text-muted-foreground text-center py-8">
+                      Nessun codice sconto utilizzato nel periodo selezionato.
+                    </p>
+                  ) : (
+                    <>
+                      <ResponsiveContainer width="100%" height={Math.max(200, Math.min(discountRows.length, 12) * 32)}>
+                        <BarChart data={discountRows.slice(0, 12)} layout="vertical" margin={{ left: 100 }}>
+                          <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" opacity={0.3} />
+                          <XAxis type="number" tick={{ fontSize: 10 }} tickFormatter={v => `€${(v / 1000).toFixed(0)}k`} />
+                          <YAxis type="category" dataKey="code" tick={{ fontSize: 10 }} width={100} />
+                          <Tooltip formatter={(v: number) => fmtDec(v)} />
+                          <Bar dataKey="netSales" name="Net Sales" fill="hsl(168,70%,42%)" radius={[0, 3, 3, 0]}>
+                            {discountRows.slice(0, 12).map((_, i) => <Cell key={i} fill={COLORS[i % COLORS.length]} />)}
+                          </Bar>
+                        </BarChart>
+                      </ResponsiveContainer>
+                      <div className="overflow-x-auto mt-4">
+                        <table className="w-full text-xs">
+                          <thead>
+                            <tr className="border-b border-border/30 text-left text-[10px] text-muted-foreground uppercase tracking-wider">
+                              <th className="py-2 px-2">Codice</th>
+                              <th className="py-2 px-2">Tipo</th>
+                              <th className="py-2 px-2 text-right">Ordini</th>
+                              <th className="py-2 px-2 text-right">Clienti</th>
+                              <th className="py-2 px-2 text-right">Qty</th>
+                              <th className="py-2 px-2 text-right">Net Sales</th>
+                              <th className="py-2 px-2 text-right">AOV</th>
+                              <th className="py-2 px-2 text-right">Sconto erogato</th>
+                              <th className="py-2 px-2 text-right">% Sconto</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {discountRows.map(d => (
+                              <tr key={d.code} className="border-b border-border/10 hover:bg-muted/30 transition-colors">
+                                <td className="py-1.5 px-2 font-mono font-semibold text-foreground">{d.code}</td>
+                                <td className="py-1.5 px-2 text-muted-foreground">{d.type}</td>
+                                <td className="py-1.5 px-2 text-right font-mono">{d.orders}</td>
+                                <td className="py-1.5 px-2 text-right font-mono">{d.customers}</td>
+                                <td className="py-1.5 px-2 text-right font-mono">{d.qty}</td>
+                                <td className="py-1.5 px-2 text-right font-mono font-semibold">{fmt(d.netSales)}</td>
+                                <td className="py-1.5 px-2 text-right font-mono">{fmt(d.aov)}</td>
+                                <td className="py-1.5 px-2 text-right font-mono text-[hsl(0,65%,52%)]">−{fmt(d.discountAmount)}</td>
+                                <td className="py-1.5 px-2 text-right font-mono">{d.discountPct}%</td>
+                              </tr>
+                            ))}
+                          </tbody>
+                          <tfoot>
+                            <tr className="border-t border-border/30 font-semibold bg-muted/20">
+                              <td className="py-2 px-2" colSpan={2}>Totale</td>
+                              <td className="py-2 px-2 text-right font-mono">{discountTotals.orders}</td>
+                              <td className="py-2 px-2 text-right">—</td>
+                              <td className="py-2 px-2 text-right font-mono">{discountTotals.qty}</td>
+                              <td className="py-2 px-2 text-right font-mono">{fmt(discountTotals.netSales)}</td>
+                              <td className="py-2 px-2 text-right">—</td>
+                              <td className="py-2 px-2 text-right font-mono text-[hsl(0,65%,52%)]">−{fmt(discountTotals.discountAmount)}</td>
+                              <td className="py-2 px-2 text-right">—</td>
+                            </tr>
+                          </tfoot>
+                        </table>
+                      </div>
+                    </>
+                  )}
                 </div>
               </div>
             )}

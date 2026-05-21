@@ -41,6 +41,7 @@ interface ShopifyOrdersResponse {
     referringSite?: string | null;
     utm?: Record<string, string> | null;
     fulfilledAt?: string | null;
+    discountCodes?: Array<{ code: string; amount: number; type?: string }>;
   }>;
   count: number;
   error?: string;
