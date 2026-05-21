@@ -1,6 +1,8 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Order } from '@/types/analytics';
+import { getEdgeAuthHeaders } from '@/lib/edge-auth';
+
 
 interface ShopifyOrdersResponse {
   success: boolean;
