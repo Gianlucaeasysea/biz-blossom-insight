@@ -41,17 +41,14 @@ export function useGoogleSheetsOrders(enabled = true) {
     queryKey: ['google-sheets-orders'],
     queryFn: async (): Promise<Order[]> => {
       const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-      const anonKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
 
       const response = await fetch(
         `${supabaseUrl}/functions/v1/google-sheets-orders`,
         {
-          headers: {
-            'Authorization': `Bearer ${anonKey}`,
-            'apikey': anonKey,
-          },
+          headers: await getEdgeAuthHeaders(),
         }
       );
+
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
