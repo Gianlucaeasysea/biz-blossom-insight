@@ -29,6 +29,11 @@ serve(async (req) => {
     return new Response(null, { headers: corsHeaders });
   }
 
+  const auth = await requireAuth(req, corsHeaders);
+  if (auth instanceof Response) return auth;
+
+
+
   try {
     const shopifyStore = Deno.env.get('SHOPIFY_STORE_NAME');
     const shopifyToken = Deno.env.get('SHOPIFY_ACCESS_TOKEN');
