@@ -74,6 +74,11 @@ interface ShopifyOrder {
   landing_site?: string | null;
   referring_site?: string | null;
   note_attributes?: Array<{ name: string; value: string }>;
+  discount_codes?: Array<{
+    code: string;
+    amount: string;
+    type?: string;
+  }>;
   fulfillments?: Array<{
     id: number;
     status: string;
@@ -584,6 +589,13 @@ serve(async (req) => {
         fulfilledAt: order.fulfillments?.length
           ? order.fulfillments.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())[0].created_at
           : null,
+        discountCodes: (order.discount_codes || [])
+          .filter((d) => d && d.code)
+          .map((d) => ({
+            code: d.code,
+            amount: roundMoney(parseMoney(d.amount)),
+            type: d.type || 'unknown',
+          })),
       };
     });
 

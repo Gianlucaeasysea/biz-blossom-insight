@@ -36,6 +36,7 @@ export interface Order {
   landingSite?: string | null;
   referringSite?: string | null;
   utm?: Record<string, string> | null;
+  discountCodes?: Array<{ code: string; amount: number; type?: string }>;
 }
 
 export interface OrderProduct {
