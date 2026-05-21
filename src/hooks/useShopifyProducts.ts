@@ -19,14 +19,11 @@ export function useShopifyProducts(enabled = true) {
     queryKey: ['shopify-products'],
     queryFn: async (): Promise<ShopifyProductRow[]> => {
       const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-      const anonKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
 
       const response = await fetch(`${supabaseUrl}/functions/v1/shopify-products`, {
-        headers: {
-          'Authorization': `Bearer ${anonKey}`,
-          'apikey': anonKey,
-        },
+        headers: await getEdgeAuthHeaders(),
       });
+
 
       if (!response.ok) {
         const err = await response.json().catch(() => ({}));
