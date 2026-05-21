@@ -10,6 +10,8 @@ import { FrankFilters, getDefaultFilters, type FrankDataFilters } from '@/compon
 import { buildFilteredContext } from '@/components/frank/buildFilteredContext';
 import { ConversationList } from '@/components/frank/ConversationList';
 import { supabase } from '@/integrations/supabase/client';
+import { getEdgeAuthHeaders } from '@/lib/edge-auth';
+
 
 type Msg = { role: 'user' | 'assistant'; content: string; files?: UploadedFile[]; id?: string };
 type UploadedFile = { name: string; content: string; type: string };
