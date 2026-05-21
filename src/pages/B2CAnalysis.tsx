@@ -242,6 +242,59 @@ export default function B2CAnalysis() {
       .sort((a, b) => b.revenue - a.revenue);
   }, [filtered]);
 
+  // ── Discount codes breakdown ────────────────────────────────────────────
+  const discountRows = useMemo(() => {
+    const map: Record<string, {
+      code: string; type: string; orders: Set<string>; customers: Set<string>;
+      qty: number; netSales: number; discountAmount: number; grossSales: number;
+    }> = {};
+    filtered.forEach(o => {
+      const codes = o.discountCodes ?? [];
+      if (codes.length === 0) return;
+      const orderNet = o.netAmount ?? o.totalAmount;
+      const orderGross = o.grossSales ?? o.totalAmount;
+      const orderQty = o.products.reduce((s, p) => s + p.quantity, 0);
+      const totalDiscAmount = codes.reduce((s, c) => s + (c.amount || 0), 0);
+      codes.forEach(c => {
+        const key = (c.code || '').trim().toUpperCase();
+        if (!key) return;
+        if (!map[key]) map[key] = {
+          code: key, type: c.type || 'unknown', orders: new Set(), customers: new Set(),
+          qty: 0, netSales: 0, discountAmount: 0, grossSales: 0,
+        };
+        const m = map[key];
+        // Proportional weight when multiple codes coexist on one order
+        const weight = totalDiscAmount > 0 ? (c.amount || 0) / totalDiscAmount : 1 / codes.length;
+        m.orders.add(o.id);
+        m.customers.add(o.customerId);
+        m.qty += orderQty * weight;
+        m.netSales += orderNet * weight;
+        m.grossSales += orderGross * weight;
+        m.discountAmount += (c.amount || 0);
+      });
+    });
+    return Object.values(map)
+      .map(m => ({
+        code: m.code, type: m.type,
+        orders: m.orders.size,
+        customers: m.customers.size,
+        qty: Math.round(m.qty),
+        netSales: Math.round(m.netSales * 100) / 100,
+        grossSales: Math.round(m.grossSales * 100) / 100,
+        discountAmount: Math.round(m.discountAmount * 100) / 100,
+        aov: m.orders.size > 0 ? Math.round((m.netSales / m.orders.size) * 100) / 100 : 0,
+        discountPct: m.grossSales > 0 ? Math.round((m.discountAmount / m.grossSales) * 1000) / 10 : 0,
+      }))
+      .sort((a, b) => b.netSales - a.netSales);
+  }, [filtered]);
+
+  const discountTotals = useMemo(() => discountRows.reduce((acc, r) => ({
+    orders: acc.orders + r.orders,
+    netSales: acc.netSales + r.netSales,
+    discountAmount: acc.discountAmount + r.discountAmount,
+    qty: acc.qty + r.qty,
+  }), { orders: 0, netSales: 0, discountAmount: 0, qty: 0 }), [discountRows]);
+
   // ── Monthly trend ───────────────────────────────────────────────────────
   const monthlyTrend = useMemo(() => {
     const map: Record<string, { orders: number; revenue: number; customers: Set<string> }> = {};
