@@ -10,6 +10,7 @@ export interface Order {
   source: DataSource;
   customerId: string;
   customerName: string;
+  customerEmail?: string | null;
   date: Date;
   deliveryDate?: Date | null;
   fulfilledAt?: Date | null;

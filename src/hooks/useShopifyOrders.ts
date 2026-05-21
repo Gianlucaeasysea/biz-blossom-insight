@@ -11,6 +11,7 @@ interface ShopifyOrdersResponse {
     source: 'shopify';
     customerId: string;
     customerName: string;
+    customerEmail?: string | null;
     date: string;
     products: Array<{
       id: string;
