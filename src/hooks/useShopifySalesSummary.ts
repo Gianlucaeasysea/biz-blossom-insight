@@ -1,6 +1,8 @@
 import { useQuery } from '@tanstack/react-query';
 import { format } from 'date-fns';
 import { ShopifySalesSummary } from '@/types/analytics';
+import { getEdgeAuthHeaders } from '@/lib/edge-auth';
+
 
 interface ShopifySalesSummaryResponse {
   success: boolean;
