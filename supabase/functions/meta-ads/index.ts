@@ -1,4 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { requireAuth } from "../_shared/auth.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -6,12 +7,17 @@ const corsHeaders = {
 };
 
 const META_API_BASE = 'https://graph.facebook.com/v21.0';
-const AD_ACCOUNT_ID = 'act_449815118955538';
+const AD_ACCOUNT_ID = Deno.env.get('META_AD_ACCOUNT_ID') ?? 'act_449815118955538';
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
+
+  const auth = await requireAuth(req, corsHeaders);
+  if (auth instanceof Response) return auth;
+
+
 
   try {
     const accessToken = Deno.env.get('META_ACCESS_TOKEN');

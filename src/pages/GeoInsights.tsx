@@ -232,16 +232,17 @@ export default function GeoInsights() {
     setAiInsight('');
 
     const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-    const anonKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+    const { getEdgeAuthHeaders } = await import('@/lib/edge-auth');
+    const authHeaders = await getEdgeAuthHeaders();
 
     try {
       const resp = await fetch(`${supabaseUrl}/functions/v1/geo-insights`, {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${anonKey}`,
-          'apikey': anonKey,
+          ...authHeaders,
           'Content-Type': 'application/json',
         },
+
         body: JSON.stringify({
           countryData: countryData.slice(0, 15),
           totalNetSales,

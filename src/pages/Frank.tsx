@@ -10,6 +10,8 @@ import { FrankFilters, getDefaultFilters, type FrankDataFilters } from '@/compon
 import { buildFilteredContext } from '@/components/frank/buildFilteredContext';
 import { ConversationList } from '@/components/frank/ConversationList';
 import { supabase } from '@/integrations/supabase/client';
+import { getEdgeAuthHeaders } from '@/lib/edge-auth';
+
 
 type Msg = { role: 'user' | 'assistant'; content: string; files?: UploadedFile[]; id?: string };
 type UploadedFile = { name: string; content: string; type: string };
@@ -162,13 +164,14 @@ export default function Frank() {
     try {
       const resp = await fetch(CHAT_URL, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}` },
+        headers: { 'Content-Type': 'application/json', ...(await getEdgeAuthHeaders()) },
         body: JSON.stringify({
           messages: [...messages, userMsg].map(m => ({ role: m.role, content: m.content })),
           dataContext,
           fileContents,
         }),
       });
+
 
       if (!resp.ok || !resp.body) {
         const err = await resp.json().catch(() => ({ error: 'Errore' }));

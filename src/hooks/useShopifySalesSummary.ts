@@ -1,6 +1,8 @@
 import { useQuery } from '@tanstack/react-query';
 import { format } from 'date-fns';
 import { ShopifySalesSummary } from '@/types/analytics';
+import { getEdgeAuthHeaders } from '@/lib/edge-auth';
+
 
 interface ShopifySalesSummaryResponse {
   success: boolean;
@@ -24,14 +26,11 @@ export function useShopifySalesSummary({ start, end, enabled = true }: UseShopif
       params.set('created_at_max', format(end, 'yyyy-MM-dd'));
 
       const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-      const anonKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
 
       const response = await fetch(`${supabaseUrl}/functions/v1/shopify-orders?${params.toString()}`, {
-        headers: {
-          Authorization: `Bearer ${anonKey}`,
-          apikey: anonKey,
-        },
+        headers: await getEdgeAuthHeaders(),
       });
+
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));

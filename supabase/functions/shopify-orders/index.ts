@@ -1,4 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { requireAuth } from "../_shared/auth.ts";
+
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -371,6 +373,11 @@ serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders });
   }
+
+  const auth = await requireAuth(req, corsHeaders);
+  if (auth instanceof Response) return auth;
+
+
 
   try {
     const storeNameRaw = Deno.env.get('SHOPIFY_STORE_NAME');
