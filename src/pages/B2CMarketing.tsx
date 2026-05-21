@@ -145,7 +145,7 @@ export default function B2CMarketing() {
     queryFn: async () => {
       const { data, error } = await supabase.from('b2c_customer_insights').select('*');
       if (error) throw error;
-      return (data || []) as Insight[];
+      return (data || []) as unknown as Insight[];
     },
   });
   const insightMap = useMemo(() => {
