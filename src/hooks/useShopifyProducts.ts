@@ -1,4 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
+import { getEdgeAuthHeaders } from '@/lib/edge-auth';
+
 
 export interface ShopifyProductRow {
   productId: number;
