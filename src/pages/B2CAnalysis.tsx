@@ -120,7 +120,7 @@ export default function B2CAnalysis() {
     end: new Date(),
   });
   const [calendarOpen, setCalendarOpen] = useState(false);
-  const [activeTab, setActiveTab] = useState<'overview' | 'products' | 'customers' | 'countries' | 'orders'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'products' | 'customers' | 'countries' | 'orders' | 'discounts'>('overview');
   const [search, setSearch] = useState('');
   const [sortField, setSortField] = useState<'totalSpent' | 'orders' | 'name' | 'daysSinceLast' | 'avgOrderValue'>('totalSpent');
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc');
