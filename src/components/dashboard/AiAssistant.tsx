@@ -2,6 +2,8 @@ import { useState, useRef, useEffect, useCallback } from 'react';
 import { Bot, Send, X, Minimize2, Maximize2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import ReactMarkdown from 'react-markdown';
+import { getEdgeAuthHeaders } from '@/lib/edge-auth';
+
 
 type Msg = { role: 'user' | 'assistant'; content: string };
 
