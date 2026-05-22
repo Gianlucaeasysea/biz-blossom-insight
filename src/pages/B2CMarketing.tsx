@@ -398,17 +398,41 @@ export default function B2CMarketing() {
           <div className="kpi-card"><div className="flex items-center gap-1.5 mb-1"><Users className="w-3.5 h-3.5 text-primary" /><p className="text-[10px] text-muted-foreground font-semibold uppercase">Clienti</p></div><p className="text-lg font-bold font-mono">{kpis.total}</p></div>
           <div className="kpi-card"><div className="flex items-center gap-1.5 mb-1"><Users className="w-3.5 h-3.5 text-primary" /><p className="text-[10px] text-muted-foreground font-semibold uppercase">Repeat</p></div><p className="text-lg font-bold font-mono">{kpis.repeat}</p></div>
           <div className="kpi-card"><div className="flex items-center gap-1.5 mb-1"><Sparkles className="w-3.5 h-3.5 text-primary" /><p className="text-[10px] text-muted-foreground font-semibold uppercase">LTV medio</p></div><p className="text-lg font-bold font-mono">{fmt(kpis.ltv)}</p></div>
+        {/* KPIs */}
+        <div className="grid grid-cols-2 md:grid-cols-6 gap-3">
+          <div className="kpi-card"><div className="flex items-center gap-1.5 mb-1"><Users className="w-3.5 h-3.5 text-primary" /><p className="text-[10px] text-muted-foreground font-semibold uppercase">Clienti</p></div><p className="text-lg font-bold font-mono">{kpis.total}</p></div>
+          <div className="kpi-card"><div className="flex items-center gap-1.5 mb-1"><Activity className="w-3.5 h-3.5 text-primary" /><p className="text-[10px] text-muted-foreground font-semibold uppercase">Repeat rate</p></div><p className="text-lg font-bold font-mono">{kpis.repeatRate.toFixed(1)}%</p></div>
+          <div className="kpi-card"><div className="flex items-center gap-1.5 mb-1"><Sparkles className="w-3.5 h-3.5 text-primary" /><p className="text-[10px] text-muted-foreground font-semibold uppercase">LTV medio</p></div><p className="text-lg font-bold font-mono">{fmt(kpis.ltv)}</p></div>
+          <div className="kpi-card"><div className="flex items-center gap-1.5 mb-1"><Clock className="w-3.5 h-3.5 text-primary" /><p className="text-[10px] text-muted-foreground font-semibold uppercase">Cadenza media</p></div><p className="text-lg font-bold font-mono">{kpis.avgCadence}g</p></div>
           <div className="kpi-card"><div className="flex items-center gap-1.5 mb-1"><Bot className="w-3.5 h-3.5 text-primary" /><p className="text-[10px] text-muted-foreground font-semibold uppercase">Analizzati AI</p></div><p className="text-lg font-bold font-mono">{kpis.analyzed}</p></div>
-          <div className="kpi-card"><div className="flex items-center gap-1.5 mb-1"><Ship className="w-3.5 h-3.5 text-primary" /><p className="text-[10px] text-muted-foreground font-semibold uppercase">Segmenti</p></div><p className="text-lg font-bold font-mono">{kpis.segments}</p></div>
+          <div className="kpi-card"><div className="flex items-center gap-1.5 mb-1"><Ship className="w-3.5 h-3.5 text-primary" /><p className="text-[10px] text-muted-foreground font-semibold uppercase">% Dormienti</p></div><p className="text-lg font-bold font-mono">{kpis.dormantRate.toFixed(1)}%</p></div>
         </div>
 
-        {view === 'board' ? (
+        {/* Behavioral segments */}
+        {view !== 'history' && (
+          <SegmentChips segments={segmentation.segmentList} active={activeSegment} onChange={setActiveSegment} fmt={fmt} />
+        )}
+
+        {view === 'history' ? (
+          <CampaignHistory
+            campaigns={savedCampaigns}
+            customers={customers.map(c => ({ id: c.id, name: c.name, email: c.email, country: c.country, totalSpent: c.totalSpent }))}
+            fmt={fmt}
+            isLoading={campaignsLoading}
+          />
+        ) : view === 'board' ? (
           isLoading ? (
             <div className="flex items-center justify-center py-12">
               <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
             </div>
           ) : (
-            <MarketingWhiteboard customers={customers} insightMap={insightMap} fmt={fmt} />
+            <MarketingWhiteboard
+              customers={customers}
+              insightMap={insightMap}
+              fmt={fmt}
+              activeSegment={activeSegment}
+              segmentIds={activeSegmentIds ?? undefined}
+            />
           )
         ) : (
         <>
