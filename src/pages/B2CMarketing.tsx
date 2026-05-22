@@ -137,6 +137,17 @@ export default function B2CMarketing() {
   const [campaignSegment, setCampaignSegment] = useState<string>('');
   const [campaignLoading, setCampaignLoading] = useState(false);
   const [campaignData, setCampaignData] = useState<any>(null);
+  const [view, setView] = useState<'list' | 'board'>('list');
+
+  const datePresets = [
+    { label: '30g', range: () => ({ start: subDays(new Date(), 30), end: new Date() }) },
+    { label: '90g', range: () => ({ start: subDays(new Date(), 90), end: new Date() }) },
+    { label: '6m', range: () => ({ start: subMonths(new Date(), 6), end: new Date() }) },
+    { label: 'YTD', range: () => ({ start: startOfYear(new Date()), end: new Date() }) },
+    { label: '1a', range: () => ({ start: subDays(new Date(), 365), end: new Date() }) },
+    { label: 'Tutto', range: () => ({ start: new Date('2023-01-01'), end: new Date() }) },
+  ];
+
 
   const customers = useMemo(() => buildCustomers(orders, dateRange), [orders, dateRange]);
   const coPurchase = useMemo(() => buildCoPurchase(customers), [customers]);
