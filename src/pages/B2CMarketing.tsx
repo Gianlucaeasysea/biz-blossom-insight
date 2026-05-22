@@ -378,6 +378,16 @@ export default function B2CMarketing() {
           <div className="kpi-card"><div className="flex items-center gap-1.5 mb-1"><Ship className="w-3.5 h-3.5 text-primary" /><p className="text-[10px] text-muted-foreground font-semibold uppercase">Segmenti</p></div><p className="text-lg font-bold font-mono">{kpis.segments}</p></div>
         </div>
 
+        {view === 'board' ? (
+          isLoading ? (
+            <div className="flex items-center justify-center py-12">
+              <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
+            </div>
+          ) : (
+            <MarketingWhiteboard customers={customers} insightMap={insightMap} fmt={fmt} />
+          )
+        ) : (
+        <>
         {/* Filters */}
         <div className="glass-card p-3 flex flex-wrap items-center gap-2">
           <div className="relative flex-1 min-w-[200px]">
@@ -411,6 +421,7 @@ export default function B2CMarketing() {
             <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
           </div>
         ) : (
+
           <div className="space-y-2">
             {filtered.slice(0, 200).map(c => {
               const ins = insightMap.get(c.id);
