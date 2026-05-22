@@ -1,5 +1,5 @@
 import { useState, useMemo, useCallback } from 'react';
-import { format } from 'date-fns';
+import { format, subDays, subMonths, startOfYear, startOfMonth } from 'date-fns';
 import { DashboardHeader } from '@/components/dashboard/DashboardHeader';
 import { DraggableNav } from '@/components/DraggableNav';
 import { useShopifyOrders } from '@/hooks/useShopifyOrders';
@@ -10,7 +10,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import {
   Users, ChevronRight, Sparkles, Download, Search, Loader2, Megaphone,
-  Ship, Lightbulb, Bot, Calendar, Mail, Copy, X,
+  Ship, Lightbulb, Bot, Calendar, Mail, Copy, X, Network, List,
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -19,6 +19,8 @@ import { Calendar as CalendarComponent } from '@/components/ui/calendar';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import ReactMarkdown from 'react-markdown';
+import { MarketingWhiteboard } from '@/components/marketing/MarketingWhiteboard';
+
 
 const fmt = (v: number) => new Intl.NumberFormat('it-IT', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 }).format(v);
 
@@ -135,6 +137,17 @@ export default function B2CMarketing() {
   const [campaignSegment, setCampaignSegment] = useState<string>('');
   const [campaignLoading, setCampaignLoading] = useState(false);
   const [campaignData, setCampaignData] = useState<any>(null);
+  const [view, setView] = useState<'list' | 'board'>('list');
+
+  const datePresets = [
+    { label: '30g', range: () => ({ start: subDays(new Date(), 30), end: new Date() }) },
+    { label: '90g', range: () => ({ start: subDays(new Date(), 90), end: new Date() }) },
+    { label: '6m', range: () => ({ start: subMonths(new Date(), 6), end: new Date() }) },
+    { label: 'YTD', range: () => ({ start: startOfYear(new Date()), end: new Date() }) },
+    { label: '1a', range: () => ({ start: subDays(new Date(), 365), end: new Date() }) },
+    { label: 'Tutto', range: () => ({ start: new Date('2023-01-01'), end: new Date() }) },
+  ];
+
 
   const customers = useMemo(() => buildCustomers(orders, dateRange), [orders, dateRange]);
   const coPurchase = useMemo(() => buildCoPurchase(customers), [customers]);
@@ -305,26 +318,56 @@ export default function B2CMarketing() {
           </div>
 
           <div className="flex flex-wrap gap-2 items-center">
+            {/* View toggle */}
+            <div className="flex rounded-lg bg-muted/60 p-0.5 gap-0.5">
+              <button
+                onClick={() => setView('list')}
+                className={`px-2.5 py-1.5 text-[11px] font-semibold rounded-md transition-all flex items-center gap-1.5 ${view === 'list' ? 'bg-primary text-primary-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'}`}
+              >
+                <List className="w-3.5 h-3.5" /> Lista
+              </button>
+              <button
+                onClick={() => setView('board')}
+                className={`px-2.5 py-1.5 text-[11px] font-semibold rounded-md transition-all flex items-center gap-1.5 ${view === 'board' ? 'bg-primary text-primary-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'}`}
+              >
+                <Network className="w-3.5 h-3.5" /> Lavagna interattiva
+              </button>
+            </div>
+
+            {/* Date presets */}
+            <div className="flex rounded-md bg-muted p-0.5">
+              {datePresets.map(p => (
+                <button key={p.label} onClick={() => setDateRange(p.range())}
+                  className="px-2 py-1.5 text-[11px] text-muted-foreground hover:text-foreground rounded transition-colors">
+                  {p.label}
+                </button>
+              ))}
+            </div>
+
+            {/* Date range picker */}
             <Popover open={calOpen} onOpenChange={setCalOpen}>
               <PopoverTrigger asChild>
-                <Button variant="outline" size="sm" className="gap-2">
+                <Button variant="outline" size="sm" className="gap-2 h-8 text-[11px]">
                   <Calendar className="w-3.5 h-3.5" />
-                  {format(dateRange.start, 'dd/MM/yy')} → {format(dateRange.end, 'dd/MM/yy')}
+                  {format(dateRange.start, 'dd MMM yy')} → {format(dateRange.end, 'dd MMM yy')}
                 </Button>
               </PopoverTrigger>
               <PopoverContent className="w-auto p-0" align="end">
                 <CalendarComponent
                   mode="range"
+                  defaultMonth={dateRange.start}
                   selected={{ from: dateRange.start, to: dateRange.end }}
                   onSelect={(r) => {
                     if (r?.from && r?.to) setDateRange({ start: r.from, end: r.to });
                   }}
                   numberOfMonths={2}
+                  className="pointer-events-auto"
                 />
               </PopoverContent>
             </Popover>
           </div>
         </div>
+
 
         {/* KPIs */}
         <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
@@ -335,6 +378,16 @@ export default function B2CMarketing() {
           <div className="kpi-card"><div className="flex items-center gap-1.5 mb-1"><Ship className="w-3.5 h-3.5 text-primary" /><p className="text-[10px] text-muted-foreground font-semibold uppercase">Segmenti</p></div><p className="text-lg font-bold font-mono">{kpis.segments}</p></div>
         </div>
 
+        {view === 'board' ? (
+          isLoading ? (
+            <div className="flex items-center justify-center py-12">
+              <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
+            </div>
+          ) : (
+            <MarketingWhiteboard customers={customers} insightMap={insightMap} fmt={fmt} />
+          )
+        ) : (
+        <>
         {/* Filters */}
         <div className="glass-card p-3 flex flex-wrap items-center gap-2">
           <div className="relative flex-1 min-w-[200px]">
@@ -368,6 +421,7 @@ export default function B2CMarketing() {
             <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
           </div>
         ) : (
+
           <div className="space-y-2">
             {filtered.slice(0, 200).map(c => {
               const ins = insightMap.get(c.id);
@@ -486,7 +540,10 @@ export default function B2CMarketing() {
             )}
           </div>
         )}
+        </>
+        )}
       </main>
+
 
       {/* Campaign dialog */}
       <Dialog open={campaignOpen} onOpenChange={setCampaignOpen}>
