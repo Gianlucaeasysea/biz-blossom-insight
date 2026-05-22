@@ -1,5 +1,5 @@
 import { useState, useMemo, useCallback } from 'react';
-import { format } from 'date-fns';
+import { format, subDays, subMonths, startOfYear, startOfMonth } from 'date-fns';
 import { DashboardHeader } from '@/components/dashboard/DashboardHeader';
 import { DraggableNav } from '@/components/DraggableNav';
 import { useShopifyOrders } from '@/hooks/useShopifyOrders';
@@ -10,7 +10,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import {
   Users, ChevronRight, Sparkles, Download, Search, Loader2, Megaphone,
-  Ship, Lightbulb, Bot, Calendar, Mail, Copy, X,
+  Ship, Lightbulb, Bot, Calendar, Mail, Copy, X, Network, List,
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -19,6 +19,8 @@ import { Calendar as CalendarComponent } from '@/components/ui/calendar';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import ReactMarkdown from 'react-markdown';
+import { MarketingWhiteboard } from '@/components/marketing/MarketingWhiteboard';
+
 
 const fmt = (v: number) => new Intl.NumberFormat('it-IT', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 }).format(v);
 
