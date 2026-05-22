@@ -10,7 +10,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import {
   Users, ChevronRight, Sparkles, Download, Search, Loader2, Megaphone,
-  Ship, Lightbulb, Bot, Calendar, Mail, Copy, X, Network, List,
+  Ship, Lightbulb, Bot, Calendar, Mail, Copy, X, Network, List, Archive, Clock, Activity,
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -20,6 +20,10 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import ReactMarkdown from 'react-markdown';
 import { MarketingWhiteboard } from '@/components/marketing/MarketingWhiteboard';
+import { SegmentChips } from '@/components/marketing/SegmentChips';
+import { CampaignHistory } from '@/components/marketing/CampaignHistory';
+import { useCustomerSegmentation, type SegmentKey } from '@/hooks/useCustomerSegmentation';
+import { useSavedCampaigns } from '@/hooks/useSavedCampaigns';
 
 
 const fmt = (v: number) => new Intl.NumberFormat('it-IT', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 }).format(v);
@@ -137,7 +141,8 @@ export default function B2CMarketing() {
   const [campaignSegment, setCampaignSegment] = useState<string>('');
   const [campaignLoading, setCampaignLoading] = useState(false);
   const [campaignData, setCampaignData] = useState<any>(null);
-  const [view, setView] = useState<'list' | 'board'>('list');
+  const [view, setView] = useState<'list' | 'board' | 'history'>('list');
+  const [activeSegment, setActiveSegment] = useState<SegmentKey | null>(null);
 
   const datePresets = [
     { label: '30g', range: () => ({ start: subDays(new Date(), 30), end: new Date() }) },
@@ -151,6 +156,8 @@ export default function B2CMarketing() {
 
   const customers = useMemo(() => buildCustomers(orders, dateRange), [orders, dateRange]);
   const coPurchase = useMemo(() => buildCoPurchase(customers), [customers]);
+  const segmentation = useCustomerSegmentation(customers);
+  const { data: savedCampaigns = [], isLoading: campaignsLoading } = useSavedCampaigns();
 
   // Load insights from DB
   const { data: insights = [] } = useQuery({
@@ -173,10 +180,14 @@ export default function B2CMarketing() {
     return Array.from(s).sort();
   }, [insights]);
 
+  // Active segment ids from behavioral segmentation
+  const activeSegmentIds = activeSegment ? segmentation.segments[activeSegment].ids : null;
+
   const filtered = useMemo(() => {
     const q = search.toLowerCase().trim();
     return customers
       .filter(c => {
+        if (activeSegmentIds && !activeSegmentIds.has(c.id)) return false;
         if (q && !c.name.toLowerCase().includes(q) && !(c.email || '').toLowerCase().includes(q)) return false;
         if (segFilter !== 'all') {
           const ins = insightMap.get(c.id);
@@ -185,14 +196,21 @@ export default function B2CMarketing() {
         return true;
       })
       .sort((a, b) => b.totalSpent - a.totalSpent);
-  }, [customers, search, segFilter, insightMap]);
+  }, [customers, search, segFilter, insightMap, activeSegmentIds]);
 
   const kpis = useMemo(() => {
     const total = filtered.length;
     const repeat = filtered.filter(c => c.orderCount > 1).length;
+    const repeatRate = total ? (repeat / total) * 100 : 0;
     const ltv = total > 0 ? filtered.reduce((s, c) => s + c.totalSpent, 0) / total : 0;
     const analyzed = filtered.filter(c => insightMap.has(c.id)).length;
-    return { total, repeat, ltv, analyzed, segments: segments.length };
+    const dormantRate = total ? (segmentation.segments.dormant.ids.size / total) * 100 : 0;
+    return {
+      total, repeat, repeatRate, ltv, analyzed,
+      segments: segments.length,
+      avgCadence: Math.round(segmentation.globalAvgDaysBetween),
+      dormantRate,
+    };
   }, [filtered, insightMap, segments]);
 
   const toggle = (id: string) => {
@@ -330,7 +348,13 @@ export default function B2CMarketing() {
                 onClick={() => setView('board')}
                 className={`px-2.5 py-1.5 text-[11px] font-semibold rounded-md transition-all flex items-center gap-1.5 ${view === 'board' ? 'bg-primary text-primary-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'}`}
               >
-                <Network className="w-3.5 h-3.5" /> Lavagna interattiva
+                <Network className="w-3.5 h-3.5" /> Lavagna
+              </button>
+              <button
+                onClick={() => setView('history')}
+                className={`px-2.5 py-1.5 text-[11px] font-semibold rounded-md transition-all flex items-center gap-1.5 ${view === 'history' ? 'bg-primary text-primary-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'}`}
+              >
+                <Archive className="w-3.5 h-3.5" /> Campagne {savedCampaigns.length > 0 && <span className="bg-primary/20 text-primary px-1 rounded text-[9px]">{savedCampaigns.length}</span>}
               </button>
             </div>
 
@@ -370,21 +394,40 @@ export default function B2CMarketing() {
 
 
         {/* KPIs */}
-        <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+        <div className="grid grid-cols-2 md:grid-cols-6 gap-3">
           <div className="kpi-card"><div className="flex items-center gap-1.5 mb-1"><Users className="w-3.5 h-3.5 text-primary" /><p className="text-[10px] text-muted-foreground font-semibold uppercase">Clienti</p></div><p className="text-lg font-bold font-mono">{kpis.total}</p></div>
-          <div className="kpi-card"><div className="flex items-center gap-1.5 mb-1"><Users className="w-3.5 h-3.5 text-primary" /><p className="text-[10px] text-muted-foreground font-semibold uppercase">Repeat</p></div><p className="text-lg font-bold font-mono">{kpis.repeat}</p></div>
+          <div className="kpi-card"><div className="flex items-center gap-1.5 mb-1"><Activity className="w-3.5 h-3.5 text-primary" /><p className="text-[10px] text-muted-foreground font-semibold uppercase">Repeat rate</p></div><p className="text-lg font-bold font-mono">{kpis.repeatRate.toFixed(1)}%</p></div>
           <div className="kpi-card"><div className="flex items-center gap-1.5 mb-1"><Sparkles className="w-3.5 h-3.5 text-primary" /><p className="text-[10px] text-muted-foreground font-semibold uppercase">LTV medio</p></div><p className="text-lg font-bold font-mono">{fmt(kpis.ltv)}</p></div>
+          <div className="kpi-card"><div className="flex items-center gap-1.5 mb-1"><Clock className="w-3.5 h-3.5 text-primary" /><p className="text-[10px] text-muted-foreground font-semibold uppercase">Cadenza media</p></div><p className="text-lg font-bold font-mono">{kpis.avgCadence}g</p></div>
           <div className="kpi-card"><div className="flex items-center gap-1.5 mb-1"><Bot className="w-3.5 h-3.5 text-primary" /><p className="text-[10px] text-muted-foreground font-semibold uppercase">Analizzati AI</p></div><p className="text-lg font-bold font-mono">{kpis.analyzed}</p></div>
-          <div className="kpi-card"><div className="flex items-center gap-1.5 mb-1"><Ship className="w-3.5 h-3.5 text-primary" /><p className="text-[10px] text-muted-foreground font-semibold uppercase">Segmenti</p></div><p className="text-lg font-bold font-mono">{kpis.segments}</p></div>
+          <div className="kpi-card"><div className="flex items-center gap-1.5 mb-1"><Ship className="w-3.5 h-3.5 text-primary" /><p className="text-[10px] text-muted-foreground font-semibold uppercase">% Dormienti</p></div><p className="text-lg font-bold font-mono">{kpis.dormantRate.toFixed(1)}%</p></div>
         </div>
 
-        {view === 'board' ? (
+        {/* Behavioral segments */}
+        {view !== 'history' && (
+          <SegmentChips segments={segmentation.segmentList} active={activeSegment} onChange={setActiveSegment} fmt={fmt} />
+        )}
+
+        {view === 'history' ? (
+          <CampaignHistory
+            campaigns={savedCampaigns}
+            customers={customers.map(c => ({ id: c.id, name: c.name, email: c.email, country: c.country, totalSpent: c.totalSpent }))}
+            fmt={fmt}
+            isLoading={campaignsLoading}
+          />
+        ) : view === 'board' ? (
           isLoading ? (
             <div className="flex items-center justify-center py-12">
               <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
             </div>
           ) : (
-            <MarketingWhiteboard customers={customers} insightMap={insightMap} fmt={fmt} />
+            <MarketingWhiteboard
+              customers={customers}
+              insightMap={insightMap}
+              fmt={fmt}
+              activeSegment={activeSegment}
+              segmentIds={activeSegmentIds ?? undefined}
+            />
           )
         ) : (
         <>

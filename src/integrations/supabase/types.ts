@@ -59,6 +59,63 @@ export type Database = {
         }
         Relationships: []
       }
+      b2c_marketing_campaigns: {
+        Row: {
+          audience_ids: Json
+          audience_size: number
+          boat_type: string | null
+          created_at: string
+          created_by: string | null
+          discount_pct: number
+          est_revenue_max: number
+          est_revenue_min: number
+          id: string
+          name: string
+          notes: string | null
+          objective: string
+          product_names: Json
+          segment: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          audience_ids?: Json
+          audience_size?: number
+          boat_type?: string | null
+          created_at?: string
+          created_by?: string | null
+          discount_pct?: number
+          est_revenue_max?: number
+          est_revenue_min?: number
+          id?: string
+          name: string
+          notes?: string | null
+          objective?: string
+          product_names?: Json
+          segment?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          audience_ids?: Json
+          audience_size?: number
+          boat_type?: string | null
+          created_at?: string
+          created_by?: string | null
+          discount_pct?: number
+          est_revenue_max?: number
+          est_revenue_min?: number
+          id?: string
+          name?: string
+          notes?: string | null
+          objective?: string
+          product_names?: Json
+          segment?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       debug_proposals: {
         Row: {
           author: string
