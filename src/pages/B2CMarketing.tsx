@@ -394,11 +394,6 @@ export default function B2CMarketing() {
 
 
         {/* KPIs */}
-        <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
-          <div className="kpi-card"><div className="flex items-center gap-1.5 mb-1"><Users className="w-3.5 h-3.5 text-primary" /><p className="text-[10px] text-muted-foreground font-semibold uppercase">Clienti</p></div><p className="text-lg font-bold font-mono">{kpis.total}</p></div>
-          <div className="kpi-card"><div className="flex items-center gap-1.5 mb-1"><Users className="w-3.5 h-3.5 text-primary" /><p className="text-[10px] text-muted-foreground font-semibold uppercase">Repeat</p></div><p className="text-lg font-bold font-mono">{kpis.repeat}</p></div>
-          <div className="kpi-card"><div className="flex items-center gap-1.5 mb-1"><Sparkles className="w-3.5 h-3.5 text-primary" /><p className="text-[10px] text-muted-foreground font-semibold uppercase">LTV medio</p></div><p className="text-lg font-bold font-mono">{fmt(kpis.ltv)}</p></div>
-        {/* KPIs */}
         <div className="grid grid-cols-2 md:grid-cols-6 gap-3">
           <div className="kpi-card"><div className="flex items-center gap-1.5 mb-1"><Users className="w-3.5 h-3.5 text-primary" /><p className="text-[10px] text-muted-foreground font-semibold uppercase">Clienti</p></div><p className="text-lg font-bold font-mono">{kpis.total}</p></div>
           <div className="kpi-card"><div className="flex items-center gap-1.5 mb-1"><Activity className="w-3.5 h-3.5 text-primary" /><p className="text-[10px] text-muted-foreground font-semibold uppercase">Repeat rate</p></div><p className="text-lg font-bold font-mono">{kpis.repeatRate.toFixed(1)}%</p></div>
