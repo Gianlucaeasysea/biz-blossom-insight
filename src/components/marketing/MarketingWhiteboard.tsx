@@ -157,7 +157,6 @@ export function MarketingWhiteboard({ customers, insightMap, fmt, activeSegment,
         est_revenue_max: Math.round(sim?.revMax ?? 0),
         notes: null,
         status: 'draft',
-        created_by: null as any,
       });
       toast.success('Campagna salvata');
       setCampaignName('');
