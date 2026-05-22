@@ -540,7 +540,10 @@ export default function B2CMarketing() {
             )}
           </div>
         )}
+        </>
+        )}
       </main>
+
 
       {/* Campaign dialog */}
       <Dialog open={campaignOpen} onOpenChange={setCampaignOpen}>
