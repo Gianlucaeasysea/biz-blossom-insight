@@ -318,26 +318,56 @@ export default function B2CMarketing() {
           </div>
 
           <div className="flex flex-wrap gap-2 items-center">
+            {/* View toggle */}
+            <div className="flex rounded-lg bg-muted/60 p-0.5 gap-0.5">
+              <button
+                onClick={() => setView('list')}
+                className={`px-2.5 py-1.5 text-[11px] font-semibold rounded-md transition-all flex items-center gap-1.5 ${view === 'list' ? 'bg-primary text-primary-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'}`}
+              >
+                <List className="w-3.5 h-3.5" /> Lista
+              </button>
+              <button
+                onClick={() => setView('board')}
+                className={`px-2.5 py-1.5 text-[11px] font-semibold rounded-md transition-all flex items-center gap-1.5 ${view === 'board' ? 'bg-primary text-primary-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'}`}
+              >
+                <Network className="w-3.5 h-3.5" /> Lavagna interattiva
+              </button>
+            </div>
+
+            {/* Date presets */}
+            <div className="flex rounded-md bg-muted p-0.5">
+              {datePresets.map(p => (
+                <button key={p.label} onClick={() => setDateRange(p.range())}
+                  className="px-2 py-1.5 text-[11px] text-muted-foreground hover:text-foreground rounded transition-colors">
+                  {p.label}
+                </button>
+              ))}
+            </div>
+
+            {/* Date range picker */}
             <Popover open={calOpen} onOpenChange={setCalOpen}>
               <PopoverTrigger asChild>
-                <Button variant="outline" size="sm" className="gap-2">
+                <Button variant="outline" size="sm" className="gap-2 h-8 text-[11px]">
                   <Calendar className="w-3.5 h-3.5" />
-                  {format(dateRange.start, 'dd/MM/yy')} → {format(dateRange.end, 'dd/MM/yy')}
+                  {format(dateRange.start, 'dd MMM yy')} → {format(dateRange.end, 'dd MMM yy')}
                 </Button>
               </PopoverTrigger>
               <PopoverContent className="w-auto p-0" align="end">
                 <CalendarComponent
                   mode="range"
+                  defaultMonth={dateRange.start}
                   selected={{ from: dateRange.start, to: dateRange.end }}
                   onSelect={(r) => {
                     if (r?.from && r?.to) setDateRange({ start: r.from, end: r.to });
                   }}
                   numberOfMonths={2}
+                  className="pointer-events-auto"
                 />
               </PopoverContent>
             </Popover>
           </div>
         </div>
+
 
         {/* KPIs */}
         <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
