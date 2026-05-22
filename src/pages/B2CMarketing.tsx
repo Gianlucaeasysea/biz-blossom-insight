@@ -141,7 +141,8 @@ export default function B2CMarketing() {
   const [campaignSegment, setCampaignSegment] = useState<string>('');
   const [campaignLoading, setCampaignLoading] = useState(false);
   const [campaignData, setCampaignData] = useState<any>(null);
-  const [view, setView] = useState<'list' | 'board'>('list');
+  const [view, setView] = useState<'list' | 'board' | 'history'>('list');
+  const [activeSegment, setActiveSegment] = useState<SegmentKey | null>(null);
 
   const datePresets = [
     { label: '30g', range: () => ({ start: subDays(new Date(), 30), end: new Date() }) },
