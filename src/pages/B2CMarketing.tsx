@@ -10,7 +10,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import {
   Users, ChevronRight, Sparkles, Download, Search, Loader2, Megaphone,
-  Ship, Lightbulb, Bot, Calendar, Mail, Copy, X, Network, List,
+  Ship, Lightbulb, Bot, Calendar, Mail, Copy, X, Network, List, Archive, Clock, Activity,
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -20,6 +20,10 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import ReactMarkdown from 'react-markdown';
 import { MarketingWhiteboard } from '@/components/marketing/MarketingWhiteboard';
+import { SegmentChips } from '@/components/marketing/SegmentChips';
+import { CampaignHistory } from '@/components/marketing/CampaignHistory';
+import { useCustomerSegmentation, type SegmentKey } from '@/hooks/useCustomerSegmentation';
+import { useSavedCampaigns } from '@/hooks/useSavedCampaigns';
 
 
 const fmt = (v: number) => new Intl.NumberFormat('it-IT', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 }).format(v);
