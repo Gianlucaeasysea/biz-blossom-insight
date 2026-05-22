@@ -156,6 +156,8 @@ export default function B2CMarketing() {
 
   const customers = useMemo(() => buildCustomers(orders, dateRange), [orders, dateRange]);
   const coPurchase = useMemo(() => buildCoPurchase(customers), [customers]);
+  const segmentation = useCustomerSegmentation(customers);
+  const { data: savedCampaigns = [], isLoading: campaignsLoading } = useSavedCampaigns();
 
   // Load insights from DB
   const { data: insights = [] } = useQuery({
@@ -178,10 +180,14 @@ export default function B2CMarketing() {
     return Array.from(s).sort();
   }, [insights]);
 
+  // Active segment ids from behavioral segmentation
+  const activeSegmentIds = activeSegment ? segmentation.segments[activeSegment].ids : null;
+
   const filtered = useMemo(() => {
     const q = search.toLowerCase().trim();
     return customers
       .filter(c => {
+        if (activeSegmentIds && !activeSegmentIds.has(c.id)) return false;
         if (q && !c.name.toLowerCase().includes(q) && !(c.email || '').toLowerCase().includes(q)) return false;
         if (segFilter !== 'all') {
           const ins = insightMap.get(c.id);
@@ -190,14 +196,21 @@ export default function B2CMarketing() {
         return true;
       })
       .sort((a, b) => b.totalSpent - a.totalSpent);
-  }, [customers, search, segFilter, insightMap]);
+  }, [customers, search, segFilter, insightMap, activeSegmentIds]);
 
   const kpis = useMemo(() => {
     const total = filtered.length;
     const repeat = filtered.filter(c => c.orderCount > 1).length;
+    const repeatRate = total ? (repeat / total) * 100 : 0;
     const ltv = total > 0 ? filtered.reduce((s, c) => s + c.totalSpent, 0) / total : 0;
     const analyzed = filtered.filter(c => insightMap.has(c.id)).length;
-    return { total, repeat, ltv, analyzed, segments: segments.length };
+    const dormantRate = total ? (segmentation.segments.dormant.ids.size / total) * 100 : 0;
+    return {
+      total, repeat, repeatRate, ltv, analyzed,
+      segments: segments.length,
+      avgCadence: Math.round(segmentation.globalAvgDaysBetween),
+      dormantRate,
+    };
   }, [filtered, insightMap, segments]);
 
   const toggle = (id: string) => {
