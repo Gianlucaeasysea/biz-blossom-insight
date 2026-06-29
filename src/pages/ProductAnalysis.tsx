@@ -9,9 +9,11 @@ import { DraggableNav } from '@/components/DraggableNav';
 import { useShopifyOrders } from '@/hooks/useShopifyOrders';
 import { useShopifySalesSummary } from '@/hooks/useShopifySalesSummary';
 import { useGoogleSheetsOrders } from '@/hooks/useGoogleSheetsOrders';
+import { useMetaAds, getActionValue } from '@/hooks/useMetaAds';
 import { getSkuCollection } from '@/lib/mock-data';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { Loader2 } from 'lucide-react';
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 
 // ── Country normalizer ──
 const COUNTRY_MAP: Record<string, string> = {
@@ -55,7 +57,7 @@ const COLLECTION_TO_PRODUCT: Record<string, string> = {
 };
 
 const PRODUCTS = [
-  'FLIPPER', 'OLLI BLOCK', 'OLLI RING', 'JAKE', 'WAY2', 'SIDE PRODUCTS',
+  'FLIPPER', 'OLLI BLOCK', 'OLLI RING', 'OLLI FLEX', 'JAKE', 'WAY2', 'SIDE PRODUCTS',
 ] as const;
 
 // Color per product
@@ -63,10 +65,30 @@ const PRODUCT_COLORS: Record<string, string> = {
   'FLIPPER':       'hsl(215,85%,55%)',
   'OLLI BLOCK':    'hsl(168,70%,42%)',
   'OLLI RING':     'hsl(42,96%,48%)',
+  'OLLI FLEX':     'hsl(330,75%,55%)',
   'JAKE':          'hsl(280,65%,55%)',
   'WAY2':          'hsl(0,65%,52%)',
   'SIDE PRODUCTS': 'hsl(200,60%,45%)',
 };
+
+// Adset/campaign name keywords used to attribute Meta Ads spend to each product
+const PRODUCT_ADSET_KEYWORDS: Record<string, string[]> = {
+  'FLIPPER':       ['flipper', 'winch'],
+  'OLLI BLOCK':    ['block'],
+  'OLLI RING':     ['ring', 'snatch', 'anti-shock', 'anti shock', 'low friction'],
+  'OLLI FLEX':     ['flex'],
+  'JAKE':          ['jake', 'jib', 'boat hook', 'boathook', 'pole', 'brush', 'telescope'],
+  'WAY2':          ['way2', 'way 2', 'gangway'],
+  'SIDE PRODUCTS': [],
+};
+
+// Map product line item to display product (name-based overrides take priority over collection)
+function getProductBucket(name: string, sku: string): string | null {
+  const n = (name || '').toLowerCase();
+  if (n.includes('olli flex') || n.includes('olliflex') || /\bflex\b/.test(n)) return 'OLLI FLEX';
+  const collection = getSkuCollection(sku);
+  return COLLECTION_TO_PRODUCT[collection] ?? null;
+}
 
 const B2B_OPACITY = 0.45;
 
@@ -130,6 +152,36 @@ export default function ProductAnalysis() {
     enabled: true,
   });
 
+  // Meta Ads adsets for spend/revenue attribution per product
+  const { data: metaCore } = useMetaAds(yearSummaryRange);
+  const adsetsByProduct = useMemo(() => {
+    const out: Record<string, Array<{ adset: string; campaign: string; spend: number; revenue: number; purchases: number; roas: number }>> = {};
+    PRODUCTS.forEach(p => { out[p] = []; });
+    const adsets = metaCore?.adsets ?? [];
+    for (const a of adsets) {
+      const name = `${a.adset_name || ''} ${a.campaign_name || ''}`.toLowerCase();
+      let matched: string | null = null;
+      // priority: more specific keywords first; OLLI FLEX before OLLI BLOCK/RING to honor "flex"
+      const order: readonly string[] = ['OLLI FLEX', 'FLIPPER', 'OLLI BLOCK', 'OLLI RING', 'JAKE', 'WAY2'];
+      for (const p of order) {
+        if (PRODUCT_ADSET_KEYWORDS[p].some(k => name.includes(k))) { matched = p; break; }
+      }
+      if (!matched) matched = 'SIDE PRODUCTS';
+      const spend = parseFloat(a.spend || '0');
+      const revenue = getActionValue(a.action_values, 'purchase');
+      const purchases = getActionValue(a.actions, 'purchase');
+      out[matched].push({
+        adset: a.adset_name || '—',
+        campaign: a.campaign_name || '',
+        spend, revenue, purchases,
+        roas: spend > 0 ? revenue / spend : 0,
+      });
+    }
+    // sort each bucket by spend desc
+    for (const k of Object.keys(out)) out[k].sort((x, y) => y.spend - x.spend);
+    return out;
+  }, [metaCore]);
+
   const allOrders = useMemo(() => [...shopifyOrders, ...gsOrders], [shopifyOrders, gsOrders]);
   const isLoading = isLoadingShopify || isLoadingGS;
   const isFetching = isFetchingShopify || isFetchingGS;
@@ -186,8 +238,7 @@ export default function ProductAnalysis() {
       const isCustom = order.orderType && order.orderType.toLowerCase() === 'custom';
 
       order.products.forEach(prod => {
-        const collection = getSkuCollection(prod.sku);
-        const product = COLLECTION_TO_PRODUCT[collection];
+        const product = getProductBucket(prod.name, prod.sku);
         if (!product) return; // skip Shipping, Other, etc.
 
         if (order.customerType === 'B2C') {
@@ -417,6 +468,65 @@ export default function ProductAnalysis() {
                         </ComposedChart>
                       </ResponsiveContainer>
                     )}
+
+                    {/* Meta Ads adset spending accordion */}
+                    {(() => {
+                      const rows = adsetsByProduct[product] ?? [];
+                      const totSpend = rows.reduce((s, r) => s + r.spend, 0);
+                      const totRev = rows.reduce((s, r) => s + r.revenue, 0);
+                      const totRoas = totSpend > 0 ? totRev / totSpend : 0;
+                      return (
+                        <Accordion type="single" collapsible className="border-t border-border/30 -mx-4 -mb-4 px-4 pt-1">
+                          <AccordionItem value="adsets" className="border-b-0">
+                            <AccordionTrigger className="py-2 hover:no-underline">
+                              <div className="flex items-center justify-between w-full pr-2">
+                                <span className="text-[10px] uppercase tracking-widest text-muted-foreground font-semibold">
+                                  Meta Ads · {rows.length} adset
+                                </span>
+                                <div className="flex gap-3 text-[10px] font-mono">
+                                  <span className="text-red-400">Spend {fmtK(totSpend)}</span>
+                                  <span className="text-emerald-400">Rev {fmtK(totRev)}</span>
+                                  <span className="text-yellow-400">ROAS {totRoas.toFixed(2)}x</span>
+                                </div>
+                              </div>
+                            </AccordionTrigger>
+                            <AccordionContent className="pb-2">
+                              {rows.length === 0 ? (
+                                <p className="text-[11px] text-muted-foreground italic py-1">Nessun adset trovato nel periodo.</p>
+                              ) : (
+                                <div className="overflow-x-auto">
+                                  <table className="w-full text-[10.5px] font-mono">
+                                    <thead>
+                                      <tr className="border-b border-border/30 text-muted-foreground">
+                                        <th className="text-left py-1 pr-2 font-medium">Adset</th>
+                                        <th className="text-right py-1 px-1 font-medium">Spend</th>
+                                        <th className="text-right py-1 px-1 font-medium">Rev</th>
+                                        <th className="text-right py-1 px-1 font-medium">Acq</th>
+                                        <th className="text-right py-1 pl-1 font-medium">ROAS</th>
+                                      </tr>
+                                    </thead>
+                                    <tbody>
+                                      {rows.slice(0, 25).map((r, i) => (
+                                        <tr key={i} className="border-b border-border/10 last:border-0">
+                                          <td className="py-1 pr-2">
+                                            <div className="text-foreground truncate max-w-[200px]" title={r.adset}>{r.adset}</div>
+                                            <div className="text-[9px] text-muted-foreground truncate max-w-[200px]" title={r.campaign}>{r.campaign}</div>
+                                          </td>
+                                          <td className="text-right py-1 px-1 text-red-400">{fmtK(r.spend)}</td>
+                                          <td className="text-right py-1 px-1 text-emerald-400">{fmtK(r.revenue)}</td>
+                                          <td className="text-right py-1 px-1 text-foreground/80">{Math.round(r.purchases)}</td>
+                                          <td className="text-right py-1 pl-1 text-yellow-400">{r.roas.toFixed(2)}x</td>
+                                        </tr>
+                                      ))}
+                                    </tbody>
+                                  </table>
+                                </div>
+                              )}
+                            </AccordionContent>
+                          </AccordionItem>
+                        </Accordion>
+                      );
+                    })()}
                   </div>
                 );
               })}
