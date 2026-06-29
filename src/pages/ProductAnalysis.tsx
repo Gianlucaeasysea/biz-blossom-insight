@@ -57,7 +57,7 @@ const COLLECTION_TO_PRODUCT: Record<string, string> = {
 };
 
 const PRODUCTS = [
-  'FLIPPER', 'OLLI BLOCK', 'OLLI RING', 'JAKE', 'WAY2', 'SIDE PRODUCTS',
+  'FLIPPER', 'OLLI BLOCK', 'OLLI RING', 'OLLI FLEX', 'JAKE', 'WAY2', 'SIDE PRODUCTS',
 ] as const;
 
 // Color per product
@@ -65,10 +65,30 @@ const PRODUCT_COLORS: Record<string, string> = {
   'FLIPPER':       'hsl(215,85%,55%)',
   'OLLI BLOCK':    'hsl(168,70%,42%)',
   'OLLI RING':     'hsl(42,96%,48%)',
+  'OLLI FLEX':     'hsl(330,75%,55%)',
   'JAKE':          'hsl(280,65%,55%)',
   'WAY2':          'hsl(0,65%,52%)',
   'SIDE PRODUCTS': 'hsl(200,60%,45%)',
 };
+
+// Adset/campaign name keywords used to attribute Meta Ads spend to each product
+const PRODUCT_ADSET_KEYWORDS: Record<string, string[]> = {
+  'FLIPPER':       ['flipper', 'winch'],
+  'OLLI BLOCK':    ['block'],
+  'OLLI RING':     ['ring', 'snatch', 'anti-shock', 'anti shock', 'low friction'],
+  'OLLI FLEX':     ['flex'],
+  'JAKE':          ['jake', 'jib', 'boat hook', 'boathook', 'pole', 'brush', 'telescope'],
+  'WAY2':          ['way2', 'way 2', 'gangway'],
+  'SIDE PRODUCTS': [],
+};
+
+// Map product line item to display product (name-based overrides take priority over collection)
+function getProductBucket(name: string, sku: string): string | null {
+  const n = (name || '').toLowerCase();
+  if (n.includes('olli flex') || n.includes('olliflex') || /\bflex\b/.test(n)) return 'OLLI FLEX';
+  const collection = getSkuCollection(sku);
+  return COLLECTION_TO_PRODUCT[collection] ?? null;
+}
 
 const B2B_OPACITY = 0.45;
 
