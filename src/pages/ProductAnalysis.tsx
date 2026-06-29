@@ -468,6 +468,65 @@ export default function ProductAnalysis() {
                         </ComposedChart>
                       </ResponsiveContainer>
                     )}
+
+                    {/* Meta Ads adset spending accordion */}
+                    {(() => {
+                      const rows = adsetsByProduct[product] ?? [];
+                      const totSpend = rows.reduce((s, r) => s + r.spend, 0);
+                      const totRev = rows.reduce((s, r) => s + r.revenue, 0);
+                      const totRoas = totSpend > 0 ? totRev / totSpend : 0;
+                      return (
+                        <Accordion type="single" collapsible className="border-t border-border/30 -mx-4 -mb-4 px-4 pt-1">
+                          <AccordionItem value="adsets" className="border-b-0">
+                            <AccordionTrigger className="py-2 hover:no-underline">
+                              <div className="flex items-center justify-between w-full pr-2">
+                                <span className="text-[10px] uppercase tracking-widest text-muted-foreground font-semibold">
+                                  Meta Ads · {rows.length} adset
+                                </span>
+                                <div className="flex gap-3 text-[10px] font-mono">
+                                  <span className="text-red-400">Spend {fmtK(totSpend)}</span>
+                                  <span className="text-emerald-400">Rev {fmtK(totRev)}</span>
+                                  <span className="text-yellow-400">ROAS {totRoas.toFixed(2)}x</span>
+                                </div>
+                              </div>
+                            </AccordionTrigger>
+                            <AccordionContent className="pb-2">
+                              {rows.length === 0 ? (
+                                <p className="text-[11px] text-muted-foreground italic py-1">Nessun adset trovato nel periodo.</p>
+                              ) : (
+                                <div className="overflow-x-auto">
+                                  <table className="w-full text-[10.5px] font-mono">
+                                    <thead>
+                                      <tr className="border-b border-border/30 text-muted-foreground">
+                                        <th className="text-left py-1 pr-2 font-medium">Adset</th>
+                                        <th className="text-right py-1 px-1 font-medium">Spend</th>
+                                        <th className="text-right py-1 px-1 font-medium">Rev</th>
+                                        <th className="text-right py-1 px-1 font-medium">Acq</th>
+                                        <th className="text-right py-1 pl-1 font-medium">ROAS</th>
+                                      </tr>
+                                    </thead>
+                                    <tbody>
+                                      {rows.slice(0, 25).map((r, i) => (
+                                        <tr key={i} className="border-b border-border/10 last:border-0">
+                                          <td className="py-1 pr-2">
+                                            <div className="text-foreground truncate max-w-[200px]" title={r.adset}>{r.adset}</div>
+                                            <div className="text-[9px] text-muted-foreground truncate max-w-[200px]" title={r.campaign}>{r.campaign}</div>
+                                          </td>
+                                          <td className="text-right py-1 px-1 text-red-400">{fmtK(r.spend)}</td>
+                                          <td className="text-right py-1 px-1 text-emerald-400">{fmtK(r.revenue)}</td>
+                                          <td className="text-right py-1 px-1 text-foreground/80">{Math.round(r.purchases)}</td>
+                                          <td className="text-right py-1 pl-1 text-yellow-400">{r.roas.toFixed(2)}x</td>
+                                        </tr>
+                                      ))}
+                                    </tbody>
+                                  </table>
+                                </div>
+                              )}
+                            </AccordionContent>
+                          </AccordionItem>
+                        </Accordion>
+                      );
+                    })()}
                   </div>
                 );
               })}
