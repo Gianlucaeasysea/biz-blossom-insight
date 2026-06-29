@@ -208,8 +208,7 @@ export default function ProductAnalysis() {
       const isCustom = order.orderType && order.orderType.toLowerCase() === 'custom';
 
       order.products.forEach(prod => {
-        const collection = getSkuCollection(prod.sku);
-        const product = COLLECTION_TO_PRODUCT[collection];
+        const product = getProductBucket(prod.name, prod.sku);
         if (!product) return; // skip Shipping, Other, etc.
 
         if (order.customerType === 'B2C') {
