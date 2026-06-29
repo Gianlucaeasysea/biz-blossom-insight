@@ -11,8 +11,7 @@ Deno.serve(async (req) => {
   }
 
   try {
-    // Verify admin secret
-    const { email, password, adminSecret } = await req.json();
+    const { email, password, adminSecret, resetIfExists } = await req.json();
 
     const expectedSecret = Deno.env.get('EASYSEA');
     if (!adminSecret || adminSecret !== expectedSecret) {
@@ -41,6 +40,37 @@ Deno.serve(async (req) => {
     });
 
     if (error) {
+      // If user already exists and resetIfExists is true, update the password
+      if (resetIfExists && (error.message?.includes('already') || (error as any).code === 'email_exists')) {
+        const { data: list, error: listErr } = await supabaseAdmin.auth.admin.listUsers();
+        if (listErr) {
+          return new Response(JSON.stringify({ error: listErr.message }), {
+            status: 400,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          });
+        }
+        const existing = list.users.find((u) => u.email?.toLowerCase() === email.toLowerCase());
+        if (!existing) {
+          return new Response(JSON.stringify({ error: 'User not found for reset' }), {
+            status: 404,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          });
+        }
+        const { data: updated, error: updErr } = await supabaseAdmin.auth.admin.updateUserById(existing.id, {
+          password,
+          email_confirm: true,
+        });
+        if (updErr) {
+          return new Response(JSON.stringify({ error: updErr.message }), {
+            status: 400,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          });
+        }
+        return new Response(JSON.stringify({ user: { id: updated.user.id, email: updated.user.email }, reset: true }), {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+
       return new Response(JSON.stringify({ error: error.message }), {
         status: 400,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -51,7 +81,7 @@ Deno.serve(async (req) => {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
   } catch (err) {
-    return new Response(JSON.stringify({ error: err.message }), {
+    return new Response(JSON.stringify({ error: (err as Error).message }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
