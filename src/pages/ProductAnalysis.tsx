@@ -152,6 +152,36 @@ export default function ProductAnalysis() {
     enabled: true,
   });
 
+  // Meta Ads adsets for spend/revenue attribution per product
+  const { data: metaCore } = useMetaAds(yearSummaryRange);
+  const adsetsByProduct = useMemo(() => {
+    const out: Record<string, Array<{ adset: string; campaign: string; spend: number; revenue: number; purchases: number; roas: number }>> = {};
+    PRODUCTS.forEach(p => { out[p] = []; });
+    const adsets = metaCore?.adsets ?? [];
+    for (const a of adsets) {
+      const name = `${a.adset_name || ''} ${a.campaign_name || ''}`.toLowerCase();
+      let matched: string | null = null;
+      // priority: more specific keywords first; OLLI FLEX before OLLI BLOCK/RING to honor "flex"
+      const order: readonly string[] = ['OLLI FLEX', 'FLIPPER', 'OLLI BLOCK', 'OLLI RING', 'JAKE', 'WAY2'];
+      for (const p of order) {
+        if (PRODUCT_ADSET_KEYWORDS[p].some(k => name.includes(k))) { matched = p; break; }
+      }
+      if (!matched) matched = 'SIDE PRODUCTS';
+      const spend = parseFloat(a.spend || '0');
+      const revenue = getActionValue(a.action_values, 'purchase');
+      const purchases = getActionValue(a.actions, 'purchase');
+      out[matched].push({
+        adset: a.adset_name || '—',
+        campaign: a.campaign_name || '',
+        spend, revenue, purchases,
+        roas: spend > 0 ? revenue / spend : 0,
+      });
+    }
+    // sort each bucket by spend desc
+    for (const k of Object.keys(out)) out[k].sort((x, y) => y.spend - x.spend);
+    return out;
+  }, [metaCore]);
+
   const allOrders = useMemo(() => [...shopifyOrders, ...gsOrders], [shopifyOrders, gsOrders]);
   const isLoading = isLoadingShopify || isLoadingGS;
   const isFetching = isFetchingShopify || isFetchingGS;
