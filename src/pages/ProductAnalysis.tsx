@@ -9,9 +9,11 @@ import { DraggableNav } from '@/components/DraggableNav';
 import { useShopifyOrders } from '@/hooks/useShopifyOrders';
 import { useShopifySalesSummary } from '@/hooks/useShopifySalesSummary';
 import { useGoogleSheetsOrders } from '@/hooks/useGoogleSheetsOrders';
+import { useMetaAds, getActionValue } from '@/hooks/useMetaAds';
 import { getSkuCollection } from '@/lib/mock-data';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { Loader2 } from 'lucide-react';
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 
 // ── Country normalizer ──
 const COUNTRY_MAP: Record<string, string> = {
