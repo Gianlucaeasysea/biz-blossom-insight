@@ -9,6 +9,24 @@ const corsHeaders = {
 const META_API_BASE = 'https://graph.facebook.com/v21.0';
 const AD_ACCOUNT_ID = Deno.env.get('META_AD_ACCOUNT_ID') ?? 'act_449815118955538';
 
+// Fetch ALL pages from a Meta Graph paginated endpoint.
+// Meta insights truncate at `limit` per page — without paging we drop data
+// (e.g. account-level daily insights beyond ~100 days, or large adset counts).
+async function fetchAllPages(url: string, label: string, maxPages = 40): Promise<any[]> {
+  const results: any[] = [];
+  let next: string | null = url;
+  let page = 0;
+  while (next && page < maxPages) {
+    const res = await fetch(next);
+    if (!res.ok) throw new Error(`Meta ${label} failed [${res.status}] page ${page + 1}: ${await res.text()}`);
+    const json = await res.json();
+    if (Array.isArray(json.data)) results.push(...json.data);
+    next = json.paging?.next ?? null;
+    page += 1;
+  }
+  return results;
+}
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -16,8 +34,6 @@ serve(async (req) => {
 
   const auth = await requireAuth(req, corsHeaders);
   if (auth instanceof Response) return auth;
-
-
 
   try {
     const accessToken = Deno.env.get('META_ACCESS_TOKEN');
@@ -27,26 +43,24 @@ serve(async (req) => {
 
     const { dateFrom, dateTo, mode } = await req.json();
     const timeRange = JSON.stringify({ since: dateFrom, until: dateTo });
+    const tr = encodeURIComponent(timeRange);
 
     if (mode === 'creatives') {
-      // Fetch ads with creative thumbnails, UTM url_tags, and adset info
-      const [adsRes, adInsightsRes] = await Promise.all([
-        fetch(`${META_API_BASE}/${AD_ACCOUNT_ID}/ads?fields=id,name,campaign_id,campaign{name},adset_id,adset{name},creative{thumbnail_url,image_url,url_tags},effective_status&filtering=[{"field":"impressions","operator":"GREATER_THAN","value":"0"}]&limit=50&access_token=${accessToken}`),
-        fetch(`${META_API_BASE}/${AD_ACCOUNT_ID}/insights?fields=ad_id,ad_name,campaign_name,campaign_id,adset_name,adset_id,spend,impressions,clicks,ctr,cpc,actions,action_values&time_range=${encodeURIComponent(timeRange)}&level=ad&limit=50&access_token=${accessToken}`),
+      const [ads, adInsights] = await Promise.all([
+        fetchAllPages(
+          `${META_API_BASE}/${AD_ACCOUNT_ID}/ads?fields=id,name,campaign_id,campaign{name},adset_id,adset{name},creative{thumbnail_url,image_url,url_tags},effective_status&filtering=[{"field":"impressions","operator":"GREATER_THAN","value":"0"}]&limit=100&access_token=${accessToken}`,
+          'ads',
+        ),
+        fetchAllPages(
+          `${META_API_BASE}/${AD_ACCOUNT_ID}/insights?fields=ad_id,ad_name,campaign_name,campaign_id,adset_name,adset_id,spend,impressions,clicks,ctr,cpc,actions,action_values&time_range=${tr}&level=ad&limit=200&access_token=${accessToken}`,
+          'ad-insights',
+        ),
       ]);
 
-      if (!adsRes.ok) throw new Error(`Meta ads failed [${adsRes.status}]: ${await adsRes.text()}`);
-      if (!adInsightsRes.ok) throw new Error(`Meta ad insights failed [${adInsightsRes.status}]: ${await adInsightsRes.text()}`);
-
-      const adsData = await adsRes.json();
-      const adInsightsData = await adInsightsRes.json();
-
       const insightsMap = new Map<string, any>();
-      for (const ai of (adInsightsData.data || [])) {
-        insightsMap.set(ai.ad_id, ai);
-      }
+      for (const ai of adInsights) insightsMap.set(ai.ad_id, ai);
 
-      const ads = (adsData.data || []).map((ad: any) => {
+      const result = ads.map((ad: any) => {
         const insights = insightsMap.get(ad.id);
         return {
           id: ad.id,
@@ -68,40 +82,42 @@ serve(async (req) => {
         };
       });
 
-      return new Response(JSON.stringify({ ads }), {
+      return new Response(JSON.stringify({ ads: result }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
 
-    // DEFAULT: core data - daily insights + campaign + adset + country breakdown
-    const [insightsRes, campaignsRes, adsetsRes, countryRes, campaignDailyRes] = await Promise.all([
-      fetch(`${META_API_BASE}/${AD_ACCOUNT_ID}/insights?fields=spend,impressions,clicks,ctr,cpc,cpm,reach,frequency,actions,cost_per_action_type,action_values&time_range=${encodeURIComponent(timeRange)}&time_increment=1&limit=100&access_token=${accessToken}`),
-      fetch(`${META_API_BASE}/${AD_ACCOUNT_ID}/insights?fields=campaign_name,campaign_id,objective,spend,impressions,clicks,ctr,cpc,actions,cost_per_action_type,action_values&time_range=${encodeURIComponent(timeRange)}&level=campaign&limit=100&access_token=${accessToken}`),
-      fetch(`${META_API_BASE}/${AD_ACCOUNT_ID}/insights?fields=adset_name,adset_id,campaign_name,campaign_id,spend,impressions,clicks,ctr,cpc,actions,action_values&time_range=${encodeURIComponent(timeRange)}&level=adset&limit=100&access_token=${accessToken}`),
-      fetch(`${META_API_BASE}/${AD_ACCOUNT_ID}/insights?fields=spend,impressions,clicks,ctr,cpc,actions,action_values&time_range=${encodeURIComponent(timeRange)}&breakdowns=country&limit=100&access_token=${accessToken}`),
-      fetch(`${META_API_BASE}/${AD_ACCOUNT_ID}/insights?fields=campaign_name,campaign_id,objective,spend,impressions&time_range=${encodeURIComponent(timeRange)}&level=campaign&time_increment=monthly&limit=500&access_token=${accessToken}`),
-    ]);
-
-    if (!insightsRes.ok) throw new Error(`Meta insights failed [${insightsRes.status}]: ${await insightsRes.text()}`);
-    if (!campaignsRes.ok) throw new Error(`Meta campaigns failed [${campaignsRes.status}]: ${await campaignsRes.text()}`);
-    if (!adsetsRes.ok) throw new Error(`Meta adsets failed [${adsetsRes.status}]: ${await adsetsRes.text()}`);
-    if (!countryRes.ok) throw new Error(`Meta country failed [${countryRes.status}]: ${await countryRes.text()}`);
-    if (!campaignDailyRes.ok) throw new Error(`Meta campaign daily failed [${campaignDailyRes.status}]: ${await campaignDailyRes.text()}`);
-
-    const [insightsData, campaignsData, adsetsData, countryData, campaignDailyData] = await Promise.all([
-      insightsRes.json(),
-      campaignsRes.json(),
-      adsetsRes.json(),
-      countryRes.json(),
-      campaignDailyRes.json(),
+    // DEFAULT: core data — daily + campaigns + adsets + country + monthly campaigns.
+    // All endpoints paginated to avoid truncation over long ranges / large accounts.
+    const [daily, campaigns, adsets, countries, campaignMonthly] = await Promise.all([
+      fetchAllPages(
+        `${META_API_BASE}/${AD_ACCOUNT_ID}/insights?fields=spend,impressions,clicks,ctr,cpc,cpm,reach,frequency,actions,cost_per_action_type,action_values&time_range=${tr}&time_increment=1&limit=500&access_token=${accessToken}`,
+        'daily-insights',
+      ),
+      fetchAllPages(
+        `${META_API_BASE}/${AD_ACCOUNT_ID}/insights?fields=campaign_name,campaign_id,objective,spend,impressions,clicks,ctr,cpc,actions,cost_per_action_type,action_values&time_range=${tr}&level=campaign&limit=200&access_token=${accessToken}`,
+        'campaign-insights',
+      ),
+      fetchAllPages(
+        `${META_API_BASE}/${AD_ACCOUNT_ID}/insights?fields=adset_name,adset_id,campaign_name,campaign_id,spend,impressions,clicks,ctr,cpc,actions,action_values&time_range=${tr}&level=adset&limit=200&access_token=${accessToken}`,
+        'adset-insights',
+      ),
+      fetchAllPages(
+        `${META_API_BASE}/${AD_ACCOUNT_ID}/insights?fields=spend,impressions,clicks,ctr,cpc,actions,action_values&time_range=${tr}&breakdowns=country&limit=200&access_token=${accessToken}`,
+        'country-insights',
+      ),
+      fetchAllPages(
+        `${META_API_BASE}/${AD_ACCOUNT_ID}/insights?fields=campaign_name,campaign_id,objective,spend,impressions&time_range=${tr}&level=campaign&time_increment=monthly&limit=500&access_token=${accessToken}`,
+        'campaign-monthly-insights',
+      ),
     ]);
 
     return new Response(JSON.stringify({
-      daily: insightsData.data || [],
-      campaigns: campaignsData.data || [],
-      adsets: adsetsData.data || [],
-      countries: countryData.data || [],
-      campaignMonthly: campaignDailyData.data || [],
+      daily,
+      campaigns,
+      adsets,
+      countries,
+      campaignMonthly,
     }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
