@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { format } from 'date-fns';
+import { getEdgeAuthHeaders } from '@/lib/edge-auth';
 
 export interface MetaDailyInsight {
   date_start: string;
@@ -179,14 +180,25 @@ export function useMetaAds(dateRange: { start: Date; end: Date }) {
   return useQuery<MetaCoreData>({
     queryKey: ['meta-ads-core', format(dateRange.start, 'yyyy-MM-dd'), format(dateRange.end, 'yyyy-MM-dd')],
     queryFn: async () => {
-      const { data, error } = await supabase.functions.invoke('meta-ads', {
-        body: { dateFrom: format(dateRange.start, 'yyyy-MM-dd'), dateTo: format(dateRange.end, 'yyyy-MM-dd'), mode: 'core' },
+      const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/meta-ads`, {
+        method: 'POST',
+        headers: await getEdgeAuthHeaders(),
+        body: JSON.stringify({
+          dateFrom: format(dateRange.start, 'yyyy-MM-dd'),
+          dateTo: format(dateRange.end, 'yyyy-MM-dd'),
+          mode: 'core',
+        }),
       });
-      if (error) throw error;
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(data?.error || `HTTP ${response.status}`);
       if (data.error) throw new Error(data.error);
       return data as MetaCoreData;
     },
-    staleTime: 10 * 60 * 1000,
+    staleTime: 0,
+    refetchOnMount: 'always',
+    refetchOnWindowFocus: true,
+    refetchInterval: 5 * 60 * 1000,
+    retry: 2,
   });
 }
 
@@ -194,14 +206,24 @@ export function useMetaCreatives(dateRange: { start: Date; end: Date }, enabled:
   return useQuery<MetaCreativesData>({
     queryKey: ['meta-ads-creatives', format(dateRange.start, 'yyyy-MM-dd'), format(dateRange.end, 'yyyy-MM-dd')],
     queryFn: async () => {
-      const { data, error } = await supabase.functions.invoke('meta-ads', {
-        body: { dateFrom: format(dateRange.start, 'yyyy-MM-dd'), dateTo: format(dateRange.end, 'yyyy-MM-dd'), mode: 'creatives' },
+      const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/meta-ads`, {
+        method: 'POST',
+        headers: await getEdgeAuthHeaders(),
+        body: JSON.stringify({
+          dateFrom: format(dateRange.start, 'yyyy-MM-dd'),
+          dateTo: format(dateRange.end, 'yyyy-MM-dd'),
+          mode: 'creatives',
+        }),
       });
-      if (error) throw error;
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(data?.error || `HTTP ${response.status}`);
       if (data.error) throw new Error(data.error);
       return data as MetaCreativesData;
     },
-    staleTime: 10 * 60 * 1000,
+    staleTime: 0,
+    refetchOnMount: 'always',
+    refetchOnWindowFocus: true,
     enabled,
+    retry: 2,
   });
 }
