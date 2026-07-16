@@ -447,10 +447,14 @@ export default function B2BAnalysis() {
 
   const matrixRows = useMemo<MatrixRow[]>(() => {
     const map: Record<string, MatrixRow> = {};
+    const from = mDateFrom ? new Date(mDateFrom + 'T00:00:00') : null;
+    const to = mDateTo ? new Date(mDateTo + 'T23:59:59.999') : null;
     filteredOrders.forEach(o => {
       if (mCustomer && o.customerName !== mCustomer) return;
       if (mCountry && o.country !== mCountry) return;
       const d = toDate(o.date) || new Date();
+      if (from && d < from) return;
+      if (to && d > to) return;
       o.products.forEach(p => {
         if (mProduct && p.name !== mProduct) return;
         if (mSku && p.sku !== mSku) return;
@@ -479,7 +483,8 @@ export default function B2BAnalysis() {
       return mSortDir === 'asc' ? cmp : -cmp;
     });
     return list;
-  }, [filteredOrders, mProduct, mSku, mCustomer, mCountry, mSearch, mSort, mSortDir]);
+  }, [filteredOrders, mProduct, mSku, mCustomer, mCountry, mSearch, mSort, mSortDir, mDateFrom, mDateTo]);
+
 
   const matrixTotals = useMemo(() => ({
     rows: matrixRows.length,
