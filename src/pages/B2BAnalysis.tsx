@@ -923,6 +923,57 @@ export default function B2BAnalysis() {
                     <option value="">Tutti i prodotti ({allProductNames.length})</option>
                     {allProductNames.map(n => <option key={n} value={n}>{n}</option>)}
                   </select>
+                {/* Date range filter */}
+                <div className="flex flex-wrap items-end gap-2 p-3 rounded-lg bg-primary/5 border border-primary/20">
+                  <div className="flex flex-col">
+                    <label className="text-[9px] text-muted-foreground uppercase tracking-wider mb-1">Da</label>
+                    <Input type="date" value={mDateFrom} onChange={e => setMDateFrom(e.target.value)} className="h-8 text-xs w-[140px]" />
+                  </div>
+                  <div className="flex flex-col">
+                    <label className="text-[9px] text-muted-foreground uppercase tracking-wider mb-1">A</label>
+                    <Input type="date" value={mDateTo} onChange={e => setMDateTo(e.target.value)} className="h-8 text-xs w-[140px]" />
+                  </div>
+                  <div className="flex gap-1 flex-wrap">
+                    {[
+                      { label: '7g', days: 7 },
+                      { label: '30g', days: 30 },
+                      { label: '90g', days: 90 },
+                      { label: 'YTD', days: -1 },
+                    ].map(preset => (
+                      <button
+                        key={preset.label}
+                        onClick={() => {
+                          const today = new Date();
+                          const from = preset.days === -1
+                            ? new Date(today.getFullYear(), 0, 1)
+                            : new Date(today.getTime() - preset.days * 86400000);
+                          setMDateFrom(format(from, 'yyyy-MM-dd'));
+                          setMDateTo(format(today, 'yyyy-MM-dd'));
+                        }}
+                        className="h-8 px-2 text-[10px] rounded border border-border/50 bg-background hover:bg-muted transition-colors"
+                      >
+                        {preset.label}
+                      </button>
+                    ))}
+                    {(mDateFrom || mDateTo) && (
+                      <button onClick={() => { setMDateFrom(''); setMDateTo(''); }} className="h-8 px-2 text-[10px] rounded border border-border/50 bg-background hover:bg-muted transition-colors">
+                        ✕ Reset date
+                      </button>
+                    )}
+                  </div>
+                  {(mDateFrom || mDateTo) && (
+                    <span className="text-[10px] text-muted-foreground ml-auto">
+                      Range attivo: {mDateFrom || '—'} → {mDateTo || '—'}
+                    </span>
+                  )}
+                </div>
+
+                {/* Filters */}
+                <div className="grid grid-cols-2 md:grid-cols-5 gap-2 p-3 rounded-lg bg-muted/30 border border-border/30">
+                  <select value={mProduct} onChange={e => setMProduct(e.target.value)} className="h-8 text-xs rounded border border-border/50 bg-background px-2 truncate">
+                    <option value="">Tutti i prodotti ({allProductNames.length})</option>
+                    {allProductNames.map(n => <option key={n} value={n}>{n}</option>)}
+                  </select>
                   <select value={mSku} onChange={e => setMSku(e.target.value)} className="h-8 text-xs rounded border border-border/50 bg-background px-2 truncate">
                     <option value="">Tutti gli SKU ({allSkus.length})</option>
                     {allSkus.map(s => <option key={s} value={s}>{s}</option>)}
@@ -950,6 +1001,7 @@ export default function B2BAnalysis() {
                 {/* Summary */}
                 <div className="grid grid-cols-2 md:grid-cols-5 gap-2">
                   <div className="p-2 rounded bg-muted/30"><p className="text-[9px] text-muted-foreground uppercase">Combinazioni</p><p className="text-sm font-bold font-mono">{matrixTotals.rows}</p></div>
+
                   <div className="p-2 rounded bg-muted/30"><p className="text-[9px] text-muted-foreground uppercase">Prodotti</p><p className="text-sm font-bold font-mono">{matrixTotals.products}</p></div>
                   <div className="p-2 rounded bg-muted/30"><p className="text-[9px] text-muted-foreground uppercase">Clienti</p><p className="text-sm font-bold font-mono">{matrixTotals.customers}</p></div>
                   <div className="p-2 rounded bg-muted/30"><p className="text-[9px] text-muted-foreground uppercase">Qty totale</p><p className="text-sm font-bold font-mono">{matrixTotals.qty}</p></div>
