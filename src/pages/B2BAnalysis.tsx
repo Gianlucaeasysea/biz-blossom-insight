@@ -654,10 +654,10 @@ export default function B2BAnalysis() {
 
             {/* ── Tab navigation ───────────────────────────────── */}
             <div className="flex gap-1 border-b border-border/30 pb-0">
-              {(['customers', 'orders', 'products', 'countries'] as const).map(tab => (
+              {(['customers', 'orders', 'products', 'matrix', 'countries'] as const).map(tab => (
                 <button key={tab} onClick={() => setActiveTab(tab)}
                   className={`px-3 py-1.5 text-xs font-semibold rounded-t-lg transition-colors ${activeTab === tab ? 'bg-card text-foreground border border-b-0 border-border/30' : 'text-muted-foreground hover:text-foreground'}`}>
-                  {tab === 'customers' ? '👥 Clienti' : tab === 'orders' ? '📋 Ordini' : tab === 'products' ? '📦 Prodotti' : '🌍 Paesi'}
+                  {tab === 'customers' ? '👥 Clienti' : tab === 'orders' ? '📋 Ordini' : tab === 'products' ? '📦 Prodotti' : tab === 'matrix' ? '🎯 Prodotti × Clienti' : '🌍 Paesi'}
                 </button>
               ))}
             </div>
