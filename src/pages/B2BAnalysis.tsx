@@ -917,13 +917,8 @@ export default function B2BAnalysis() {
                   </Button>
                 </div>
 
-                {/* Filters */}
-                <div className="grid grid-cols-2 md:grid-cols-5 gap-2 p-3 rounded-lg bg-muted/30 border border-border/30">
-                  <select value={mProduct} onChange={e => setMProduct(e.target.value)} className="h-8 text-xs rounded border border-border/50 bg-background px-2 truncate">
-                    <option value="">Tutti i prodotti ({allProductNames.length})</option>
-                    {allProductNames.map(n => <option key={n} value={n}>{n}</option>)}
-                  </select>
                 {/* Date range filter */}
+
                 <div className="flex flex-wrap items-end gap-2 p-3 rounded-lg bg-primary/5 border border-primary/20">
                   <div className="flex flex-col">
                     <label className="text-[9px] text-muted-foreground uppercase tracking-wider mb-1">Da</label>
