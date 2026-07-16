@@ -431,6 +431,73 @@ export default function B2BAnalysis() {
     return orderRows.filter(o => o.customerName.toLowerCase().includes(q) || o.orderNumber.toLowerCase().includes(q) || o.country.toLowerCase().includes(q));
   }, [orderRows, search]);
 
+  // ── Product × Customer matrix ─────────────────────────────────────────
+  interface MatrixRow {
+    key: string; sku: string; productName: string; customerName: string; customerId: string;
+    country: string; agent: string; qty: number; revenue: number; orders: number;
+    avgPrice: number; firstDate: Date; lastDate: Date;
+  }
+
+  const allProductNames = useMemo(() => Array.from(new Set(filteredOrders.flatMap(o => o.products.map(p => p.name)))).sort(), [filteredOrders]);
+  const allSkus = useMemo(() => Array.from(new Set(filteredOrders.flatMap(o => o.products.map(p => p.sku)))).filter(Boolean).sort(), [filteredOrders]);
+  const allCustomerNames = useMemo(() => Array.from(new Set(filteredOrders.map(o => o.customerName))).sort(), [filteredOrders]);
+  const allCountries = useMemo(() => Array.from(new Set(filteredOrders.map(o => o.country).filter(Boolean))).sort(), [filteredOrders]);
+
+  const matrixRows = useMemo<MatrixRow[]>(() => {
+    const map: Record<string, MatrixRow> = {};
+    filteredOrders.forEach(o => {
+      if (mCustomer && o.customerName !== mCustomer) return;
+      if (mCountry && o.country !== mCountry) return;
+      const d = toDate(o.date) || new Date();
+      o.products.forEach(p => {
+        if (mProduct && p.name !== mProduct) return;
+        if (mSku && p.sku !== mSku) return;
+        const key = `${p.sku || p.name}::${o.customerId}`;
+        if (!map[key]) map[key] = {
+          key, sku: p.sku, productName: p.name, customerName: o.customerName, customerId: o.customerId,
+          country: o.country || '', agent: o.agent || '', qty: 0, revenue: 0, orders: 0,
+          avgPrice: 0, firstDate: d, lastDate: d,
+        };
+        const r = map[key];
+        r.qty += p.quantity;
+        r.revenue += p.totalPrice;
+        r.orders += 1;
+        if (d < r.firstDate) r.firstDate = d;
+        if (d > r.lastDate) r.lastDate = d;
+      });
+    });
+    let list = Object.values(map).map(r => ({ ...r, avgPrice: r.qty > 0 ? r.revenue / r.qty : 0 }));
+    if (mSearch) {
+      const q = mSearch.toLowerCase();
+      list = list.filter(r => r.productName.toLowerCase().includes(q) || r.sku.toLowerCase().includes(q) || r.customerName.toLowerCase().includes(q) || r.country.toLowerCase().includes(q));
+    }
+    list.sort((a, b) => {
+      const av = a[mSort], bv = b[mSort];
+      const cmp = typeof av === 'string' ? (av as string).localeCompare(bv as string) : (av as number) - (bv as number);
+      return mSortDir === 'asc' ? cmp : -cmp;
+    });
+    return list;
+  }, [filteredOrders, mProduct, mSku, mCustomer, mCountry, mSearch, mSort, mSortDir]);
+
+  const matrixTotals = useMemo(() => ({
+    rows: matrixRows.length,
+    qty: matrixRows.reduce((s, r) => s + r.qty, 0),
+    revenue: matrixRows.reduce((s, r) => s + r.revenue, 0),
+    customers: new Set(matrixRows.map(r => r.customerId)).size,
+    products: new Set(matrixRows.map(r => r.sku || r.productName)).size,
+  }), [matrixRows]);
+
+  const handleMatrixSort = (f: typeof mSort) => {
+    if (mSort === f) setMSortDir(d => d === 'asc' ? 'desc' : 'asc');
+    else { setMSort(f); setMSortDir('desc'); }
+  };
+
+  const exportMatrixCsv = () => {
+    downloadCsv('b2b-product-customer', ['SKU', 'Prodotto', 'Cliente', 'Paese', 'Agente', 'Qty', 'Revenue', 'Ordini', 'Prezzo Medio', 'Primo Acquisto', 'Ultimo Acquisto'],
+      matrixRows.map(r => [r.sku, r.productName, r.customerName, r.country, r.agent, r.qty, r.revenue, r.orders, r.avgPrice.toFixed(2), format(r.firstDate, 'dd/MM/yyyy'), format(r.lastDate, 'dd/MM/yyyy')])
+    );
+  };
+
   const exportCustomersCsv = () => {
     downloadCsv('b2b-customers', ['Nome', 'Paese', 'Agente', 'Ordini', 'Totale Ordinato', 'Consegnato', 'Pagato', 'In Attesa', 'Non Pagato', 'AOV', 'Primo Ordine', 'Ultimo Ordine', 'Giorni Inattivo', 'Prodotti'],
       sortedCustomers.map(c => [c.name, c.country, c.agent, c.orders, c.totalOrdered, c.totalDelivered, c.totalPaid, c.pendingAmount, c.unpaidAmount, c.avgOrderValue, format(c.firstOrder, 'dd/MM/yyyy'), format(c.lastOrder, 'dd/MM/yyyy'), c.daysSinceLast, c.products.join('; ')])
