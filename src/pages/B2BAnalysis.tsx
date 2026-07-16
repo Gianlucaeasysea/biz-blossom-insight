@@ -250,6 +250,8 @@ export default function B2BAnalysis() {
   const [mSearch, setMSearch] = useState('');
   const [mSort, setMSort] = useState<'revenue' | 'qty' | 'customer' | 'product'>('revenue');
   const [mSortDir, setMSortDir] = useState<'asc' | 'desc'>('desc');
+  const [mDateFrom, setMDateFrom] = useState('');
+  const [mDateTo, setMDateTo] = useState('');
 
   const toggleOrder = (id: string) => {
     setExpandedOrders(prev => {
