@@ -897,6 +897,101 @@ export default function B2BAnalysis() {
               </div>
             )}
 
+            {/* ── Matrix Prodotti × Clienti ─────────────────────── */}
+            {activeTab === 'matrix' && (
+              <div className="dashboard-card p-4 space-y-3">
+                <div className="flex items-start justify-between gap-2 flex-wrap">
+                  <div>
+                    <h3 className="text-sm font-semibold text-foreground">🎯 Prodotti × Clienti</h3>
+                    <p className="text-[10px] text-muted-foreground mt-0.5">Chi ha comprato cosa nel periodo — filtra per prodotto, SKU, cliente o paese.</p>
+                  </div>
+                  <Button variant="outline" size="sm" className="h-7 text-[10px] gap-1" onClick={exportMatrixCsv}>
+                    <Download className="w-3 h-3" /> CSV
+                  </Button>
+                </div>
+
+                {/* Filters */}
+                <div className="grid grid-cols-2 md:grid-cols-5 gap-2 p-3 rounded-lg bg-muted/30 border border-border/30">
+                  <select value={mProduct} onChange={e => setMProduct(e.target.value)} className="h-8 text-xs rounded border border-border/50 bg-background px-2 truncate">
+                    <option value="">Tutti i prodotti ({allProductNames.length})</option>
+                    {allProductNames.map(n => <option key={n} value={n}>{n}</option>)}
+                  </select>
+                  <select value={mSku} onChange={e => setMSku(e.target.value)} className="h-8 text-xs rounded border border-border/50 bg-background px-2 truncate">
+                    <option value="">Tutti gli SKU ({allSkus.length})</option>
+                    {allSkus.map(s => <option key={s} value={s}>{s}</option>)}
+                  </select>
+                  <select value={mCustomer} onChange={e => setMCustomer(e.target.value)} className="h-8 text-xs rounded border border-border/50 bg-background px-2 truncate">
+                    <option value="">Tutti i clienti ({allCustomerNames.length})</option>
+                    {allCustomerNames.map(c => <option key={c} value={c}>{c}</option>)}
+                  </select>
+                  <select value={mCountry} onChange={e => setMCountry(e.target.value)} className="h-8 text-xs rounded border border-border/50 bg-background px-2 truncate">
+                    <option value="">Tutti i paesi ({allCountries.length})</option>
+                    {allCountries.map(c => <option key={c} value={c}>{c}</option>)}
+                  </select>
+                  <div className="relative">
+                    <Search className="absolute left-2 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
+                    <Input value={mSearch} onChange={e => setMSearch(e.target.value)} placeholder="Cerca..." className="h-8 text-xs pl-7" />
+                  </div>
+                </div>
+
+                {(mProduct || mSku || mCustomer || mCountry || mSearch) && (
+                  <button onClick={() => { setMProduct(''); setMSku(''); setMCustomer(''); setMCountry(''); setMSearch(''); }} className="text-[10px] text-primary hover:underline">
+                    ✕ Reset filtri
+                  </button>
+                )}
+
+                {/* Summary */}
+                <div className="grid grid-cols-2 md:grid-cols-5 gap-2">
+                  <div className="p-2 rounded bg-muted/30"><p className="text-[9px] text-muted-foreground uppercase">Combinazioni</p><p className="text-sm font-bold font-mono">{matrixTotals.rows}</p></div>
+                  <div className="p-2 rounded bg-muted/30"><p className="text-[9px] text-muted-foreground uppercase">Prodotti</p><p className="text-sm font-bold font-mono">{matrixTotals.products}</p></div>
+                  <div className="p-2 rounded bg-muted/30"><p className="text-[9px] text-muted-foreground uppercase">Clienti</p><p className="text-sm font-bold font-mono">{matrixTotals.customers}</p></div>
+                  <div className="p-2 rounded bg-muted/30"><p className="text-[9px] text-muted-foreground uppercase">Qty totale</p><p className="text-sm font-bold font-mono">{matrixTotals.qty}</p></div>
+                  <div className="p-2 rounded bg-muted/30"><p className="text-[9px] text-muted-foreground uppercase">Revenue</p><p className="text-sm font-bold font-mono">{fmt(matrixTotals.revenue)}</p></div>
+                </div>
+
+                {/* Table */}
+                <div className="overflow-x-auto">
+                  <table className="w-full text-xs">
+                    <thead>
+                      <tr className="border-b border-border/30 text-left text-[10px] text-muted-foreground uppercase tracking-wider">
+                        <th className="py-2 px-2 cursor-pointer" onClick={() => handleMatrixSort('product')}>SKU / Prodotto {mSort === 'product' && <ArrowUpDown className="w-2.5 h-2.5 inline" />}</th>
+                        <th className="py-2 px-2 cursor-pointer" onClick={() => handleMatrixSort('customer')}>Cliente {mSort === 'customer' && <ArrowUpDown className="w-2.5 h-2.5 inline" />}</th>
+                        <th className="py-2 px-2">Paese</th>
+                        <th className="py-2 px-2 text-right cursor-pointer" onClick={() => handleMatrixSort('qty')}>Qty {mSort === 'qty' && <ArrowUpDown className="w-2.5 h-2.5 inline" />}</th>
+                        <th className="py-2 px-2 text-right cursor-pointer" onClick={() => handleMatrixSort('revenue')}>Revenue {mSort === 'revenue' && <ArrowUpDown className="w-2.5 h-2.5 inline" />}</th>
+                        <th className="py-2 px-2 text-right">Ordini</th>
+                        <th className="py-2 px-2 text-right">Prezzo Medio</th>
+                        <th className="py-2 px-2 text-right">Primo</th>
+                        <th className="py-2 px-2 text-right">Ultimo</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {matrixRows.slice(0, 300).map(r => (
+                        <tr key={r.key} className="border-b border-border/10 hover:bg-muted/30 transition-colors">
+                          <td className="py-1.5 px-2">
+                            <div className="font-mono text-[10px] text-muted-foreground">{r.sku || '—'}</div>
+                            <div className="font-medium max-w-[220px] truncate" title={r.productName}>{r.productName}</div>
+                          </td>
+                          <td className="py-1.5 px-2 font-medium">{r.customerName}</td>
+                          <td className="py-1.5 px-2 text-muted-foreground">{r.country || '—'}</td>
+                          <td className="py-1.5 px-2 text-right font-mono font-semibold">{r.qty}</td>
+                          <td className="py-1.5 px-2 text-right font-mono font-semibold">{fmtDec(r.revenue)}</td>
+                          <td className="py-1.5 px-2 text-right font-mono">{r.orders}</td>
+                          <td className="py-1.5 px-2 text-right font-mono">{fmtDec(r.avgPrice)}</td>
+                          <td className="py-1.5 px-2 text-right text-muted-foreground">{format(r.firstDate, 'dd/MM/yy')}</td>
+                          <td className="py-1.5 px-2 text-right text-muted-foreground">{format(r.lastDate, 'dd/MM/yy')}</td>
+                        </tr>
+                      ))}
+                      {matrixRows.length === 0 && (
+                        <tr><td colSpan={9} className="text-center py-8 text-muted-foreground text-xs">Nessun dato — modifica i filtri o il periodo.</td></tr>
+                      )}
+                    </tbody>
+                  </table>
+                  {matrixRows.length > 300 && <p className="text-[10px] text-muted-foreground mt-2 text-center">Mostrate 300 di {matrixRows.length} combinazioni — usa i filtri per restringere.</p>}
+                </div>
+              </div>
+            )}
+
             {/* ── Countries tab ─────────────────────────────────── */}
             {activeTab === 'countries' && (
               <div className="space-y-4">
