@@ -239,8 +239,17 @@ export default function B2BAnalysis() {
   const [search, setSearch] = useState('');
   const [sortField, setSortField] = useState<'totalOrdered' | 'orders' | 'name' | 'totalDelivered' | 'avgOrderValue' | 'pendingAmount'>('totalOrdered');
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc');
-  const [activeTab, setActiveTab] = useState<'customers' | 'products' | 'orders' | 'countries'>('customers');
+  const [activeTab, setActiveTab] = useState<'customers' | 'products' | 'orders' | 'countries' | 'matrix'>('customers');
   const [expandedOrders, setExpandedOrders] = useState<Set<string>>(new Set());
+
+  // Matrix filters
+  const [mProduct, setMProduct] = useState('');
+  const [mSku, setMSku] = useState('');
+  const [mCustomer, setMCustomer] = useState('');
+  const [mCountry, setMCountry] = useState('');
+  const [mSearch, setMSearch] = useState('');
+  const [mSort, setMSort] = useState<'revenue' | 'qty' | 'customer' | 'product'>('revenue');
+  const [mSortDir, setMSortDir] = useState<'asc' | 'desc'>('desc');
 
   const toggleOrder = (id: string) => {
     setExpandedOrders(prev => {
