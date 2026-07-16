@@ -250,6 +250,8 @@ export default function B2BAnalysis() {
   const [mSearch, setMSearch] = useState('');
   const [mSort, setMSort] = useState<'revenue' | 'qty' | 'customer' | 'product'>('revenue');
   const [mSortDir, setMSortDir] = useState<'asc' | 'desc'>('desc');
+  const [mDateFrom, setMDateFrom] = useState('');
+  const [mDateTo, setMDateTo] = useState('');
 
   const toggleOrder = (id: string) => {
     setExpandedOrders(prev => {
@@ -445,10 +447,14 @@ export default function B2BAnalysis() {
 
   const matrixRows = useMemo<MatrixRow[]>(() => {
     const map: Record<string, MatrixRow> = {};
+    const from = mDateFrom ? new Date(mDateFrom + 'T00:00:00') : null;
+    const to = mDateTo ? new Date(mDateTo + 'T23:59:59.999') : null;
     filteredOrders.forEach(o => {
       if (mCustomer && o.customerName !== mCustomer) return;
       if (mCountry && o.country !== mCountry) return;
       const d = toDate(o.date) || new Date();
+      if (from && d < from) return;
+      if (to && d > to) return;
       o.products.forEach(p => {
         if (mProduct && p.name !== mProduct) return;
         if (mSku && p.sku !== mSku) return;
@@ -477,7 +483,8 @@ export default function B2BAnalysis() {
       return mSortDir === 'asc' ? cmp : -cmp;
     });
     return list;
-  }, [filteredOrders, mProduct, mSku, mCustomer, mCountry, mSearch, mSort, mSortDir]);
+  }, [filteredOrders, mProduct, mSku, mCustomer, mCountry, mSearch, mSort, mSortDir, mDateFrom, mDateTo]);
+
 
   const matrixTotals = useMemo(() => ({
     rows: matrixRows.length,
@@ -910,6 +917,52 @@ export default function B2BAnalysis() {
                   </Button>
                 </div>
 
+                {/* Date range filter */}
+
+                <div className="flex flex-wrap items-end gap-2 p-3 rounded-lg bg-primary/5 border border-primary/20">
+                  <div className="flex flex-col">
+                    <label className="text-[9px] text-muted-foreground uppercase tracking-wider mb-1">Da</label>
+                    <Input type="date" value={mDateFrom} onChange={e => setMDateFrom(e.target.value)} className="h-8 text-xs w-[140px]" />
+                  </div>
+                  <div className="flex flex-col">
+                    <label className="text-[9px] text-muted-foreground uppercase tracking-wider mb-1">A</label>
+                    <Input type="date" value={mDateTo} onChange={e => setMDateTo(e.target.value)} className="h-8 text-xs w-[140px]" />
+                  </div>
+                  <div className="flex gap-1 flex-wrap">
+                    {[
+                      { label: '7g', days: 7 },
+                      { label: '30g', days: 30 },
+                      { label: '90g', days: 90 },
+                      { label: 'YTD', days: -1 },
+                    ].map(preset => (
+                      <button
+                        key={preset.label}
+                        onClick={() => {
+                          const today = new Date();
+                          const from = preset.days === -1
+                            ? new Date(today.getFullYear(), 0, 1)
+                            : new Date(today.getTime() - preset.days * 86400000);
+                          setMDateFrom(format(from, 'yyyy-MM-dd'));
+                          setMDateTo(format(today, 'yyyy-MM-dd'));
+                        }}
+                        className="h-8 px-2 text-[10px] rounded border border-border/50 bg-background hover:bg-muted transition-colors"
+                      >
+                        {preset.label}
+                      </button>
+                    ))}
+                    {(mDateFrom || mDateTo) && (
+                      <button onClick={() => { setMDateFrom(''); setMDateTo(''); }} className="h-8 px-2 text-[10px] rounded border border-border/50 bg-background hover:bg-muted transition-colors">
+                        ✕ Reset date
+                      </button>
+                    )}
+                  </div>
+                  {(mDateFrom || mDateTo) && (
+                    <span className="text-[10px] text-muted-foreground ml-auto">
+                      Range attivo: {mDateFrom || '—'} → {mDateTo || '—'}
+                    </span>
+                  )}
+                </div>
+
                 {/* Filters */}
                 <div className="grid grid-cols-2 md:grid-cols-5 gap-2 p-3 rounded-lg bg-muted/30 border border-border/30">
                   <select value={mProduct} onChange={e => setMProduct(e.target.value)} className="h-8 text-xs rounded border border-border/50 bg-background px-2 truncate">
@@ -943,6 +996,7 @@ export default function B2BAnalysis() {
                 {/* Summary */}
                 <div className="grid grid-cols-2 md:grid-cols-5 gap-2">
                   <div className="p-2 rounded bg-muted/30"><p className="text-[9px] text-muted-foreground uppercase">Combinazioni</p><p className="text-sm font-bold font-mono">{matrixTotals.rows}</p></div>
+
                   <div className="p-2 rounded bg-muted/30"><p className="text-[9px] text-muted-foreground uppercase">Prodotti</p><p className="text-sm font-bold font-mono">{matrixTotals.products}</p></div>
                   <div className="p-2 rounded bg-muted/30"><p className="text-[9px] text-muted-foreground uppercase">Clienti</p><p className="text-sm font-bold font-mono">{matrixTotals.customers}</p></div>
                   <div className="p-2 rounded bg-muted/30"><p className="text-[9px] text-muted-foreground uppercase">Qty totale</p><p className="text-sm font-bold font-mono">{matrixTotals.qty}</p></div>
